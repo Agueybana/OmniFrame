@@ -1,0 +1,12 @@
+.git
+.DS_Store
+node_modules
+dist
+.venv
+venv
+__pycache__
+.pytest_cache
+backend/runtime
+omniframe-eb.zip
+.local
+.run

@@ -1,0 +1,31 @@
+{
+  "name": "omniframe",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c green,cyan \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000",
+    "dev:frontend": "vite --host 0.0.0.0 --port 5173",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 4173",
+    "test": "pytest backend/tests",
+    "package:eb": "bash scripts/package-eb.sh"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.0.0",
+    "gsap": "^3.13.0",
+    "lucide-react": "^0.468.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "three": "^0.171.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.0",
+    "postcss": "^8.4.49",
+    "rollup": "npm:@rollup/wasm-node@^4.60.4",
+    "tailwindcss": "^3.4.17",
+    "vite": "^6.0.0"
+  }
+}
