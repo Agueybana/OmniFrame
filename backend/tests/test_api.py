@@ -27,6 +27,17 @@ def test_model_options_endpoint():
     assert any(provider["id"] == "google" for provider in payload["providers"])
 
 
+def test_route_response_includes_selection_process(monkeypatch):
+    monkeypatch.setenv("OMNIFRAME_USE_LLM", "false")
+    client = TestClient(app)
+    response = client.post("/api/route", json={"goal": "Rank features for a local events MVP before we spend engineering budget."})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["selection_process"]["passes"][0]["name"] == "Intent criteria"
+    assert payload["selection_process"]["passes"][1]["name"] == "Output-fit criteria"
+
+
 def test_option_refresh_keeps_metric_domain(monkeypatch):
     monkeypatch.setenv("OMNIFRAME_USE_LLM", "false")
     client = TestClient(app)

@@ -28,6 +28,7 @@ class RouteResponse(BaseModel):
     framework_name: str
     confidence: float = Field(..., ge=0, le=1)
     rationale: str
+    selection_process: dict[str, Any] | None = None
     canvas: dict[str, Any]
 
 

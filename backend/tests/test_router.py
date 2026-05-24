@@ -19,3 +19,11 @@ from backend.app.services.router import deterministic_route
 )
 def test_deterministic_router(goal, expected):
     assert deterministic_route(goal)["framework_id"] == expected
+
+
+def test_deterministic_router_exposes_smart_criteria_process():
+    decision = deterministic_route("Rank features for an MVP while validating traction before we build too much")
+
+    assert decision["selection_process"]["passes"][0]["name"] == "Intent criteria"
+    assert decision["selection_process"]["passes"][1]["name"] == "Output-fit criteria"
+    assert decision["selection_process"]["selected_framework"] in {"rice", "lean_startup"}

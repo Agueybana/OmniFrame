@@ -15,6 +15,7 @@ class RouteDecision(TypedDict):
     framework_id: str
     confidence: float
     rationale: str
+    selection_process: dict
 
 
 SWOT_TERMS = {
@@ -126,52 +127,172 @@ MODEL_DEFAULTS = {
     "google": "gemini-3.1-pro-preview",
 }
 
+FRAMEWORK_NAMES = {
+    "swot": "SWOT",
+    "lean_startup": "Lean Startup",
+    "okrs": "OKRs",
+    "porters_five_forces": "Porter's Five Forces",
+    "pestle": "PESTLE",
+    "rice": "RICE",
+    "triz": "TRIZ",
+}
+
 
 def _tokenize(goal: str) -> set[str]:
     return set(re.findall(r"[a-zA-Z][a-zA-Z-]+", goal.lower()))
 
 
-def deterministic_route(goal: str) -> RouteDecision:
+def _score_pass(goal: str, mode: str) -> dict:
     text = goal.lower()
     tokens = _tokenize(goal)
-    if tokens & RELATIONSHIP_TERMS:
-        return {
-            "framework_id": "swot",
-            "confidence": 0.82,
-            "rationale": "The goal is a personal relationship decision, so OmniFrame selected SWOT to separate needs, patterns, repair options, and risks without forcing a premature yes/no answer.",
-        }
+    scores = {framework_id: 0 for framework_id in ACTIVE_FRAMEWORK_IDS}
+    signals: dict[str, list[str]] = {framework_id: [] for framework_id in ACTIVE_FRAMEWORK_IDS}
 
-    scores = {
-        "swot": len(tokens & SWOT_TERMS) + sum(phrase in text for phrase in ["new market", "go to market", "business strategy"]),
-        "rice": len(tokens & RICE_TERMS) + sum(phrase in text for phrase in ["what to build", "which feature", "next sprint"]),
-        "triz": len(tokens & TRIZ_TERMS) + sum(phrase in text for phrase in ["but it", "trade off", "tradeoff", "without increasing"]),
-        "lean_startup": len(tokens & LEAN_TERMS) + sum(phrase in text for phrase in ["product market fit", "test demand", "landing page"]),
-        "okrs": len(tokens & OKR_TERMS) + sum(phrase in text for phrase in ["align teams", "quarterly targets", "company goals"]),
-        "porters_five_forces": len(tokens & PORTER_TERMS) + sum(phrase in text for phrase in ["five forces", "market attractiveness", "industry structure"]),
-        "pestle": len(tokens & PESTLE_TERMS) + sum(phrase in text for phrase in ["global expansion", "macro environment", "regulatory risk"]),
-    }
+    def add(framework_id: str, points: int, reason: str) -> None:
+        scores[framework_id] += points
+        if reason and reason not in signals[framework_id]:
+            signals[framework_id].append(reason)
+
+    if mode == "intent":
+        term_groups = {
+            "swot": (SWOT_TERMS, ["new market", "go to market", "business strategy", "personal decision", "should i"]),
+            "rice": (RICE_TERMS, ["what to build", "which feature", "next sprint", "rank features"]),
+            "triz": (TRIZ_TERMS, ["but it", "trade off", "tradeoff", "without increasing", "lighter but"]),
+            "lean_startup": (LEAN_TERMS, ["product market fit", "test demand", "landing page", "validate mvp"]),
+            "okrs": (OKR_TERMS, ["align teams", "quarterly targets", "company goals"]),
+            "porters_five_forces": (PORTER_TERMS, ["five forces", "market attractiveness", "industry structure"]),
+            "pestle": (PESTLE_TERMS, ["global expansion", "macro environment", "regulatory risk"]),
+        }
+        for framework_id, (terms, phrases) in term_groups.items():
+            term_hits = sorted(tokens & terms)
+            phrase_hits = [phrase for phrase in phrases if phrase in text]
+            if term_hits:
+                add(framework_id, len(term_hits), f"keyword signal: {', '.join(term_hits[:4])}")
+            for phrase in phrase_hits:
+                add(framework_id, 2, f"phrase signal: {phrase}")
+        if tokens & RELATIONSHIP_TERMS:
+            add("swot", 5, "relationship or personal decision language")
+    else:
+        if any(word in tokens for word in ["rank", "prioritize", "priority", "backlog", "features", "score"]):
+            add("rice", 5, "requested output is ranking or prioritization")
+        if any(phrase in text for phrase in ["feature list", "rank features", "what should we build", "roadmap"]):
+            add("rice", 4, "requested artifact is a scored build list")
+        if any(word in tokens for word in ["validate", "mvp", "prototype", "experiment", "traction", "hypothesis"]):
+            add("lean_startup", 5, "requested output is validation or experiment design")
+        if any(word in tokens for word in ["objective", "objectives", "okr", "goals", "quarterly", "alignment"]):
+            add("okrs", 5, "requested output is measurable alignment")
+        if any(word in tokens for word in ["industry", "supplier", "buyer", "substitute", "entrant", "rivalry", "competition"]):
+            add("porters_five_forces", 5, "requested output is industry pressure analysis")
+        if any(word in tokens for word in ["legal", "regulatory", "regulation", "policy", "global", "economic", "environmental"]):
+            add("pestle", 5, "requested output is macro-environment scan")
+        if any(word in tokens for word in ["lighter", "stronger", "cheaper", "faster", "constraint", "contradiction", "material", "engineering"]):
+            add("triz", 5, "requested output involves a technical contradiction or design tradeoff")
+        if any(word in tokens for word in RELATIONSHIP_TERMS) or any(phrase in text for phrase in ["should i", "decide whether", "best choice"]):
+            add("swot", 5, "requested output is a decision audit under uncertainty")
+        if not any(scores.values()):
+            add("swot", 1, "broad diagnostic fallback")
 
     winner = max(scores, key=scores.get)
     top_score = scores[winner]
-    total_signal = sum(scores.values())
+    sorted_scores = sorted(scores.values(), reverse=True)
+    margin = top_score - (sorted_scores[1] if len(sorted_scores) > 1 else 0)
+    confidence = min(0.94, 0.55 + (top_score * 0.05) + (margin * 0.04))
+    return {
+        "name": "Intent criteria" if mode == "intent" else "Output-fit criteria",
+        "winner": winner,
+        "winner_name": FRAMEWORK_NAMES.get(winner, winner),
+        "scores": scores,
+        "confidence": round(confidence, 2),
+        "signals": signals[winner][:4] or ["broad fit signal"],
+    }
 
-    if total_signal == 0:
-        winner = "swot"
-        confidence = 0.58
-        rationale = "No strong specialist signal was detected, so OmniFrame selected SWOT as the safest broad diagnostic route."
-    else:
-        confidence = min(0.92, 0.62 + (top_score / max(total_signal, 1)) * 0.3)
-        rationale = {
-            "swot": "The goal reads like a strategic baseline assessment with internal and external factors.",
-            "rice": "The goal is asking for prioritization, ranking, or roadmap tradeoffs.",
-            "triz": "The goal contains an engineering contradiction or constraint conflict that needs inventive resolution.",
-            "lean_startup": "The goal is asking for fast validation, MVP design, or evidence before committing capital.",
-            "okrs": "The goal needs measurable alignment between objectives, key results, and execution work.",
-            "porters_five_forces": "The goal is about industry attractiveness, competitive pressure, and structural profitability.",
-            "pestle": "The goal depends on macro-environmental forces such as regulation, economics, technology, or legal risk.",
-        }[winner]
 
-    return {"framework_id": winner, "confidence": round(confidence, 2), "rationale": rationale}
+def _adjudicate_smart_passes(goal: str, intent_pass: dict, output_pass: dict) -> dict:
+    text = goal.lower()
+    tokens = _tokenize(goal)
+    scores = {framework_id: intent_pass["scores"].get(framework_id, 0) + output_pass["scores"].get(framework_id, 0) for framework_id in ACTIVE_FRAMEWORK_IDS}
+    criteria = []
+
+    if tokens & RELATIONSHIP_TERMS:
+        scores["swot"] += 4
+        criteria.append("Personal or relationship decisions require a diagnostic audit before advice.")
+    if any(word in tokens for word in ["rank", "prioritize", "features", "score", "backlog"]):
+        scores["rice"] += 3
+        criteria.append("Ranking language gets extra weight for RICE.")
+    if any(word in tokens for word in ["validate", "mvp", "experiment", "traction"]):
+        scores["lean_startup"] += 3
+        criteria.append("Validation language gets extra weight for Lean Startup.")
+    if any(word in tokens for word in ["industry", "supplier", "buyer", "substitute", "entrant", "rivalry"]):
+        scores["porters_five_forces"] += 3
+        criteria.append("Industry-structure language gets extra weight for Porter's Five Forces.")
+    if any(word in tokens for word in ["legal", "regulatory", "global", "policy", "economic", "environmental"]):
+        scores["pestle"] += 3
+        criteria.append("Macro-environment language gets extra weight for PESTLE.")
+    if any(word in tokens for word in ["lighter", "stronger", "cheaper", "faster", "constraint", "contradiction", "material"]):
+        scores["triz"] += 3
+        criteria.append("Physical or engineering tradeoff language gets extra weight for TRIZ.")
+    if any(word in tokens for word in ["okr", "objectives", "quarterly", "alignment", "key"]):
+        scores["okrs"] += 3
+        criteria.append("Measurable alignment language gets extra weight for OKRs.")
+
+    if "market" in tokens and "enter" in tokens:
+        scores["swot"] += 2
+        criteria.append("Market-entry ambiguity keeps SWOT competitive unless industry forces dominate.")
+    if "five forces" in text:
+        scores["porters_five_forces"] += 6
+        criteria.append("Explicit framework mention overrides nearby generic strategy language.")
+
+    winner = max(scores, key=scores.get)
+    top_score = scores[winner]
+    sorted_scores = sorted(scores.values(), reverse=True)
+    margin = top_score - (sorted_scores[1] if len(sorted_scores) > 1 else 0)
+    confidence = min(0.96, 0.62 + top_score * 0.025 + margin * 0.035)
+    return {
+        "name": "Adjudicator criteria",
+        "winner": winner,
+        "winner_name": FRAMEWORK_NAMES.get(winner, winner),
+        "scores": scores,
+        "confidence": round(confidence, 2),
+        "signals": criteria[:4] or ["Combined score selected the most reasonable execution path."],
+    }
+
+
+def smart_criteria_route(goal: str) -> RouteDecision:
+    intent_pass = _score_pass(goal, "intent")
+    output_pass = _score_pass(goal, "output")
+    mismatch = intent_pass["winner"] != output_pass["winner"]
+    adjudicator = _adjudicate_smart_passes(goal, intent_pass, output_pass) if mismatch else None
+    selected_pass = adjudicator or intent_pass
+    framework_id = selected_pass["winner"]
+    agreement_text = (
+        f"Both smart-criteria passes selected {FRAMEWORK_NAMES.get(framework_id, framework_id)}."
+        if not mismatch
+        else f"Intent selected {intent_pass['winner_name']} while output-fit selected {output_pass['winner_name']}; adjudicator selected {selected_pass['winner_name']}."
+    )
+    rationale = {
+        "swot": "SWOT was selected to create a panoramic audit of controllable strengths/weaknesses and external opportunities/threats before committing to action.",
+        "rice": "RICE was selected because the request needs ranked initiatives with reach, impact, confidence, and effort tradeoffs.",
+        "triz": "TRIZ was selected because the request contains a design contradiction where improving one property may worsen another.",
+        "lean_startup": "Lean Startup was selected because the request needs a falsifiable MVP or experiment before investing heavily.",
+        "okrs": "OKRs were selected because the request needs measurable objectives, key results, and operating cadence.",
+        "porters_five_forces": "Porter's Five Forces was selected because the request centers on industry structure and competitive pressure.",
+        "pestle": "PESTLE was selected because the request depends on macro political, economic, social, technological, legal, or environmental forces.",
+    }[framework_id]
+    return {
+        "framework_id": framework_id,
+        "confidence": selected_pass["confidence"],
+        "rationale": f"{agreement_text} {rationale}",
+        "selection_process": {
+            "summary": agreement_text,
+            "passes": [intent_pass, output_pass] + ([adjudicator] if adjudicator else []),
+            "mismatch_resolved": mismatch,
+            "selected_framework": framework_id,
+        },
+    }
+
+
+def deterministic_route(goal: str) -> RouteDecision:
+    return smart_criteria_route(goal)
 
 
 def _llm_enabled(provider: str | None = None) -> bool:
@@ -301,6 +422,12 @@ async def langchain_route(goal: str, provider: str | None = None, model_id: str 
                 "framework_id": parsed["framework_id"],
                 "confidence": float(parsed.get("confidence", 0.74)),
                 "rationale": str(parsed.get("rationale", "Routed by LangChain LLM policy.")),
+                "selection_process": {
+                    "summary": "LLM route reinforcement pass.",
+                    "passes": [],
+                    "mismatch_resolved": False,
+                    "selected_framework": parsed["framework_id"],
+                },
             }
     except Exception:
         return None
@@ -313,8 +440,11 @@ async def langchain_enrich_canvas(framework_id: str, goal: str, canvas: dict, pr
         "You are OmniFrame's senior framework analyst with web research enabled when available. Return only valid JSON.\n"
         "Preserve the current canvas schema and top-level type exactly, but rewrite generic content into concrete, domain-specific analysis.\n"
         "Use the user's exact context, names, constraints, and emotional/business/engineering details. If the prompt is personal or relationship-related, avoid business jargon.\n"
+        "The root canvas must already feel complete before the user opens any focus workspace: populate every first-page section, row, force, objective, lane, or principle with highly specific wording tied to the user's prompt.\n"
+        "Do not reserve all specificity for drilldowns. The first screen should give a panoramic view of user focus, derived context, key variables, risks, and next moves.\n"
         "For relationship decisions, do not decide for the user; organize values, patterns, boundaries, repair options, safety concerns, and conversation experiments.\n"
         "For every drilldown panel, provide options that directly reference the original user input and the current framework.\n"
+        "For every option set, keep options specific to that panel's role: evidence options must be evidence, actions must be actions, metrics must be metrics, risks must be risks, and experiments must be experiments.\n"
         "Use reputable public web context where useful, but do not include citations in the JSON unless a field already supports them.\n\n"
         f"Framework: {framework_id}\n"
         f"Goal: {goal}\n"
@@ -532,26 +662,64 @@ async def refresh_panel_options(request, provider: str | None = None, model_id: 
 
 
 async def route_goal(goal: str, framework_id: str | None = None, model_provider: str | None = None, model_id: str | None = None) -> dict:
+    smart_decision = deterministic_route(goal)
+    llm_decision = await langchain_route(goal, model_provider, model_id)
+
     if framework_id:
         framework = get_framework(framework_id)
         if not framework or framework_id not in ACTIVE_FRAMEWORK_IDS:
-            decision = deterministic_route(goal)
+            decision = smart_decision
         else:
             canvas = build_canvas(framework_id, goal)
             enriched = await langchain_enrich_canvas(framework_id, goal, canvas, model_provider, model_id)
+            selection_process = {
+                **smart_decision["selection_process"],
+                "summary": f"Smart criteria recommended {FRAMEWORK_NAMES.get(smart_decision['framework_id'], smart_decision['framework_id'])}; user overrode to {framework['name']}.",
+                "user_override": {
+                    "recommended_framework": smart_decision["framework_id"],
+                    "selected_framework": framework_id,
+                    "reason": "User chose a different live route after reviewing the recommendation.",
+                },
+            }
+            if llm_decision:
+                selection_process["reinforcer"] = {
+                    "framework_id": llm_decision["framework_id"],
+                    "framework_name": FRAMEWORK_NAMES.get(llm_decision["framework_id"], llm_decision["framework_id"]),
+                    "confidence": llm_decision["confidence"],
+                    "rationale": llm_decision["rationale"],
+                }
             return {
                 "framework_id": framework_id,
                 "framework_name": framework["name"],
                 "confidence": 1.0,
                 "rationale": f"User selected {framework['name']} after reviewing OmniFrame's recommendation.",
+                "selection_process": selection_process,
                 "canvas": enriched or canvas,
             }
     else:
-        decision = await langchain_route(goal, model_provider, model_id) or deterministic_route(goal)
+        decision = smart_decision
+
+    selection_process = dict(decision["selection_process"])
+    if llm_decision:
+        selection_process["reinforcer"] = {
+            "framework_id": llm_decision["framework_id"],
+            "framework_name": FRAMEWORK_NAMES.get(llm_decision["framework_id"], llm_decision["framework_id"]),
+            "confidence": llm_decision["confidence"],
+            "rationale": llm_decision["rationale"],
+            "agreement": llm_decision["framework_id"] == decision["framework_id"],
+        }
+        if llm_decision["framework_id"] != decision["framework_id"]:
+            selection_process["summary"] = (
+                f"{selection_process.get('summary', '')} LLM reinforcement preferred "
+                f"{FRAMEWORK_NAMES.get(llm_decision['framework_id'], llm_decision['framework_id'])}, but the criteria adjudicator retained "
+                f"{FRAMEWORK_NAMES.get(decision['framework_id'], decision['framework_id'])}."
+            ).strip()
+
     framework = get_framework(decision["framework_id"])
     if not framework:
-        decision = deterministic_route(goal)
+        decision = smart_decision
         framework = get_framework(decision["framework_id"])
+        selection_process = dict(decision["selection_process"])
 
     canvas = build_canvas(decision["framework_id"], goal)
     enriched = await langchain_enrich_canvas(decision["framework_id"], goal, canvas, model_provider, model_id)
@@ -560,5 +728,6 @@ async def route_goal(goal: str, framework_id: str | None = None, model_provider:
         "framework_name": framework["name"],
         "confidence": decision["confidence"],
         "rationale": decision["rationale"],
+        "selection_process": selection_process,
         "canvas": enriched or canvas,
     }

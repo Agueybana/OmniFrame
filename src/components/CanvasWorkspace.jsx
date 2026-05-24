@@ -12,7 +12,7 @@ import {
   RefreshCw,
   Sparkles
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { refreshOptions } from "../lib/api";
 
@@ -135,6 +135,7 @@ export default function CanvasWorkspace({ route }) {
           <FocusCanvasView focusCanvas={activeFocus} onChange={updateActiveFocus} onExport={exportPdf} route={route} />
         ) : (
           <>
+            <PromptPanorama route={route} canvas={canvas} />
             <AnalysisBrief canvas={canvas} />
             {canvas.type === "quadrant" && <QuadrantCanvas canvas={canvas} onChange={setCanvas} onOpenFocus={openFocus} />}
             {canvas.type === "score_table" && <RiceCanvas canvas={canvas} onChange={setCanvas} onOpenFocus={openFocus} />}
@@ -144,6 +145,39 @@ export default function CanvasWorkspace({ route }) {
             {canvas.type === "force_map" && <ForceMapCanvas canvas={canvas} onOpenFocus={openFocus} />}
           </>
         )}
+      </div>
+    </section>
+  );
+}
+
+function PromptPanorama({ route, canvas }) {
+  const variables = getCanvasPanorama(canvas);
+  const context = canvas.analysis_brief?.[0] || canvas.subtitle || route.rationale;
+
+  return (
+    <section className="mb-6 rounded-lg border border-moss/20 bg-[#07100d] p-5 shadow-[0_24px_80px_rgba(34,197,94,0.08)]">
+      <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-moss">Input panorama</p>
+          <h3 className="mt-2 text-2xl font-semibold text-white">Prompt focus and derived context</h3>
+          <p className="mt-3 text-sm leading-6 text-white/66">{compactText(route.goal || "No prompt captured.", 420)}</p>
+          <div className="mt-4 rounded-lg border border-white/10 bg-white/[0.04] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/36">Derived read</p>
+            <p className="mt-2 text-sm leading-6 text-white/70">{context}</p>
+          </div>
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-signal">Framework variables</p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {variables.map((variable) => (
+              <div key={`${variable.label}-${variable.value}`} className="depth-card rounded-lg border border-white/10 bg-white/[0.04] p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/36">{variable.label}</p>
+                <p className="mt-2 text-sm font-semibold leading-5 text-white">{variable.value}</p>
+                {variable.detail && <p className="mt-2 text-xs leading-5 text-white/52">{variable.detail}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -217,9 +251,13 @@ function DecisionOverview({ route, canvas }) {
     method: "OmniFrame selected this route because it best matches the strongest language in the goal.",
     signals: ["goal language", "framework fit", "execution guidance"]
   };
+  const selectionProcess = route.selection_process;
+  const passes = selectionProcess?.passes ?? [];
+  const reinforcer = selectionProcess?.reinforcer;
 
   return (
-    <aside className="mb-6 grid gap-4 rounded-lg border border-white/10 bg-white/[0.045] p-5 lg:grid-cols-[0.9fr_1.1fr]">
+    <aside className="mb-6 rounded-lg border border-white/10 bg-white/[0.045] p-5">
+      <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal">Decision Overview</p>
         <h3 className="mt-2 text-xl font-semibold text-white">{copy.trigger}</h3>
@@ -234,6 +272,46 @@ function DecisionOverview({ route, canvas }) {
           </div>
         ))}
       </div>
+      </div>
+      {selectionProcess && (
+        <div className="mt-5 border-t border-white/10 pt-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-moss">Selection process</p>
+              <p className="mt-2 text-sm leading-6 text-white/66">{selectionProcess.summary}</p>
+            </div>
+            {selectionProcess.mismatch_resolved && (
+              <span className="w-fit rounded-md border border-signal/30 bg-signal/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-signal">
+                Adjudicated mismatch
+              </span>
+            )}
+          </div>
+          <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            {passes.map((pass) => (
+              <div key={`${pass.name}-${pass.winner}`} className="depth-card rounded-lg border border-white/10 bg-[#07100d] p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/36">{pass.name}</p>
+                <p className="mt-2 text-lg font-semibold text-white">{pass.winner_name}</p>
+                <p className="mt-1 text-xs font-semibold text-moss">Confidence {Math.round((pass.confidence ?? 0) * 100)}%</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {(pass.signals ?? []).slice(0, 3).map((signal) => (
+                    <span key={signal} className="rounded-full border border-moss/20 bg-moss/10 px-2 py-1 text-[11px] text-moss">
+                      {signal}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          {reinforcer && (
+            <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.035] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/36">LLM reinforcer</p>
+              <p className="mt-2 text-sm leading-6 text-white/66">
+                {reinforcer.framework_name} {reinforcer.agreement === false ? "challenged" : "confirmed"} the criteria route at {Math.round((reinforcer.confidence ?? 0) * 100)}% confidence. {reinforcer.rationale}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </aside>
   );
 }
@@ -311,12 +389,34 @@ function CanvasNavigator({ activeFocus, canGoBack, canGoForward, goBack, goForwa
 
 function HoverHint({ text, children, placement = "card" }) {
   const [dismissed, setDismissed] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
+  const timerRef = useRef(null);
+  useEffect(() => () => clearTimeout(timerRef.current), []);
+
+  function startTimer() {
+    if (dismissed) return;
+    clearTimeout(timerRef.current);
+    setTimedOut(false);
+    timerRef.current = setTimeout(() => setTimedOut(true), 5000);
+  }
+
+  function stopTimer() {
+    clearTimeout(timerRef.current);
+    setTimedOut(false);
+  }
+
+  function dismissHint() {
+    clearTimeout(timerRef.current);
+    setDismissed(true);
+  }
+
   const className = [
     "hint-target",
     "group",
     "relative",
     placement === "control" ? "hint-target-control" : "hint-target-card",
-    dismissed ? "hint-target-dismissed" : ""
+    dismissed ? "hint-target-dismissed" : "",
+    timedOut ? "hint-target-timeout" : ""
   ]
     .filter(Boolean)
     .join(" ");
@@ -324,17 +424,19 @@ function HoverHint({ text, children, placement = "card" }) {
   return (
     <div
       className={className}
-      onFocusCapture={() => setDismissed(true)}
+      onPointerEnter={startTimer}
+      onPointerLeave={stopTimer}
+      onFocusCapture={dismissHint}
       onPointerDownCapture={(event) => {
         if (!event.target.closest(".hint-bubble")) {
-          setDismissed(true);
+          dismissHint();
         }
       }}
     >
       {children}
       <div
         className="hint-bubble absolute z-20 rounded-lg border border-moss/25 bg-[#07100d] px-3 py-2 text-xs leading-5 text-white/78 opacity-0 shadow-glow transition group-hover:opacity-100"
-        onPointerEnter={() => setDismissed(true)}
+        onPointerEnter={dismissHint}
       >
         {text}
       </div>
@@ -1056,6 +1158,68 @@ function getPanelKind(panel) {
   return "action";
 }
 
+function getCanvasPanorama(canvas) {
+  if (canvas.type === "quadrant") {
+    return (canvas.sections ?? []).slice(0, 4).map((section) => {
+      const first = normalizeInsight(section.items?.[0] ?? {});
+      return {
+        label: section.label,
+        value: first.text || section.prompt,
+        detail: first.metric || first.rationale || section.prompt
+      };
+    });
+  }
+
+  if (canvas.type === "score_table") {
+    return (canvas.rows ?? []).slice(0, 4).map((row) => ({
+      label: `Score ${riceScore(row)}`,
+      value: row.initiative,
+      detail: row.rationale || `Reach ${row.reach}, impact ${row.impact}, confidence ${row.confidence}%, effort ${row.effort}`
+    }));
+  }
+
+  if (canvas.type === "contradiction") {
+    const contradiction = canvas.contradiction ?? {};
+    return [
+      { label: "Improving", value: contradiction.improving || "Property to improve", detail: contradiction.prompt },
+      { label: "Worsening", value: contradiction.worsening || "Constraint to protect", detail: "TRIZ separates the two sides before selecting principles." },
+      ...(canvas.principles ?? []).slice(0, 4).map((principle) => ({
+        label: `Principle ${principle.number}`,
+        value: principle.name,
+        detail: principle.application
+      }))
+    ];
+  }
+
+  if (canvas.type === "framework_board") {
+    return (canvas.lanes ?? []).flatMap((lane) =>
+      (lane.items ?? []).slice(0, 2).map((item) => ({
+        label: lane.label,
+        value: item.title,
+        detail: item.body || item.metric
+      }))
+    ).slice(0, 6);
+  }
+
+  if (canvas.type === "okr_board") {
+    return (canvas.objectives ?? []).slice(0, 4).map((objective) => ({
+      label: "Objective",
+      value: objective.objective,
+      detail: objective.key_results?.slice(0, 2).join(" | ") || objective.rationale
+    }));
+  }
+
+  if (canvas.type === "force_map") {
+    return (canvas.forces ?? []).slice(0, 5).map((force) => ({
+      label: force.name,
+      value: `${force.intensity} pressure`,
+      detail: force.implication || force.question
+    }));
+  }
+
+  return [{ label: "Canvas", value: canvas.title || "Generated framework", detail: canvas.subtitle || "Open a card for deeper analysis." }];
+}
+
 function compactText(value, limit = 160) {
   const cleaned = String(value ?? "").replace(/\s+/g, " ").trim();
   return cleaned.length > limit ? `${cleaned.slice(0, limit - 1).trim()}...` : cleaned;
@@ -1131,12 +1295,37 @@ function buildReportHtml(route, canvas, focusCanvases) {
       <p>${escapeHtml(route.rationale)}</p>
       <p>Confidence: <strong>${Math.round(route.confidence * 100)}%</strong></p>
     </header>
+    ${renderReportRouteAudit(route)}
     ${renderReportBrief(canvas)}
     ${renderReportCanvas(canvas)}
     ${renderReportFocus(focusCanvases)}
   </main>
 </body>
 </html>`;
+}
+
+function renderReportRouteAudit(route) {
+  const process = route.selection_process;
+  if (!process) {
+    return `<h2>User Prompt</h2><section class="card"><p>${escapeHtml(route.goal ?? "")}</p></section>`;
+  }
+
+  return `<h2>Selection Process</h2><section class="card"><p><strong>User prompt:</strong> ${escapeHtml(route.goal ?? "")}</p><p class="muted">${escapeHtml(
+    process.summary
+  )}</p>${(process.passes ?? [])
+    .map(
+      (pass) =>
+        `<p><strong>${escapeHtml(pass.name)}:</strong> ${escapeHtml(pass.winner_name)} (${Math.round(
+          (Number(pass.confidence) || 0) * 100
+        )}% confidence) ${escapeHtml((pass.signals ?? []).slice(0, 3).join("; "))}</p>`
+    )
+    .join("")}${
+    process.reinforcer
+      ? `<p><strong>LLM reinforcer:</strong> ${escapeHtml(process.reinforcer.framework_name)} at ${Math.round(
+          (Number(process.reinforcer.confidence) || 0) * 100
+        )}% confidence. ${escapeHtml(process.reinforcer.rationale ?? "")}</p>`
+      : ""
+  }</section>`;
 }
 
 function renderReportBrief(canvas) {
