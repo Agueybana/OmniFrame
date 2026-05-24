@@ -191,18 +191,59 @@ async def langchain_route(goal: str) -> RouteDecision | None:
     return None
 
 
+async def langchain_enrich_canvas(framework_id: str, goal: str, canvas: dict) -> dict | None:
+    if not _langchain_enabled():
+        return None
+
+    try:
+        from langchain_core.output_parsers import StrOutputParser
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_openai import ChatOpenAI
+    except Exception:
+        return None
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are OmniFrame's framework analyst. Return only valid JSON. "
+                "Preserve the current canvas schema and top-level type, but deepen content with concrete domain-specific analysis, "
+                "named assumptions, evidence requirements, and actionable options. Do not add unsupported framework IDs.",
+            ),
+            (
+                "human",
+                "Framework: {framework_id}\nGoal: {goal}\nCurrent canvas JSON:\n{canvas_json}",
+            ),
+        ]
+    )
+    model = ChatOpenAI(model=os.getenv("OMNIFRAME_CANVAS_MODEL", os.getenv("OMNIFRAME_ROUTER_MODEL", "gpt-4.1-mini")), temperature=0.2)
+    chain = prompt | model | StrOutputParser()
+
+    try:
+        raw = await chain.ainvoke({"framework_id": framework_id, "goal": goal, "canvas_json": json.dumps(canvas)})
+        parsed = json.loads(raw)
+        if isinstance(parsed, dict) and parsed.get("type") == canvas.get("type"):
+            return parsed
+    except Exception:
+        return None
+
+    return None
+
+
 async def route_goal(goal: str, framework_id: str | None = None) -> dict:
     if framework_id:
         framework = get_framework(framework_id)
         if not framework or framework_id not in ACTIVE_FRAMEWORK_IDS:
             decision = deterministic_route(goal)
         else:
+            canvas = build_canvas(framework_id, goal)
+            enriched = await langchain_enrich_canvas(framework_id, goal, canvas)
             return {
                 "framework_id": framework_id,
                 "framework_name": framework["name"],
                 "confidence": 1.0,
                 "rationale": f"User selected {framework['name']} after reviewing OmniFrame's recommendation.",
-                "canvas": build_canvas(framework_id, goal),
+                "canvas": enriched or canvas,
             }
     else:
         decision = await langchain_route(goal) or deterministic_route(goal)
@@ -211,10 +252,12 @@ async def route_goal(goal: str, framework_id: str | None = None) -> dict:
         decision = deterministic_route(goal)
         framework = get_framework(decision["framework_id"])
 
+    canvas = build_canvas(decision["framework_id"], goal)
+    enriched = await langchain_enrich_canvas(decision["framework_id"], goal, canvas)
     return {
         "framework_id": decision["framework_id"],
         "framework_name": framework["name"],
         "confidence": decision["confidence"],
         "rationale": decision["rationale"],
-        "canvas": build_canvas(decision["framework_id"], goal),
+        "canvas": enriched or canvas,
     }
