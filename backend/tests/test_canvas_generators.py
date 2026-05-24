@@ -1,4 +1,4 @@
-from backend.app.services.canvas_generators import generate_rice, generate_swot
+from backend.app.services.canvas_generators import generate_rice, generate_swot, generate_triz
 
 
 def test_rice_infers_triangle_event_features():
@@ -38,3 +38,13 @@ def test_swot_uses_project_specific_table_content():
     assert "VibeOS or SprintZero" in rendered
     assert "Agent-Trust Cert" in rendered
     assert "Nexus" in rendered
+
+
+def test_triz_hockey_stick_uses_material_specific_analysis():
+    canvas = generate_triz("Build a lighter hockey stick.")
+    rendered = " ".join(canvas["analysis_brief"]) + " " + " ".join(principle["application"] for principle in canvas["principles"])
+
+    assert "carbon" in rendered.lower()
+    assert "foam" in rendered.lower()
+    assert "hockey stick" in rendered.lower() or "hockey-stick" in rendered.lower()
+    assert canvas["principles"][0]["drilldown"]["panels"][1]["options"]

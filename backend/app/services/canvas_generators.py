@@ -84,12 +84,13 @@ def _extract_projects(goal: str) -> list[ParsedProject]:
     return []
 
 
-def _panel(title: str, prompt: str, options: list[str], value: str = "") -> dict[str, Any]:
+def _panel(title: str, prompt: str, options: list[str], value: str = "", option_sets: list[list[str]] | None = None) -> dict[str, Any]:
     return {
         "title": title,
         "prompt": prompt,
         "options": options,
         "value": value,
+        "option_sets": option_sets or [],
     }
 
 
@@ -816,6 +817,8 @@ class TrizPrinciple:
     number: int
     name: str
     application: str
+    why_it_fits: str = ""
+    panels: list[dict[str, Any]] | None = None
 
 
 TRIZ_STARTERS = [
@@ -827,41 +830,599 @@ TRIZ_STARTERS = [
 ]
 
 
+def _triz_principle_dict(principle: TrizPrinciple) -> dict[str, Any]:
+    return {
+        "number": principle.number,
+        "name": principle.name,
+        "application": principle.application,
+        "why_it_fits": principle.why_it_fits,
+        "drilldown": {
+            "description": principle.application,
+            "panels": principle.panels or [],
+        },
+    }
+
+
+def _hockey_stick_principles() -> list[TrizPrinciple]:
+    return [
+        TrizPrinciple(
+            1,
+            "Segmentation",
+            "Separate the hockey stick into shaft, blade, hosel/heel, grip, and kick-zone modules so weight can be removed only where stiffness and impact loads allow it.",
+            "A lighter stick is not one uniform material problem. The shaft needs low swing weight and torsional stiffness, while the blade needs impact toughness, puck feel, and edge durability.",
+            [
+                _panel(
+                    "Contradiction rewrite",
+                    "Frame the hockey-stick tradeoff in concrete engineering terms.",
+                    [
+                        "Reduce total mass and swing weight while preserving shot energy transfer, blade durability, torsional stiffness, and puck feel.",
+                        "Remove material from low-load shaft zones without weakening the heel, blade edge, or lower-shaft slash-impact region.",
+                        "Lower blade mass for faster handling while keeping enough damping and stiffness for passing accuracy.",
+                    ],
+                    value="Reduce total mass and swing weight while preserving shot energy transfer, blade durability, torsional stiffness, and puck feel.",
+                    option_sets=[
+                        [
+                            "Reduce shaft mass while maintaining flex profile, torsional rigidity, and resistance to slash impacts.",
+                            "Lower blade inertia while preserving puck feel, face stability, and edge chip resistance.",
+                            "Move reinforcement out of low-stress zones and into heel, lower shaft, and blade perimeter load paths.",
+                        ]
+                    ],
+                ),
+                _panel(
+                    "Material architecture",
+                    "Choose material moves that fit modern composite stick construction.",
+                    [
+                        "Use a high-modulus unidirectional carbon fiber shaft with localized aramid or S-glass toughening in slash-prone lower-shaft zones.",
+                        "Try spread-tow carbon plies to reduce resin-rich gaps and keep stiffness with less laminate mass.",
+                        "Use a lightweight foam blade core with carbon skins, then reinforce the perimeter and heel with tougher fiber patches.",
+                    ],
+                    option_sets=[
+                        [
+                            "Compare standard-modulus carbon, high-modulus carbon, and hybrid carbon/aramid layups for stiffness-to-weight and impact tolerance.",
+                            "Prototype a variable wall-thickness shaft: thinner upper shaft, reinforced lower shaft, and added hoop plies near the hosel.",
+                            "Evaluate toughened epoxy resin systems before exotic fibers, because resin toughness often controls impact damage growth.",
+                        ],
+                        [
+                            "Reserve boron or graphene-enhanced materials for small reinforcement zones where cost and brittleness are acceptable.",
+                            "Add basalt or aramid veil layers only where blade chipping and slash impact are the dominant failure modes.",
+                            "Use finite-element load maps to remove laminate from neutral/low-stress regions instead of making the whole stick thinner.",
+                        ],
+                    ],
+                ),
+                _panel(
+                    "Prototype test",
+                    "Pick the smallest physical test that proves the lighter design is not fragile.",
+                    [
+                        "Build three coupon sets: current layup, high-modulus carbon layup, and carbon/aramid hybrid; test bending stiffness, torsion, and impact damage.",
+                        "Make a segmented blade/shaft prototype and compare swing weight, slap-shot deflection, wrist-shot release, and puck-feel ratings.",
+                        "Run a slash-impact fixture on the lower shaft before any on-ice user testing.",
+                    ],
+                    option_sets=[
+                        [
+                            "Measure center of mass and moment of inertia, not just grams, because a lighter blade can feel faster than the same mass removed near the handle.",
+                            "Use strain gauges or painted witness marks at the heel, lower shaft, and blade toe to find where mass cannot be removed.",
+                            "Run cold-temperature impact tests because hockey sticks fail differently at rink temperatures than at room temperature.",
+                        ]
+                    ],
+                ),
+                _panel(
+                    "Failure mode",
+                    "Identify what could get worse when the stick gets lighter.",
+                    [
+                        "High-modulus carbon can be stiff and light but may reduce impact tolerance if not toughened with resin or hybrid fibers.",
+                        "A lighter blade can reduce puck feel if the foam core and damping layers are over-thinned.",
+                        "Removing wall thickness in the lower shaft can create slash-impact cracks even if lab bending stiffness looks acceptable.",
+                    ],
+                    option_sets=[
+                        [
+                            "Watch for brittle heel failures, blade-face delamination, toe chipping, and torsional flutter during hard passes.",
+                            "Do not treat advertised low weight as success unless durability, flex repeatability, and player feel survive testing.",
+                            "Cost and repairability may worsen if exotic reinforcement is applied across the whole stick instead of high-load zones.",
+                        ]
+                    ],
+                ),
+            ],
+        ),
+        TrizPrinciple(
+            31,
+            "Porous materials",
+            "Use lightweight internal cores and controlled hollow spaces so the stick keeps outer shell stiffness without carrying unnecessary solid material.",
+            "Modern sticks already exploit hollow composite shafts and foam blade cores; the inventive move is making internal structure more deliberate.",
+            [
+                _panel(
+                    "Core strategy",
+                    "Select where hollow, foam, or lattice structure can reduce mass.",
+                    [
+                        "Keep the shaft as a hollow composite tube but vary wall thickness by load zone.",
+                        "Use blade foam density gradients: denser near heel and perimeter, lighter in lower-stress central zones.",
+                        "Test ribbed or lattice blade cores only if they improve puck feel and resist water ingress.",
+                    ],
+                ),
+                _panel(
+                    "Prototype test",
+                    "Prove the lighter core survives the use case.",
+                    [
+                        "Compare blade torsional stiffness, rebound consistency, and moisture ingress after impact.",
+                        "Run repeated slap-shot and board-impact cycles on baseline and lightweight core prototypes.",
+                        "Measure acoustic/vibration feedback because player feel can degrade before structural failure.",
+                    ],
+                ),
+                _panel(
+                    "Failure mode",
+                    "Watch for hidden core-driven failures.",
+                    [
+                        "A too-light blade core can create dead spots, delamination, or edge collapse.",
+                        "Internal voids can concentrate stress if the laminate is not supported during impact.",
+                        "Foam density changes can shift balance and alter release feel even when total weight improves.",
+                    ],
+                ),
+            ],
+        ),
+        TrizPrinciple(
+            35,
+            "Parameter change",
+            "Change fiber orientation, modulus, resin toughness, wall thickness, balance point, and kick-zone geometry instead of only chasing lower total weight.",
+            "The user asked for lighter, but performance is governed by stiffness-to-weight, impact energy absorption, and moment of inertia.",
+            [
+                _panel(
+                    "Parameter map",
+                    "Pick the parameters to vary in the experiment.",
+                    [
+                        "Vary fiber orientation: 0-degree plies for bending stiffness, +/-45-degree plies for torsion, 90-degree hoop plies for crush resistance.",
+                        "Move mass reduction toward the blade and lower shaft first because it changes swing weight more than handle trimming.",
+                        "Use a tougher resin or local aramid patches where impact failure dominates instead of globally adding carbon.",
+                    ],
+                ),
+                _panel(
+                    "Prototype test",
+                    "Run a design-of-experiments instead of one-off samples.",
+                    [
+                        "Build a 2x2 test: standard vs high-modulus carbon and normal vs toughened resin.",
+                        "Measure mass, balance point, flex profile, torsional stiffness, impact survival, and player-rated puck feel.",
+                        "Use the best coupon result to decide the first full-stick layup.",
+                    ],
+                ),
+                _panel(
+                    "Failure mode",
+                    "Name what a parameter change might break.",
+                    [
+                        "Changing kick-zone geometry can alter release timing even if weight improves.",
+                        "Higher stiffness can make the stick feel harsher and reduce puck handling confidence.",
+                        "Moving the balance point can feel worse even if scale weight is lower.",
+                    ],
+                ),
+            ],
+        ),
+        TrizPrinciple(
+            40,
+            "Composite materials",
+            "Use a hybrid composite instead of a single material: carbon for stiffness-to-weight, aramid/S-glass for toughness, toughened epoxy for damage resistance, and foam/core structures for blade mass control.",
+            "The hockey-stick problem is naturally composite: no single material optimizes lightness, shot power, slash resistance, blade feel, and cost.",
+            [
+                _panel(
+                    "Material shortlist",
+                    "Create a grounded shortlist before exotic materials distract the build.",
+                    [
+                        "Baseline: unidirectional carbon fiber/epoxy shaft with foam-core carbon blade.",
+                        "Durability hybrid: carbon primary plies plus aramid or S-glass in lower shaft, heel, and blade perimeter.",
+                        "Advanced test: high-modulus or spread-tow carbon with toughened epoxy; reserve boron or graphene-enhanced resin for small reinforcement trials.",
+                    ],
+                    option_sets=[
+                        [
+                            "Avoid aluminum or titanium as primary stick materials for the V1 unless the goal is a specialty training stick; composites dominate because stiffness-to-weight is better.",
+                            "Use wood only as a control sample for puck feel and damping, not as the path to minimum mass.",
+                            "Consider recycled carbon only if sustainability is a requirement, because fiber consistency and certification can complicate performance claims.",
+                        ]
+                    ],
+                ),
+                _panel(
+                    "Supplier question",
+                    "Ask the question a materials engineer or vendor must answer.",
+                    [
+                        "What is the specific modulus, tensile strength, impact toughness, and resin system for the proposed carbon prepreg?",
+                        "How does the layup perform after cold-temperature impact and cyclic slap-shot loading?",
+                        "What mass reduction comes from fiber choice versus layup optimization versus blade core redesign?",
+                    ],
+                ),
+                _panel(
+                    "Failure mode",
+                    "Keep the advanced material honest.",
+                    [
+                        "Exotic fibers can increase cost and brittleness while producing only small weight savings.",
+                        "Marketing materials may cite carbon grade without revealing layup, resin, void content, or durability.",
+                        "A material that wins coupon stiffness can still lose full-stick feel.",
+                    ],
+                ),
+            ],
+        ),
+        TrizPrinciple(
+            3,
+            "Local quality",
+            "Make high-load regions strong and low-load regions light instead of applying the same laminate everywhere.",
+            "The stick has very different local jobs: the handle transmits grip, the shaft stores/release energy, the heel takes stress, and the blade controls feel.",
+            [
+                _panel(
+                    "Load-zone design",
+                    "Choose where the stick deserves different construction.",
+                    [
+                        "Reinforce the heel and lower shaft with tougher hybrid plies while thinning the upper shaft wall.",
+                        "Use blade-edge reinforcement for chipping without adding mass to the entire face.",
+                        "Tune the kick zone locally so weight reduction does not break shot timing.",
+                    ],
+                ),
+                _panel(
+                    "Prototype test",
+                    "Validate local reinforcement with targeted loads.",
+                    [
+                        "Test heel bending, lower-shaft slash impact, blade toe impact, and full-stick flex separately.",
+                        "Measure whether local reinforcement changes balance point or release feel.",
+                        "Run player blind tests on baseline and load-zone prototypes.",
+                    ],
+                ),
+                _panel(
+                    "Failure mode",
+                    "Watch for stress transfer created by local reinforcement.",
+                    [
+                        "A reinforced region can move failure to the neighboring thin region.",
+                        "Local stiffness jumps can create harsh feel or unpredictable flex.",
+                        "Manufacturing complexity can erase the weight and cost advantage.",
+                    ],
+                ),
+            ],
+        ),
+    ]
+
+
 def generate_triz(goal: str) -> dict[str, Any]:
     topic = _topic(goal)
+    hockey = "hockey" in goal.lower() and "stick" in goal.lower()
+    principles = _hockey_stick_principles() if hockey else TRIZ_STARTERS
+    contradiction = {
+        "improving": (
+            "Reduce hockey-stick mass and swing weight for faster handling and release"
+            if hockey
+            else "The desired improvement the user wants to maximize"
+        ),
+        "worsening": (
+            "Less material can reduce impact durability, torsional stiffness, shot energy transfer, and puck feel"
+            if hockey
+            else "The system property that appears to get worse when improving it"
+        ),
+        "prompt": (
+            "Rewrite these two fields into a crisp material/design contradiction before selecting a principle."
+            if hockey
+            else "Rewrite these two fields into a crisp contradiction before selecting a principle."
+        ),
+    }
+    analysis_brief = (
+        [
+            "Research brief: modern performance hockey sticks are typically composite systems, not simple metal or wood parts: carbon fiber/epoxy shafts, foam-core composite blades, and localized reinforcement drive the design space.",
+            "Material shortlist: high-modulus or spread-tow carbon can reduce mass, aramid/Kevlar or S-glass can improve impact toughness, toughened epoxy can slow damage growth, and boron/graphene-style additives should be tested only in small high-load zones.",
+            "The TRIZ contradiction is mass versus durability/feel. A good answer should change layup, load-zone reinforcement, balance point, and blade core architecture, then validate with cold impact, torsion, flex, and player-feel tests.",
+        ]
+        if hockey
+        else [
+            "OmniFrame selected TRIZ because the prompt implies a constraint conflict.",
+            "Choose a principle to open a focused workspace with generated moves, prototypes, and failure checks.",
+        ]
+    )
     return {
         "type": "contradiction",
         "title": "TRIZ Contradiction Canvas",
         "subtitle": f"Inventive problem-solving for: {topic}",
-        "analysis_brief": [
-            "OmniFrame selected TRIZ because the prompt implies a constraint conflict.",
-            "Choose a principle to open a focused workspace with generated moves, prototypes, and failure checks.",
-        ],
-        "contradiction": {
-            "improving": "The desired improvement the user wants to maximize",
-            "worsening": "The system property that appears to get worse when improving it",
-            "prompt": "Rewrite these two fields into a crisp contradiction before selecting a principle.",
-        },
-        "principles": [principle.__dict__ for principle in TRIZ_STARTERS],
+        "analysis_brief": analysis_brief,
+        "contradiction": contradiction,
+        "principles": [_triz_principle_dict(principle) for principle in principles],
         "solution_cards": [
             {
-                "title": "Separate in time",
-                "body": "Make the system behave one way during exploration and another way during execution.",
+                "title": "Load-zone composite layup" if hockey else "Separate in time",
+                "body": (
+                    "Use high stiffness-to-weight carbon where bending loads dominate, but add toughening plies only in heel, lower-shaft, and blade-edge impact zones."
+                    if hockey
+                    else "Make the system behave one way during exploration and another way during execution."
+                ),
             },
             {
-                "title": "Separate in structure",
-                "body": "Split the fragile or expensive part away from the part that must move quickly.",
+                "title": "Blade core redesign" if hockey else "Separate in structure",
+                "body": (
+                    "Reduce blade inertia with a tuned foam or ribbed core while preserving perimeter stiffness, puck feel, and water/damage resistance."
+                    if hockey
+                    else "Split the fragile or expensive part away from the part that must move quickly."
+                ),
             },
             {
-                "title": "Introduce a mediation layer",
-                "body": "Use an adapter, queue, policy engine, or human review gate to absorb the conflict.",
+                "title": "Test before exotic materials" if hockey else "Introduce a mediation layer",
+                "body": (
+                    "Run coupon and full-stick tests for flex, torsion, cold impact, cyclic shot loading, balance point, and player feel before choosing boron, graphene, or other premium additives."
+                    if hockey
+                    else "Use an adapter, queue, policy engine, or human review gate to absorb the conflict."
+                ),
             },
+        ],
+    }
+
+
+def _board_item(title: str, body: str, options: list[str], metric: str = "") -> dict[str, Any]:
+    return {
+        "title": _compact(title, 120),
+        "body": _compact(body, 380),
+        "metric": _compact(metric, 160),
+        "options": [_compact(option, 220) for option in options],
+        "drilldown": {
+            "description": "Use the generated options, then edit the notes into a decision-grade output.",
+            "panels": [
+                _panel("Best next move", "Choose or edit the next concrete move.", options, value=options[0] if options else ""),
+                _panel(
+                    "Evidence needed",
+                    "Select the evidence that would make this recommendation credible.",
+                    [
+                        f"Interview target users about: {title}",
+                        "Gather one concrete data point that could invalidate this assumption.",
+                        "Create a before/after metric that can be exported in the report.",
+                    ],
+                ),
+                _panel(
+                    "Decision metric",
+                    "Pick the measurement that determines whether this stays in the plan.",
+                    [item for item in [metric, "Decision confidence improvement", "Time-to-evidence"] if item],
+                ),
+            ],
+        },
+    }
+
+
+def generate_lean_startup(goal: str) -> dict[str, Any]:
+    topic = _topic(goal)
+    return {
+        "type": "framework_board",
+        "title": "Lean Startup Experiment Canvas",
+        "subtitle": f"Build-Measure-Learn plan for: {topic}",
+        "analysis_brief": [
+            "OmniFrame selected Lean Startup because the prompt benefits from fast evidence before full buildout.",
+            "The canvas forces a falsifiable hypothesis, a small MVP, actionable metrics, and explicit pivot/persevere criteria.",
+            "Hover over each card for guidance, open focused workspaces for deeper notes, and export the experiment plan as PDF.",
+        ],
+        "lanes": [
+            {
+                "id": "build",
+                "label": "Build",
+                "prompt": "Smallest artifact that can test the riskiest assumption.",
+                "items": [
+                    _board_item(
+                        "Riskiest assumption",
+                        f"The target user has a painful enough job around '{topic}' to change behavior now.",
+                        [
+                            "Write the assumption as a yes/no statement that could fail within 7 days.",
+                            "Cut the MVP until it tests only that assumption.",
+                            "Recruit 5 users who already tried a workaround.",
+                        ],
+                        "Assumption pass/fail evidence",
+                    ),
+                    _board_item(
+                        "MVP artifact",
+                        "Use a concierge demo, landing page, clickable prototype, or manually operated workflow before automating.",
+                        [
+                            "Build a one-screen promise plus one human-powered fulfillment path.",
+                            "Use sample data or manual analysis if automation is not the riskiest part.",
+                            "Instrument intent, completion, and objection capture from day one.",
+                        ],
+                        "Time from contact to validated signal",
+                    ),
+                ],
+            },
+            {
+                "id": "measure",
+                "label": "Measure",
+                "prompt": "Signals that prove behavior, not compliments.",
+                "items": [
+                    _board_item(
+                        "Actionable metric",
+                        "Favor conversion, repeat use, willingness to pay, referral, or time saved over vanity traffic.",
+                        [
+                            "Define one primary conversion and one disqualifying signal.",
+                            "Log qualitative objections beside every numeric metric.",
+                            "Separate curiosity clicks from actual workflow completion.",
+                        ],
+                        "Validated conversion rate",
+                    ),
+                    _board_item(
+                        "Cohort learning",
+                        "Compare user segments so the team learns where the product has a wedge.",
+                        [
+                            "Tag results by segment, pain intensity, existing workaround, and buying authority.",
+                            "Find the segment where urgency is highest and support burden is lowest.",
+                            "Export a cohort summary before deciding what to build next.",
+                        ],
+                        "Segment-specific activation",
+                    ),
+                ],
+            },
+            {
+                "id": "learn",
+                "label": "Learn",
+                "prompt": "Explicit pivot, persevere, or stop logic.",
+                "items": [
+                    _board_item(
+                        "Pivot/persevere rule",
+                        "Decide in advance what evidence earns more investment.",
+                        [
+                            "Persevere only if the target segment completes the core workflow and asks for the next run.",
+                            "Pivot if users like the concept but keep using their old workaround.",
+                            "Stop if the strongest segment will not trade time, money, or data for the result.",
+                        ],
+                        "Decision made by deadline",
+                    )
+                ],
+            },
+        ],
+    }
+
+
+def generate_okrs(goal: str) -> dict[str, Any]:
+    topic = _topic(goal)
+    return {
+        "type": "okr_board",
+        "title": "OKR Alignment Canvas",
+        "subtitle": f"Objectives and measurable outcomes for: {topic}",
+        "analysis_brief": [
+            "OmniFrame selected OKRs because the goal needs clear outcomes, measurable proof, and team alignment.",
+            "The canvas separates inspiring objectives from numeric key results and the initiatives that should move them.",
+        ],
+        "objectives": [
+            {
+                "objective": f"Create a decision-ready outcome for {topic}",
+                "rationale": "The objective is intentionally qualitative; the key results below make it measurable.",
+                "key_results": [
+                    "KR1: reach 80% stakeholder confidence that the chosen direction is correct.",
+                    "KR2: reduce the top unresolved strategic assumptions to three or fewer.",
+                    "KR3: produce one exported report that names owner, deadline, and next experiment.",
+                ],
+                "items": [
+                    _board_item(
+                        "Owner alignment",
+                        "Make one accountable owner visible for every key result.",
+                        [
+                            "Assign one KR owner and one decision reviewer.",
+                            "Add a weekly confidence check to the Wisdom Graph.",
+                            "Convert vague work into a measurable initiative tied to a KR.",
+                        ],
+                        "KR owner coverage",
+                    )
+                ],
+            },
+            {
+                "objective": "Turn analysis into execution behavior",
+                "rationale": "OKRs fail when they become static statements rather than a weekly operating system.",
+                "key_results": [
+                    "KR1: every initiative has a leading metric and a stop condition.",
+                    "KR2: weekly review captures progress, confidence, and blocker status.",
+                    "KR3: at least one initiative is cut or changed based on evidence.",
+                ],
+                "items": [
+                    _board_item(
+                        "Weekly operating rhythm",
+                        "Use the canvas to keep the OKR alive after the initial planning session.",
+                        [
+                            "Review KR movement before discussing tasks.",
+                            "Flag initiatives that consume effort without moving a KR.",
+                            "Export an updated report after each major decision.",
+                        ],
+                        "KR movement per week",
+                    )
+                ],
+            },
+        ],
+    }
+
+
+def generate_porters_five_forces(goal: str) -> dict[str, Any]:
+    topic = _topic(goal)
+    forces = [
+        (
+            "Competitive rivalry",
+            "How intense is direct competition, and where are incumbents vulnerable?",
+            "High rivalry means the strategy needs differentiation, speed, or a niche wedge.",
+        ),
+        (
+            "Threat of new entrants",
+            "How easy is it for new players to copy the offer?",
+            "Low switching costs and accessible tools raise entrant risk.",
+        ),
+        (
+            "Threat of substitutes",
+            "What workaround already solves the job well enough?",
+            "Substitutes can be spreadsheets, agencies, social groups, manual workflows, or doing nothing.",
+        ),
+        (
+            "Buyer power",
+            "Can customers force lower prices, custom demands, or long sales cycles?",
+            "Buyer concentration and low urgency weaken pricing power.",
+        ),
+        (
+            "Supplier power",
+            "Do platforms, data providers, model vendors, or distribution partners control critical inputs?",
+            "Dependency on scarce data, APIs, or talent can compress margin.",
+        ),
+    ]
+    return {
+        "type": "force_map",
+        "title": "Porter's Five Forces Canvas",
+        "subtitle": f"Industry structure read for: {topic}",
+        "analysis_brief": [
+            "OmniFrame selected Porter's Five Forces because the prompt benefits from industry structure and profitability analysis.",
+            "Each force includes a pressure reading, a strategic implication, and a focused workspace for deeper evidence.",
+        ],
+        "forces": [
+            {
+                "name": name,
+                "intensity": intensity,
+                "question": question,
+                "implication": implication,
+                "items": [
+                    _board_item(
+                        f"{name} evidence",
+                        implication,
+                        [
+                            f"List the top three facts that make {name.lower()} high, medium, or low for {topic}.",
+                            "Name the current alternative customers would choose if this product did not exist.",
+                            "Choose one move that improves structural advantage rather than only feature quality.",
+                        ],
+                        "Force confidence rating",
+                    )
+                ],
+            }
+            for (name, question, implication), intensity in zip(forces, ["High", "Medium", "High", "Medium", "Medium"], strict=True)
+        ],
+    }
+
+
+def generate_pestle(goal: str) -> dict[str, Any]:
+    topic = _topic(goal)
+    factors = [
+        ("Political", "Policy, government incentives, procurement behavior, geopolitical pressure."),
+        ("Economic", "Budget cycles, inflation, purchasing power, capital availability, cost pressure."),
+        ("Social", "Behavior shifts, cultural adoption, trust, demographics, user expectations."),
+        ("Technological", "Platform shifts, AI capability, data access, integration maturity, security."),
+        ("Legal", "Privacy, IP, employment, consumer protection, sector regulations, contract risk."),
+        ("Environmental", "Sustainability, energy use, materials, logistics, climate exposure."),
+    ]
+    return {
+        "type": "framework_board",
+        "title": "PESTLE Macro Risk Canvas",
+        "subtitle": f"Macro-environment scan for: {topic}",
+        "analysis_brief": [
+            "OmniFrame selected PESTLE because the goal depends on external forces that can help or block execution.",
+            "Use this canvas to separate macro facts from assumptions, then convert the most important factors into monitoring metrics.",
+        ],
+        "lanes": [
+            {
+                "id": name.lower(),
+                "label": name,
+                "prompt": description,
+                "items": [
+                    _board_item(
+                        f"{name} force for {topic}",
+                        description,
+                        [
+                            f"Name the most important {name.lower()} factor that could change the plan.",
+                            "Classify the factor as tailwind, headwind, or watch item.",
+                            "Define the earliest signal that would tell the team to adapt.",
+                        ],
+                        f"{name} watch signal",
+                    )
+                ],
+            }
+            for name, description in factors
         ],
     }
 
 
 GENERATORS = {
     "swot": generate_swot,
+    "lean_startup": generate_lean_startup,
+    "okrs": generate_okrs,
+    "porters_five_forces": generate_porters_five_forces,
+    "pestle": generate_pestle,
     "rice": generate_rice,
     "triz": generate_triz,
 }

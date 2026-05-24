@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 
 export default function FrameworkLibrary({ frameworks = [] }) {
   const [filter, setFilter] = useState("all");
+  const activeCount = frameworks.filter((framework) => framework.active).length;
   const visible = useMemo(() => {
     if (filter === "active") return frameworks.filter((framework) => framework.active);
     if (filter === "future") return frameworks.filter((framework) => !framework.active);
@@ -15,9 +16,9 @@ export default function FrameworkLibrary({ frameworks = [] }) {
         <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#17783a]">Framework Library</p>
-            <h2 className="mt-3 text-3xl font-semibold">50 methodologies, 3 live routes</h2>
+            <h2 className="mt-3 text-3xl font-semibold">50 methodologies, {activeCount} live routes</h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-black/60">
-              The full reference catalog is stored in the backend. V1 activates SWOT, RICE, and TRIZ while the rest
+              The full reference catalog is stored in the backend. V1 now activates the seven strongest prototype routes while the rest
               stay visible as deliberately scoped future additions.
             </p>
           </div>
@@ -68,4 +69,3 @@ export default function FrameworkLibrary({ frameworks = [] }) {
     </section>
   );
 }
-

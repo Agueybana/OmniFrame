@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUpRight, BrainCircuit, Loader2, Network, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowUpRight, BrainCircuit, Check, Loader2, Network, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import CanvasWorkspace from "./components/CanvasWorkspace";
@@ -14,6 +14,8 @@ export default function App() {
   const [goal, setGoal] = useState(STARTER_GOAL);
   const [frameworks, setFrameworks] = useState([]);
   const [route, setRoute] = useState(null);
+  const [pendingRoute, setPendingRoute] = useState(null);
+  const [showFrameworkChooser, setShowFrameworkChooser] = useState(false);
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
   const workspaceRef = useRef(null);
@@ -39,18 +41,47 @@ export default function App() {
     setError("");
     try {
       const result = await routeGoal(currentGoal);
-      setRoute(result);
-      setStatus("ready");
+      setPendingRoute(result);
+      setShowFrameworkChooser(false);
+      setStatus("reviewing");
       window.pendo?.track?.("omniframe_route_generated", {
         framework_id: result.framework_id,
         confidence: result.confidence
       });
-      setTimeout(() => workspaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
     } catch (err) {
       setStatus("idle");
       setError(err.message);
     } finally {
       routingRef.current = false;
+    }
+  }
+
+  function acceptRecommendedFramework() {
+    if (!pendingRoute) return;
+    setRoute(pendingRoute);
+    setPendingRoute(null);
+    setShowFrameworkChooser(false);
+    setStatus("ready");
+    setTimeout(() => workspaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  }
+
+  async function chooseFramework(frameworkId) {
+    const currentGoal = goalInputRef.current?.value?.trim() || goal.trim();
+    setStatus("routing");
+    setError("");
+    try {
+      const result = await routeGoal(currentGoal, frameworkId);
+      setRoute(result);
+      setPendingRoute(null);
+      setShowFrameworkChooser(false);
+      setStatus("ready");
+      window.pendo?.track?.("omniframe_framework_override_selected", {
+        framework_id: result.framework_id
+      });
+      setTimeout(() => workspaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+    } catch (err) {
+      setStatus("reviewing");
+      setError(err.message);
     }
   }
 
@@ -105,13 +136,13 @@ export default function App() {
             <div className="max-w-3xl">
               <div className="animate-step inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 py-2 text-sm text-white/72" style={{ animationDelay: "0.3s" }}>
                 <Sparkles size={16} className="text-moss" />
-                3 active routes now, 50-framework library ready
+                7 active routes now, 50-framework library ready
               </div>
               <h1 className="animate-step mt-6 max-w-4xl text-5xl font-semibold leading-[1.02] tracking-normal text-white sm:text-6xl lg:text-7xl" style={{ animationDelay: "0.55s" }}>
                 CAD for thought, routed by an agentic strategy engine.
               </h1>
               <p className="animate-step mt-6 max-w-2xl text-base leading-7 text-white/68 sm:text-lg" style={{ animationDelay: "0.8s" }}>
-                Enter a business or engineering goal. OmniFrame selects SWOT, RICE, or TRIZ, then generates an editable visual canvas you can execute.
+                Enter a business or engineering goal. OmniFrame recommends the best framework first, then lets you accept it or choose any live route yourself.
               </p>
 
               <div className="animate-step mt-8 flex flex-wrap gap-3" style={{ animationDelay: "1s" }}>
@@ -186,6 +217,95 @@ export default function App() {
           <span>Novus by Pendo initialized anonymously at app entry.</span>
         </div>
       </footer>
+
+      {pendingRoute && (
+        <FrameworkDecisionModal
+          pendingRoute={pendingRoute}
+          activeFrameworks={activeFrameworks}
+          showChooser={showFrameworkChooser}
+          setShowChooser={setShowFrameworkChooser}
+          onAccept={acceptRecommendedFramework}
+          onChoose={chooseFramework}
+          status={status}
+        />
+      )}
     </main>
+  );
+}
+
+function FrameworkDecisionModal({ pendingRoute, activeFrameworks, showChooser, setShowChooser, onAccept, onChoose, status }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-8 backdrop-blur-md">
+      <section className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-lg border border-white/10 bg-[#0d1110] p-5 text-white shadow-[0_32px_100px_rgba(0,0,0,0.55)]">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-moss">Framework confirmation required</p>
+            <h2 className="mt-3 text-3xl font-semibold">OmniFrame recommends {pendingRoute.framework_name}</h2>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-white/68">{pendingRoute.rationale}</p>
+            <p className="mt-3 text-sm text-white/52">
+              Review the logic before the canvas is generated. Accept the recommendation, or choose your own framework from the seven live routes.
+            </p>
+          </div>
+          <div className="rounded-lg border border-moss/25 bg-moss/10 px-4 py-3 text-sm font-semibold text-moss">
+            Confidence {Math.round(pendingRoute.confidence * 100)}%
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-3">
+          <div className="rounded-lg border border-white/10 bg-[#07100d] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/36">Detected route</p>
+            <p className="mt-2 text-lg font-semibold">{pendingRoute.framework_name}</p>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-[#07100d] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/36">Why this route</p>
+            <p className="mt-2 text-sm leading-6 text-white/68">{pendingRoute.rationale}</p>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-[#07100d] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/36">Your control</p>
+            <p className="mt-2 text-sm leading-6 text-white/68">Choose your own framework if you want a different analytical lens.</p>
+          </div>
+        </div>
+
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={onAccept}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-moss px-5 py-3 text-sm font-bold uppercase tracking-[0.14em] text-ink transition hover:bg-signal"
+          >
+            <Check size={17} />
+            Accept recommendation
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowChooser(true)}
+            className="rounded-lg border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:border-moss/50"
+          >
+            Choose your own
+          </button>
+        </div>
+
+        {showChooser && (
+          <div className="mt-6 rounded-lg border border-signal/30 bg-signal/10 p-4">
+            <p className="text-sm font-semibold text-signal">Select one framework to proceed.</p>
+            <p className="mt-1 text-sm text-white/62">The canvas will generate only after you click a framework card below.</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {activeFrameworks.map((framework) => (
+                <button
+                  key={framework.id}
+                  type="button"
+                  onClick={() => onChoose(framework.id)}
+                  disabled={status === "routing"}
+                  className="depth-card rounded-lg border border-white/10 bg-[#07100d] p-4 text-left transition hover:border-moss/60 disabled:cursor-wait disabled:opacity-60"
+                >
+                  <p className="text-xs font-semibold text-moss">Rank {framework.rank}</p>
+                  <h3 className="mt-2 text-lg font-semibold text-white">{framework.name}</h3>
+                  <p className="mt-2 text-sm leading-6 text-white/56">{framework.selection_lens}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+    </div>
   );
 }

@@ -9,12 +9,17 @@ import {
   Lightbulb,
   MousePointerClick,
   PencilLine,
+  RefreshCw,
   Sparkles
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 const FRAMEWORK_ICONS = {
   swot: LayoutGrid,
+  lean_startup: Sparkles,
+  okrs: Compass,
+  porters_five_forces: GitBranch,
+  pestle: MousePointerClick,
   rice: Calculator,
   triz: Lightbulb
 };
@@ -38,6 +43,10 @@ export default function CanvasWorkspace({ route }) {
           <div className="mt-5 grid gap-4 md:grid-cols-3">
             {[
               ["SWOT", "Strategic audit route for internal and external context."],
+              ["Lean Startup", "Experiment route for MVP validation and learning loops."],
+              ["OKRs", "Alignment route for objectives, key results, and operating cadence."],
+              ["Porter's Five Forces", "Industry structure route for competitive pressure and profit pools."],
+              ["PESTLE", "Macro risk route for political, economic, social, technical, legal, and environmental forces."],
               ["RICE", "Prioritization route for roadmaps, backlogs, and feature bets."],
               ["TRIZ", "Contradiction route for engineering tradeoffs and invention."]
             ].map(([title, body]) => (
@@ -128,6 +137,9 @@ export default function CanvasWorkspace({ route }) {
             {canvas.type === "quadrant" && <QuadrantCanvas canvas={canvas} onChange={setCanvas} onOpenFocus={openFocus} />}
             {canvas.type === "score_table" && <RiceCanvas canvas={canvas} onChange={setCanvas} onOpenFocus={openFocus} />}
             {canvas.type === "contradiction" && <TrizCanvas canvas={canvas} onChange={setCanvas} onOpenFocus={openFocus} />}
+            {canvas.type === "framework_board" && <FrameworkBoardCanvas canvas={canvas} onOpenFocus={openFocus} />}
+            {canvas.type === "okr_board" && <OkrCanvas canvas={canvas} onOpenFocus={openFocus} />}
+            {canvas.type === "force_map" && <ForceMapCanvas canvas={canvas} onOpenFocus={openFocus} />}
           </>
         )}
       </div>
@@ -160,6 +172,30 @@ function DecisionOverview({ route, canvas }) {
         "OmniFrame detected a business assessment with internal capabilities, market conditions, competitors, adoption risks, or opportunity language. SWOT was selected because it separates controllable assets from external forces before choosing a build path.",
       signals: ["internal capability cues", "external opportunity cues", "competitive and adoption risk"]
     },
+    lean_startup: {
+      trigger: "Validation signal",
+      method:
+        "OmniFrame detected MVP, validation, traction, experiment, or uncertainty language. Lean Startup was selected because it turns the idea into a Build-Measure-Learn loop with a falsifiable learning goal.",
+      signals: ["MVP or validation cues", "riskiest assumption", "build-measure-learn loop"]
+    },
+    okrs: {
+      trigger: "Alignment signal",
+      method:
+        "OmniFrame detected goals, objectives, measures, or team alignment language. OKRs were selected because they convert direction into measurable outcomes and review cadence.",
+      signals: ["objective language", "measurable outcomes", "team alignment"]
+    },
+    porters_five_forces: {
+      trigger: "Industry structure signal",
+      method:
+        "OmniFrame detected competition, industry, buyers, suppliers, substitutes, or profitability language. Porter's Five Forces was selected to inspect structural pressure before strategy.",
+      signals: ["competitive pressure", "buyer or supplier power", "substitute risk"]
+    },
+    pestle: {
+      trigger: "Macro-environment signal",
+      method:
+        "OmniFrame detected regulatory, global, legal, economic, political, technological, or environmental forces. PESTLE was selected to separate external tailwinds and headwinds.",
+      signals: ["macro forces", "regulatory or legal exposure", "external watch metrics"]
+    },
     rice: {
       trigger: "Prioritization signal",
       method:
@@ -172,7 +208,11 @@ function DecisionOverview({ route, canvas }) {
         "OmniFrame detected a constraint conflict where improving one system property may worsen another. TRIZ was selected because it turns the conflict into inventive principles and prototype moves.",
       signals: ["constraint conflict", "optimization language", "stronger / lighter / faster tension"]
     }
-  }[route.framework_id];
+  }[route.framework_id] ?? {
+    trigger: "Framework signal",
+    method: "OmniFrame selected this route because it best matches the strongest language in the goal.",
+    signals: ["goal language", "framework fit", "execution guidance"]
+  };
 
   return (
     <aside className="mb-6 grid gap-4 rounded-lg border border-white/10 bg-white/[0.045] p-5 lg:grid-cols-[0.9fr_1.1fr]">
@@ -199,9 +239,13 @@ function GuideDock({ route, activeFocus }) {
     ? "Use the generated buttons to fill a note, then edit it into your own decision. Export PDF when this focus view is decision-ready."
     : {
         swot: "Click a strategic insight to inspect evidence, actions, and metrics. This keeps the SWOT from staying generic.",
+        lean_startup: "Open a card to turn the idea into a sharper MVP test, metric, and pivot/persevere rule.",
+        okrs: "Open an objective item to connect key results with owners, weekly rhythm, and measurable execution.",
+        porters_five_forces: "Open a force to collect evidence, pressure ratings, and structural strategy moves.",
+        pestle: "Open a macro factor to classify tailwinds, headwinds, watch signals, and adaptation triggers.",
         rice: "Click an initiative to inspect the score assumptions. Suggested buttons can fill deeper notes without making you start from blank text.",
         triz: "Click a principle to turn the contradiction into an experiment, failure check, and prototype move."
-      }[route.framework_id];
+      }[route.framework_id] ?? "Hover and open cards to get specific guidance, deeper options, and report-ready notes.";
 
   return (
     <div className="floating-suggestion mb-6 flex flex-col gap-3 rounded-lg border border-moss/25 bg-[#09120f] p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -261,6 +305,17 @@ function CanvasNavigator({ activeFocus, canGoBack, canGoForward, goBack, goForwa
   );
 }
 
+function HoverHint({ text, children }) {
+  return (
+    <div className="hint-target group relative">
+      {children}
+      <div className="hint-bubble pointer-events-none absolute left-4 top-4 z-20 max-w-xs rounded-lg border border-moss/25 bg-[#07100d] px-3 py-2 text-xs leading-5 text-white/78 opacity-0 shadow-glow transition group-hover:translate-y-[-6px] group-hover:opacity-100">
+        {text}
+      </div>
+    </div>
+  );
+}
+
 function QuadrantCanvas({ canvas, onChange, onOpenFocus }) {
   function updateItem(sectionId, index, value) {
     onChange({
@@ -288,30 +343,32 @@ function QuadrantCanvas({ canvas, onChange, onOpenFocus }) {
             {section.items.map((rawItem, index) => {
               const item = normalizeInsight(rawItem);
               return (
-                <article key={`${section.id}-${index}`} className="insight-card rounded-lg border border-white/10 bg-[#07100d] p-4">
-                  <textarea value={item.text} onChange={(event) => updateItem(section.id, index, event.target.value)} className={fieldClassName} />
-                  {item.rationale && <p className="mt-3 text-sm leading-6 text-white/58">{item.rationale}</p>}
-                  {item.metric && (
-                    <div className="mt-3 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold uppercase tracking-[0.13em] text-white/54">
-                      Metric: <span className="normal-case tracking-normal text-white/78">{item.metric}</span>
+                <HoverHint key={`${section.id}-${index}`} text="Edit the insight directly, or click Explore to open evidence, action, and metric options for this specific item.">
+                  <article className="insight-card rounded-lg border border-white/10 bg-[#07100d] p-4">
+                    <textarea value={item.text} onChange={(event) => updateItem(section.id, index, event.target.value)} className={fieldClassName} />
+                    {item.rationale && <p className="mt-3 text-sm leading-6 text-white/58">{item.rationale}</p>}
+                    {item.metric && (
+                      <div className="mt-3 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold uppercase tracking-[0.13em] text-white/54">
+                        Metric: <span className="normal-case tracking-normal text-white/78">{item.metric}</span>
+                      </div>
+                    )}
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      {(item.options ?? []).slice(0, 2).map((option) => (
+                        <span key={option} className="option-preview rounded-full border border-moss/20 bg-moss/10 px-3 py-1 text-xs text-moss">
+                          {option}
+                        </span>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => onOpenFocus(buildSwotFocus(section, item))}
+                        className="ml-auto inline-flex items-center gap-2 rounded-md border border-moss/35 bg-moss/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-moss transition hover:bg-moss hover:text-ink"
+                      >
+                        Explore
+                        <ArrowRight size={14} />
+                      </button>
                     </div>
-                  )}
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
-                    {(item.options ?? []).slice(0, 2).map((option) => (
-                      <span key={option} className="option-preview rounded-full border border-moss/20 bg-moss/10 px-3 py-1 text-xs text-moss">
-                        {option}
-                      </span>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => onOpenFocus(buildSwotFocus(section, item))}
-                      className="ml-auto inline-flex items-center gap-2 rounded-md border border-moss/35 bg-moss/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-moss transition hover:bg-moss hover:text-ink"
-                    >
-                      Explore
-                      <ArrowRight size={14} />
-                    </button>
-                  </div>
-                </article>
+                  </article>
+                </HoverHint>
               );
             })}
           </div>
@@ -417,19 +474,111 @@ function TrizCanvas({ canvas, onChange, onOpenFocus }) {
 
       <div className="grid gap-4 md:grid-cols-2">
         {canvas.principles.map((principle) => (
-          <button
-            key={principle.number}
-            type="button"
-            onClick={() => onOpenFocus(buildTrizFocus(principle))}
-            className="depth-card rounded-lg border border-white/10 bg-white/[0.04] p-5 text-left transition hover:border-moss/60 hover:bg-moss/10"
-          >
-            <p className="text-xs font-bold text-moss">Principle {principle.number}</p>
-            <h4 className="mt-2 text-lg font-semibold text-white">{principle.name}</h4>
-            <p className="mt-3 text-sm leading-6 text-white/56">{principle.application}</p>
-            <p className="mt-4 text-xs font-bold uppercase tracking-[0.16em] text-signal">Explore application</p>
-          </button>
+          <HoverHint key={principle.number} text="Open this principle for material choices, test plans, and regenerated option sets specific to the original problem.">
+            <button
+              type="button"
+              onClick={() => onOpenFocus(buildTrizFocus(principle))}
+              className="depth-card w-full rounded-lg border border-white/10 bg-white/[0.04] p-5 text-left transition hover:border-moss/60 hover:bg-moss/10"
+            >
+              <p className="text-xs font-bold text-moss">Principle {principle.number}</p>
+              <h4 className="mt-2 text-lg font-semibold text-white">{principle.name}</h4>
+              <p className="mt-3 text-sm leading-6 text-white/56">{principle.application}</p>
+              {principle.why_it_fits && <p className="mt-3 text-sm leading-6 text-signal/80">{principle.why_it_fits}</p>}
+              <p className="mt-4 text-xs font-bold uppercase tracking-[0.16em] text-signal">Explore application</p>
+            </button>
+          </HoverHint>
         ))}
       </div>
+    </div>
+  );
+}
+
+function FrameworkBoardCanvas({ canvas, onOpenFocus }) {
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      {canvas.lanes.map((lane) => (
+        <section key={lane.id} className="depth-card rounded-lg border border-white/10 bg-white/[0.04] p-5">
+          <h3 className="text-xl font-semibold text-white">{lane.label}</h3>
+          <p className="mt-2 text-sm leading-6 text-white/52">{lane.prompt}</p>
+          <div className="mt-5 space-y-3">
+            {lane.items.map((item) => (
+              <HoverHint key={item.title} text="Open this card to get suggested evidence, metrics, and editable report notes.">
+                <button
+                  type="button"
+                  onClick={() => onOpenFocus(buildBoardFocus(canvas.title, lane, item))}
+                  className="insight-card w-full rounded-lg border border-white/10 bg-[#07100d] p-4 text-left transition hover:border-moss/60"
+                >
+                  <h4 className="text-base font-semibold text-white">{item.title}</h4>
+                  <p className="mt-2 text-sm leading-6 text-white/58">{item.body}</p>
+                  {item.metric && <p className="mt-3 text-xs font-bold uppercase tracking-[0.14em] text-moss">Metric: {item.metric}</p>}
+                </button>
+              </HoverHint>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function OkrCanvas({ canvas, onOpenFocus }) {
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      {canvas.objectives.map((objective) => (
+        <section key={objective.objective} className="depth-card rounded-lg border border-white/10 bg-white/[0.04] p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-moss">Objective</p>
+          <h3 className="mt-2 text-xl font-semibold text-white">{objective.objective}</h3>
+          <p className="mt-2 text-sm leading-6 text-white/52">{objective.rationale}</p>
+          <div className="mt-4 space-y-2">
+            {objective.key_results.map((kr) => (
+              <div key={kr} className="rounded-md border border-white/10 bg-[#07100d] px-3 py-2 text-sm text-white/70">
+                {kr}
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 space-y-3">
+            {objective.items.map((item) => (
+              <HoverHint key={item.title} text="Open this initiative to assign evidence, owner behavior, and a measurable OKR review signal.">
+                <button
+                  type="button"
+                  onClick={() => onOpenFocus(buildBoardFocus("OKR focus", { label: objective.objective }, item))}
+                  className="insight-card w-full rounded-lg border border-moss/20 bg-moss/10 p-4 text-left transition hover:border-moss/70"
+                >
+                  <h4 className="font-semibold text-white">{item.title}</h4>
+                  <p className="mt-2 text-sm leading-6 text-white/58">{item.body}</p>
+                </button>
+              </HoverHint>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function ForceMapCanvas({ canvas, onOpenFocus }) {
+  return (
+    <div className="grid gap-4 lg:grid-cols-5">
+      {canvas.forces.map((force) => (
+        <HoverHint key={force.name} text="Open this force to collect concrete evidence and decide whether the pressure is a moat, risk, or strategy constraint.">
+          <section className="depth-card h-full rounded-lg border border-white/10 bg-white/[0.04] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <h3 className="text-lg font-semibold text-white">{force.name}</h3>
+              <span className="rounded-md border border-moss/25 bg-moss/10 px-2 py-1 text-xs font-bold text-moss">{force.intensity}</span>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-white/54">{force.question}</p>
+            <p className="mt-3 text-sm leading-6 text-white/70">{force.implication}</p>
+            <button
+              type="button"
+              onClick={() => onOpenFocus(buildBoardFocus("Five Forces focus", { label: force.name }, force.items[0]))}
+              className="mt-4 inline-flex items-center gap-2 rounded-md border border-moss/35 bg-moss/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-moss transition hover:bg-moss hover:text-ink"
+            >
+              Explore
+              <ArrowRight size={14} />
+            </button>
+          </section>
+        </HoverHint>
+      ))}
     </div>
   );
 }
@@ -446,6 +595,19 @@ function FocusCanvasView({ focusCanvas, onChange, onExport }) {
     const current = focusCanvas.panels[panelIndex].value ?? "";
     const next = current.trim() ? `${current.trim()}\n\n${suggestion}` : suggestion;
     setPanelValue(panelIndex, next);
+  }
+
+  function regeneratePanelOptions(panelIndex) {
+    const panel = focusCanvas.panels[panelIndex];
+    const currentIndex = panel.regenIndex ?? 0;
+    const optionSets = panel.option_sets?.length ? panel.option_sets : buildFallbackOptionSets(focusCanvas, panel);
+    const nextIndex = currentIndex % optionSets.length;
+    onChange({
+      ...focusCanvas,
+      panels: focusCanvas.panels.map((item, index) =>
+        index === panelIndex ? { ...item, options: optionSets[nextIndex], regenIndex: currentIndex + 1 } : item
+      )
+    });
   }
 
   return (
@@ -465,9 +627,16 @@ function FocusCanvasView({ focusCanvas, onChange, onExport }) {
         {focusCanvas.panels.map((panel, panelIndex) => (
           <section key={`${panel.title}-${panelIndex}`} className="depth-card rounded-lg border border-white/10 bg-white/[0.04] p-4">
             <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-moss/15 text-moss">
-                <Compass size={16} />
-              </div>
+              <HoverHint text="Regenerate this section's options using the current focused workspace and notes you have already selected.">
+                <button
+                  type="button"
+                  onClick={() => regeneratePanelOptions(panelIndex)}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-moss/15 text-moss transition hover:bg-moss hover:text-ink"
+                  aria-label={`Regenerate ${panel.title} options`}
+                >
+                  <RefreshCw size={15} />
+                </button>
+              </HoverHint>
               <div>
                 <h4 className="text-sm font-semibold text-white">{panel.title}</h4>
                 <p className="mt-2 text-sm leading-6 text-white/52">{panel.prompt}</p>
@@ -515,6 +684,7 @@ function normalizeFocusCanvas(focusCanvas) {
     panels: focusCanvas.panels.map((panel) => ({
       ...panel,
       options: panel.options ?? [],
+      option_sets: panel.option_sets ?? [],
       value: panel.value ?? ""
     }))
   };
@@ -569,34 +739,73 @@ function buildRiceFocus(row) {
   };
 }
 
+function buildBoardFocus(canvasTitle, lane, item) {
+  return {
+    title: item.title,
+    eyebrow: `${lane.label} workspace`,
+    description: item.drilldown?.description ?? `${canvasTitle}: deepen this item into evidence, decisions, and metrics.`,
+    panels:
+      item.drilldown?.panels ??
+      [
+        { title: "Best next move", prompt: "Choose or edit the next concrete move.", options: item.options ?? [], value: item.options?.[0] ?? "" },
+        { title: "Evidence needed", prompt: "Choose the proof that makes this credible.", options: [`Interview users about ${item.title}`, "Collect one disconfirming data point."] },
+        { title: "Decision metric", prompt: "Choose the metric that decides whether this stays in the plan.", options: [item.metric, "Decision confidence improvement"].filter(Boolean) }
+      ]
+  };
+}
+
 function buildTrizFocus(principle) {
   return {
     title: `Principle ${principle.number}: ${principle.name}`,
     eyebrow: "Focused TRIZ workspace",
-    description: principle.application,
-    panels: [
-      {
-        title: "Contradiction rewrite",
-        prompt: "State the improvement and worsening property in one sentence.",
-        options: ["We need to improve the target property without increasing cost, fragility, or complexity."]
-      },
-      {
-        title: "Inventive move",
-        prompt: "How does this principle change timing, structure, parameter, or mediation?",
-        options: [principle.application, "Split the system into a fast visible layer and a slower verification layer.", "Move expensive preparation before the user-facing moment."]
-      },
-      {
-        title: "Prototype",
-        prompt: "What is the smallest experiment that proves the idea works?",
-        options: ["Build a thin demo that simulates the hard part manually.", "Test one measurable contradiction outcome in a 48-hour prototype."]
-      },
-      {
-        title: "Failure mode",
-        prompt: "What new weakness might this inventive move create?",
-        options: ["The solution may move complexity into operations.", "The mediation layer may reduce speed if it is not instrumented."]
-      }
-    ]
+    description: principle.why_it_fits || principle.application,
+    panels:
+      principle.drilldown?.panels?.length > 0
+        ? principle.drilldown.panels
+        : [
+            {
+              title: "Contradiction rewrite",
+              prompt: "State the improvement and worsening property in one sentence.",
+              options: ["We need to improve the target property without increasing cost, fragility, or complexity."]
+            },
+            {
+              title: "Inventive move",
+              prompt: "How does this principle change timing, structure, parameter, or mediation?",
+              options: [principle.application, "Split the system into a fast visible layer and a slower verification layer.", "Move expensive preparation before the user-facing moment."]
+            },
+            {
+              title: "Prototype",
+              prompt: "What is the smallest experiment that proves the idea works?",
+              options: ["Build a thin demo that simulates the hard part manually.", "Test one measurable contradiction outcome in a 48-hour prototype."]
+            },
+            {
+              title: "Failure mode",
+              prompt: "What new weakness might this inventive move create?",
+              options: ["The solution may move complexity into operations.", "The mediation layer may reduce speed if it is not instrumented."]
+            }
+          ]
   };
+}
+
+function buildFallbackOptionSets(focusCanvas, panel) {
+  const context = [focusCanvas.title, focusCanvas.description, panel.value].filter(Boolean).join(" ");
+  return [
+    [
+      `Make this more specific to: ${focusCanvas.title}.`,
+      `Add one evidence requirement before accepting this ${panel.title.toLowerCase()} note.`,
+      `Convert the current note into a testable decision with owner, metric, and deadline.`
+    ],
+    [
+      `Challenge the strongest assumption in: ${context.slice(0, 120)}.`,
+      "Generate a more conservative option that reduces cost, risk, or implementation effort.",
+      "Generate a more ambitious option that tests the biggest upside quickly."
+    ],
+    [
+      "Rewrite this as a concrete experiment that can be completed in 7 days.",
+      "Add a failure mode that would make the team reconsider the direction.",
+      "Add a stakeholder-ready sentence suitable for the exported PDF report."
+    ]
+  ];
 }
 
 function openReportWindow(route, canvas, focusCanvases) {
@@ -700,6 +909,32 @@ function renderReportCanvas(canvas) {
         )}%"></div></div></td></tr>`
       )
       .join("")}</tbody></table>`;
+  }
+
+  if (canvas.type === "framework_board") {
+    return `<h2>${escapeHtml(canvas.title)}</h2><div class="grid">${canvas.lanes
+      .map(
+        (lane) => `<section class="card"><h3>${escapeHtml(lane.label)}</h3><p class="muted">${escapeHtml(lane.prompt)}</p>${lane.items
+          .map((item) => `<p><strong>${escapeHtml(item.title)}</strong></p><p class="muted">${escapeHtml(item.body)}</p>${item.metric ? `<span class="tag">${escapeHtml(item.metric)}</span>` : ""}`)
+          .join("")}</section>`
+      )
+      .join("")}</div>`;
+  }
+
+  if (canvas.type === "okr_board") {
+    return `<h2>${escapeHtml(canvas.title)}</h2><div class="grid">${canvas.objectives
+      .map(
+        (objective) => `<section class="card"><h3>${escapeHtml(objective.objective)}</h3><p class="muted">${escapeHtml(objective.rationale)}</p>${objective.key_results
+          .map((kr) => `<span class="tag">${escapeHtml(kr)}</span>`)
+          .join("")}</section>`
+      )
+      .join("")}</div>`;
+  }
+
+  if (canvas.type === "force_map") {
+    return `<h2>${escapeHtml(canvas.title)}</h2><div class="grid">${canvas.forces
+      .map((force) => `<section class="card"><h3>${escapeHtml(force.name)} (${escapeHtml(force.intensity)})</h3><p>${escapeHtml(force.question)}</p><p class="muted">${escapeHtml(force.implication)}</p></section>`)
+      .join("")}</div>`;
   }
 
   return `<h2>Contradiction Canvas</h2><section class="card"><p>${escapeHtml(canvas.contradiction?.prompt ?? "")}</p></section>`;

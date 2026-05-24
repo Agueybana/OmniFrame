@@ -6,11 +6,11 @@ export async function fetchFrameworks() {
   return response.json();
 }
 
-export async function routeGoal(goal) {
+export async function routeGoal(goal, frameworkId = null) {
   const response = await fetch("/api/route", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ goal })
+    body: JSON.stringify({ goal, framework_id: frameworkId })
   });
   if (!response.ok) {
     throw new Error("Unable to route this goal");
@@ -29,4 +29,3 @@ export async function sendFeedback(payload) {
   }
   return response.json();
 }
-

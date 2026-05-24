@@ -36,7 +36,7 @@ def frameworks() -> list[dict]:
 
 @app.post("/api/route", response_model=RouteResponse)
 async def route(request: GoalRequest) -> dict:
-    return await route_goal(request.goal)
+    return await route_goal(request.goal, request.framework_id)
 
 
 @app.post("/api/feedback", response_model=FeedbackResponse)
@@ -55,4 +55,3 @@ def serve_frontend(path: str) -> FileResponse:
     if index_file.exists():
         return FileResponse(index_file)
     return FileResponse(Path(__file__).resolve().parent / "fallback.html")
-

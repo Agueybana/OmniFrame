@@ -6,7 +6,7 @@ import re
 from typing import TypedDict
 
 from .canvas_generators import build_canvas
-from .frameworks import get_framework
+from .frameworks import ACTIVE_FRAMEWORK_IDS, get_framework
 
 
 class RouteDecision(TypedDict):
@@ -54,6 +54,56 @@ TRIZ_TERMS = {
     "invent",
     "design problem",
 }
+LEAN_TERMS = {
+    "mvp",
+    "experiment",
+    "validate",
+    "validation",
+    "hypothesis",
+    "lean",
+    "pivot",
+    "traction",
+    "startup",
+    "prototype",
+}
+OKR_TERMS = {
+    "okr",
+    "objective",
+    "objectives",
+    "key result",
+    "key results",
+    "alignment",
+    "quarter",
+    "quarterly",
+    "goal",
+    "goals",
+    "measure",
+}
+PORTER_TERMS = {
+    "industry",
+    "rivalry",
+    "entrant",
+    "entrants",
+    "substitute",
+    "supplier",
+    "buyer",
+    "profitability",
+    "competition",
+    "competitive",
+}
+PESTLE_TERMS = {
+    "regulation",
+    "regulatory",
+    "legal",
+    "political",
+    "economic",
+    "social",
+    "environmental",
+    "global",
+    "macro",
+    "compliance",
+    "policy",
+}
 
 
 def _tokenize(goal: str) -> set[str]:
@@ -67,6 +117,10 @@ def deterministic_route(goal: str) -> RouteDecision:
         "swot": len(tokens & SWOT_TERMS) + sum(phrase in text for phrase in ["new market", "go to market", "business strategy"]),
         "rice": len(tokens & RICE_TERMS) + sum(phrase in text for phrase in ["what to build", "which feature", "next sprint"]),
         "triz": len(tokens & TRIZ_TERMS) + sum(phrase in text for phrase in ["but it", "trade off", "tradeoff", "without increasing"]),
+        "lean_startup": len(tokens & LEAN_TERMS) + sum(phrase in text for phrase in ["product market fit", "test demand", "landing page"]),
+        "okrs": len(tokens & OKR_TERMS) + sum(phrase in text for phrase in ["align teams", "quarterly targets", "company goals"]),
+        "porters_five_forces": len(tokens & PORTER_TERMS) + sum(phrase in text for phrase in ["five forces", "market attractiveness", "industry structure"]),
+        "pestle": len(tokens & PESTLE_TERMS) + sum(phrase in text for phrase in ["global expansion", "macro environment", "regulatory risk"]),
     }
 
     winner = max(scores, key=scores.get)
@@ -83,6 +137,10 @@ def deterministic_route(goal: str) -> RouteDecision:
             "swot": "The goal reads like a strategic baseline assessment with internal and external factors.",
             "rice": "The goal is asking for prioritization, ranking, or roadmap tradeoffs.",
             "triz": "The goal contains an engineering contradiction or constraint conflict that needs inventive resolution.",
+            "lean_startup": "The goal is asking for fast validation, MVP design, or evidence before committing capital.",
+            "okrs": "The goal needs measurable alignment between objectives, key results, and execution work.",
+            "porters_five_forces": "The goal is about industry attractiveness, competitive pressure, and structural profitability.",
+            "pestle": "The goal depends on macro-environmental forces such as regulation, economics, technology, or legal risk.",
         }[winner]
 
     return {"framework_id": winner, "confidence": round(confidence, 2), "rationale": rationale}
@@ -107,9 +165,10 @@ async def langchain_route(goal: str) -> RouteDecision | None:
         [
             (
                 "system",
-                "You route goals to exactly one framework: swot, rice, or triz. "
+                "You route goals to exactly one framework: swot, lean_startup, okrs, porters_five_forces, pestle, rice, or triz. "
                 "Return compact JSON with framework_id, confidence, and rationale. "
-                "Use SWOT for strategic baseline audits, RICE for prioritization, and TRIZ for engineering contradictions.",
+                "Use SWOT for broad strategic audits, Lean Startup for MVP validation, OKRs for measurable alignment, "
+                "Porter's Five Forces for industry structure, PESTLE for macro risk, RICE for prioritization, and TRIZ for engineering contradictions.",
             ),
             ("human", "{goal}"),
         ]
@@ -120,7 +179,7 @@ async def langchain_route(goal: str) -> RouteDecision | None:
     try:
         raw = await chain.ainvoke({"goal": goal})
         parsed = json.loads(raw)
-        if parsed.get("framework_id") in {"swot", "rice", "triz"}:
+        if parsed.get("framework_id") in ACTIVE_FRAMEWORK_IDS:
             return {
                 "framework_id": parsed["framework_id"],
                 "confidence": float(parsed.get("confidence", 0.74)),
@@ -132,8 +191,21 @@ async def langchain_route(goal: str) -> RouteDecision | None:
     return None
 
 
-async def route_goal(goal: str) -> dict:
-    decision = await langchain_route(goal) or deterministic_route(goal)
+async def route_goal(goal: str, framework_id: str | None = None) -> dict:
+    if framework_id:
+        framework = get_framework(framework_id)
+        if not framework or framework_id not in ACTIVE_FRAMEWORK_IDS:
+            decision = deterministic_route(goal)
+        else:
+            return {
+                "framework_id": framework_id,
+                "framework_name": framework["name"],
+                "confidence": 1.0,
+                "rationale": f"User selected {framework['name']} after reviewing OmniFrame's recommendation.",
+                "canvas": build_canvas(framework_id, goal),
+            }
+    else:
+        decision = await langchain_route(goal) or deterministic_route(goal)
     framework = get_framework(decision["framework_id"])
     if not framework:
         decision = deterministic_route(goal)
@@ -146,4 +218,3 @@ async def route_goal(goal: str) -> dict:
         "rationale": decision["rationale"],
         "canvas": build_canvas(decision["framework_id"], goal),
     }
-
