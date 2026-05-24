@@ -132,6 +132,206 @@ def _swot_item(text: str, rationale: str, options: list[str], metric: str) -> di
     }
 
 
+RELATIONSHIP_WORDS = {
+    "partner",
+    "breakup",
+    "girlfriend",
+    "boyfriend",
+    "wife",
+    "husband",
+    "relationship",
+    "dating",
+    "hollie",
+    "family",
+    "couple",
+}
+
+
+def _is_relationship_goal(goal: str) -> bool:
+    tokens = set(re.findall(r"[a-zA-Z][a-zA-Z-]+", goal.lower()))
+    return bool(tokens & RELATIONSHIP_WORDS)
+
+
+def _relationship_name(goal: str) -> str:
+    explicit = re.search(r"\(([^)]{2,40})\)", goal)
+    if explicit:
+        return _compact(explicit.group(1), 40)
+    for candidate in ["Hollie"]:
+        if re.search(rf"\b{re.escape(candidate)}\b", goal, flags=re.I):
+            return candidate
+    return "the other person"
+
+
+def _relationship_swot(goal: str, topic: str) -> dict[str, Any]:
+    person = _relationship_name(goal)
+    dating = "girlfriend" in goal.lower() and "breakup" not in goal.lower()
+    if dating:
+        strengths = [
+            _swot_item(
+                "You are asking for a relationship deliberately rather than passively waiting for one.",
+                "That means the first useful move is to define the kind of partnership you want and the behaviors you are willing to practice.",
+                [
+                    "Write a partner profile based on values, daily lifestyle, conflict style, family goals, and curiosity rather than only attraction.",
+                    "Ask two trusted friends which settings make you seem most relaxed, generous, and socially open.",
+                    "Choose one repeatable weekly environment where compatible people are likely to be present.",
+                ],
+                "Weekly high-quality conversations",
+            ),
+            _swot_item(
+                "Your interests can become natural connection points if you turn them into shared experiences.",
+                "Reading, writing, music history, travel, building, and learning are relationship assets when presented as invitations rather than tests.",
+                [
+                    "Plan low-pressure dates around music, books, language nights, museums, hikes, or travel talks.",
+                    "Practice asking about her world before explaining your own projects.",
+                    "Look for mutual curiosity, not just admiration for your interests.",
+                ],
+                "Second-date acceptance rate",
+            ),
+        ]
+        weaknesses = [
+            _swot_item(
+                "A vague desire to find a girlfriend can create mismatched dating choices.",
+                "Without a clear relationship standard, loneliness can select for availability instead of compatibility.",
+                [
+                    "List non-negotiables, preferences, and flexible areas before dating heavily.",
+                    "Define what emotional availability looks like in behavior.",
+                    "Name the patterns you do not want to repeat from past relationships.",
+                ],
+                "Dating criteria clarity",
+            )
+        ]
+        opportunities = [
+            _swot_item(
+                "The best dating strategy is repeated exposure in communities that match your real life.",
+                "Compatibility is easier to notice when the environment already filters for shared values or energy.",
+                [
+                    "Join one recurring in-person community for travel, language, arts, volunteering, sports, or intellectual events.",
+                    "Use dating apps only as one channel, with prompts that reveal values and lifestyle.",
+                    "Ask for warm introductions where friends understand your desired partnership.",
+                ],
+                "Compatible introductions per month",
+            )
+        ]
+        threats = [
+            _swot_item(
+                "Trying to perform for approval can attract the wrong match.",
+                "The risk is optimizing for being chosen instead of discovering whether the relationship is actually good for both people.",
+                [
+                    "End conversations politely when values, availability, or kindness are clearly absent.",
+                    "Do not over-invest before mutual effort is visible.",
+                    "Watch whether communication feels safe, reciprocal, and curious.",
+                ],
+                "Reciprocity signal",
+            )
+        ]
+    else:
+        strengths = [
+            _swot_item(
+                f"You have named concrete needs: learning, creating, traveling, family possibility, time with Antuan, and deeper shared experiences with {person}.",
+                "Specific needs are more useful than a general feeling of unhappiness because they can be discussed, tested, and negotiated.",
+                [
+                    f"Ask {person} for a calm conversation where each of you names three needs, three boundaries, and one repair attempt.",
+                    "Separate core values from solvable logistics such as travel planning, TV time, home setup, and quality-time routines.",
+                    "Write what a good relationship would look like in ordinary weekly behavior, not only in big life dreams.",
+                ],
+                "Clarity of needs and boundaries",
+            ),
+            _swot_item(
+                "You are noticing specific disconnection patterns rather than only blaming the whole relationship.",
+                "The Elvis movie example, travel differences, pet-shop/home conflict, and feeling exhausted can become evidence for a structured decision.",
+                [
+                    "Track three moments where connection was attempted, accepted, rejected, or shut down.",
+                    "Ask whether each pattern is new, chronic, repairable, or tied to a temporary stressor.",
+                    "Use specific examples without insults, sarcasm, or parent-child framing.",
+                ],
+                "Repair conversation quality",
+            ),
+        ]
+        weaknesses = [
+            _swot_item(
+                "The current conversation style appears to escalate into shutdown, sarcasm, or hurt rather than mutual problem solving.",
+                "Phrases like feeling exhausted, feeling empty, and the pet-shop exchange suggest the process may be damaging even before the decision is made.",
+                [
+                    "Remove contempt, teasing, or parent-child language before any serious decision talk.",
+                    "Use one sentence at a time: 'I feel X when Y happens, and I need Z to know whether this can improve.'",
+                    "Pause the conversation if either person starts defending, mocking, stonewalling, or flooding.",
+                ],
+                "Conflict de-escalation success",
+            ),
+            _swot_item(
+                f"You may be mixing multiple decisions about {person}: compatibility, family, travel, money, daily connection, and household boundaries.",
+                "A breakup decision becomes clearer when each issue is separated instead of treated as one emotional verdict.",
+                [
+                    "Score each issue as core value mismatch, negotiable preference, repairable habit, or immediate boundary.",
+                    "Do not decide based only on one painful conversation unless safety or abuse is involved.",
+                    "Define what evidence over the next 30 days would make staying or leaving more clearly right.",
+                ],
+                "Issue separation completeness",
+            ),
+        ]
+        opportunities = [
+            _swot_item(
+                "A time-boxed repair attempt could reveal whether both people are still willing to meet in the middle.",
+                "The goal is not to force staying; it is to gather better evidence before making a life-changing decision.",
+                [
+                    "Propose a 30-day repair sprint with one weekly check-in, one shared activity, and one household boundary conversation.",
+                    "Ask whether travel dreams, family expectations, salary expectations, and home priorities can be discussed without contempt.",
+                    "Consider a couples therapist or mediator if both people want repair but cannot talk safely alone.",
+                ],
+                "Mutual repair participation",
+            ),
+            _swot_item(
+                "A respectful separation plan may also be an opportunity if values are truly incompatible.",
+                "Sometimes the healthiest decision is not to win the argument, but to end the relationship with less damage.",
+                [
+                    "Write what a clean, respectful breakup would require emotionally, financially, logistically, and socially.",
+                    "Identify shared responsibilities, housing, pets, and family impacts before acting impulsively.",
+                    "Choose one trusted outside person who can help you stay fair and grounded.",
+                ],
+                "Separation readiness clarity",
+            ),
+        ]
+        threats = [
+            _swot_item(
+                "A decision made while flooded, exhausted, or contemptuous may be less wise than one made after cooling down.",
+                "The prompt contains real hurt, but the tone also shows escalation risk. That can distort judgment.",
+                [
+                    "Wait until you can describe the problem without ridicule before holding the decisive conversation.",
+                    "If there is any risk of harm, coercion, or abuse, prioritize safety and outside support immediately.",
+                    "Do not use the framework output as a weapon against Hollie; use it to prepare a calmer decision process.",
+                ],
+                "Decision made from calm state",
+            ),
+            _swot_item(
+                "Staying without changed behavior could extend the same loneliness and resentment.",
+                "Leaving impulsively could also create regret if both people would have engaged in repair with a clearer process.",
+                [
+                    "Define two stay conditions and two leave conditions before the next serious talk.",
+                    "Ask whether both people can commit to observable behavior, not vague promises.",
+                    "Review the decision with a therapist, mentor, or grounded friend before final action if possible.",
+                ],
+                "Stay/leave criteria met",
+            ),
+        ]
+
+    return {
+        "type": "quadrant",
+        "title": "Relationship Decision SWOT",
+        "subtitle": f"Personal decision audit for: {topic}",
+        "analysis_brief": [
+            "OmniFrame detected a relationship or dating decision, so it replaced business language with needs, patterns, boundaries, repair options, and risks.",
+            "This canvas should not decide for you. It helps you slow the decision down, separate issues, and prepare a respectful next conversation or action.",
+            "If there is abuse, coercion, or safety risk, prioritize immediate support from trusted people or local emergency resources over framework analysis.",
+        ],
+        "sections": [
+            {"id": "strengths", "label": "Strengths", "prompt": "Resources, values, and clarity you can bring to the relationship decision.", "items": strengths},
+            {"id": "weaknesses", "label": "Weaknesses", "prompt": "Patterns that may distort judgment or block repair.", "items": weaknesses},
+            {"id": "opportunities", "label": "Opportunities", "prompt": "Healthy repair paths or respectful transition paths.", "items": opportunities},
+            {"id": "threats", "label": "Threats", "prompt": "Risks of acting too fast, staying too long, or escalating harm.", "items": threats},
+        ],
+    }
+
+
 def _project_specific_swot(projects: list[ParsedProject], topic: str) -> dict[str, Any]:
     names = ", ".join(project.name for project in projects[:5])
     first = projects[0]
@@ -292,6 +492,8 @@ def _project_specific_swot(projects: list[ParsedProject], topic: str) -> dict[st
 
 def generate_swot(goal: str) -> dict[str, Any]:
     topic = _topic(goal)
+    if _is_relationship_goal(goal):
+        return _relationship_swot(goal, topic)
     projects = _extract_projects(goal)
     if projects:
         return _project_specific_swot(projects, topic)
@@ -1073,25 +1275,262 @@ def _hockey_stick_principles() -> list[TrizPrinciple]:
     ]
 
 
+def _relationship_triz_principles(goal: str) -> list[TrizPrinciple]:
+    person = _relationship_name(goal)
+    return [
+        TrizPrinciple(
+            1,
+            "Segmentation",
+            f"Separate the breakup decision about {person} into values, daily connection, family expectations, travel/lifestyle, household boundaries, communication safety, and repair willingness.",
+            "A relationship decision becomes vague and overwhelming when every hurt is treated as one giant verdict.",
+            [
+                _panel(
+                    "Contradiction rewrite",
+                    "Turn the emotional conflict into a clear relationship contradiction.",
+                    [
+                        f"I want freedom to learn, create, travel, and dream while also wanting a partner relationship with {person} that includes daily connection, respect, and shared future direction.",
+                        f"I want to stop feeling empty and exhausted, but I do not want to make a breakup decision from contempt, sarcasm, or one flooded conversation.",
+                        f"I want clarity about family, travel, home life, and emotional availability without forcing {person} to become someone she is not.",
+                    ],
+                    value=f"I want freedom to learn, create, travel, and dream while also wanting a partner relationship with {person} that includes daily connection, respect, and shared future direction.",
+                    option_sets=[
+                        [
+                            f"I need to know whether {person} and I can repair connection patterns before deciding whether breakup is the best choice.",
+                            "I need to distinguish incompatibility from solvable habits, stress reactions, and poor conflict process.",
+                            "I need a decision process that protects dignity for both people even if the outcome is separation.",
+                        ]
+                    ],
+                ),
+                _panel(
+                    "Inventive move",
+                    "Break the decision into smaller tests instead of treating breakup as the only next move.",
+                    [
+                        "Create four columns: core values, negotiable preferences, repairable habits, and immediate boundaries.",
+                        f"Ask {person} for one structured conversation about expectations: salary, family, travel, time with Antuan, TV/reading differences, and home/pet boundaries.",
+                        "Run a 30-day repair sprint only if both people agree to observable behaviors, not vague promises.",
+                    ],
+                    option_sets=[
+                        [
+                            "Separate the pet-shop/home conflict from deeper issues of being heard, respected, and allowed to have adult boundaries.",
+                            "Separate travel preferences from the deeper question: do both people want shared wonder, learning, and family time?",
+                            "Separate emotional exhaustion from the decision itself: first calm the process, then judge compatibility.",
+                        ],
+                        [
+                            "Define two stay conditions: mutual repair effort and respectful conflict. Define two leave conditions: contempt continues or core life goals are incompatible.",
+                            "Use a therapist/mediator if the two of you cannot discuss family, money, travel, and connection without shutdown.",
+                            "Prepare a respectful separation plan in parallel so staying is a choice, not inertia.",
+                        ],
+                    ],
+                ),
+                _panel(
+                    "Prototype",
+                    "Choose a humane experiment before an irreversible decision.",
+                    [
+                        "Schedule a 60-minute calm talk with an agenda: needs, expectations, repair willingness, and what each person will actually change for 30 days.",
+                        "Plan one low-pressure shared activity that is not TV-only or wine-only: music history, a walk, a museum, travel dreaming, or time with Antuan.",
+                        "Write a private decision memo after the talk: what changed, what did not, and whether you felt more respected or more alone.",
+                    ],
+                    option_sets=[
+                        [
+                            "Use a no-sarcasm rule for the next hard conversation; restart later if either person mocks, shuts down, or escalates.",
+                            "Ask each person to bring a list of expectations, including money/salary, family, travel, home priorities, and emotional connection.",
+                            "End the test early if either person feels unsafe, coerced, or repeatedly demeaned.",
+                        ]
+                    ],
+                ),
+                _panel(
+                    "Failure mode",
+                    "Name what could go wrong with this approach.",
+                    [
+                        "Segmentation can become analysis paralysis if you keep sorting issues but avoid the painful decision.",
+                        f"{person} may experience the framework as a trial or indictment if it is presented harshly.",
+                        "A repair sprint is not useful if only one person is participating or if contempt remains in the room.",
+                    ],
+                    option_sets=[
+                        [
+                            "Do not use the canvas as a script to prosecute Hollie. Use it to prepare calmer questions and your own boundaries.",
+                            "Do not let a single good date erase chronic incompatibilities if the core issues remain unchanged.",
+                            "Do not let fear of grief keep you in a relationship that both people know is no longer mutual.",
+                        ]
+                    ],
+                ),
+            ],
+        ),
+        TrizPrinciple(
+            10,
+            "Preliminary action",
+            "Do emotional and logistical preparation before a breakup-or-stay conversation so the moment is less reactive.",
+            "The expensive part is not only the decision; it is the damage caused by making it while flooded.",
+            [
+                _panel(
+                    "Preparation",
+                    "Prepare before the decisive talk.",
+                    [
+                        "Write what you want, what you expect, what you can offer, and what you cannot keep doing.",
+                        f"Ask {person} to prepare her own list before the conversation instead of forcing answers in the moment.",
+                        "Choose a calm time, no alcohol, no audience, no sarcasm, and a stop rule if either person escalates.",
+                    ],
+                ),
+                _panel(
+                    "Prototype",
+                    "Run the prepared conversation.",
+                    [
+                        "Use one prompt: 'Do we both want to repair this, and what behavior would prove it over the next 30 days?'",
+                        "Ask: 'What would make you feel loved by me, and what would make me feel loved by you?'",
+                        "Ask directly whether family, travel, money, and home priorities are compatible enough to build around.",
+                    ],
+                ),
+                _panel(
+                    "Failure mode",
+                    "Watch for false clarity.",
+                    [
+                        "Preparation can become a speech instead of a dialogue.",
+                        "A beautiful conversation can still fail if no behavior changes afterward.",
+                        "If either person uses threats, contempt, or coercion, preparation is not enough; get outside support.",
+                    ],
+                ),
+            ],
+        ),
+        TrizPrinciple(
+            15,
+            "Dynamics",
+            "Replace a permanent yes/no decision with a time-bound adaptive experiment when safety allows.",
+            "Some uncertainty can only be resolved by observing changed behavior over time.",
+            [
+                _panel(
+                    "Inventive move",
+                    "Make the relationship test dynamic and time-boxed.",
+                    [
+                        "Try a 30-day repair agreement with weekly check-ins and visible behavior commitments from both people.",
+                        "Try a short structured separation if both people need space to think without daily escalation.",
+                        "Change the connection routine: one shared activity per week chosen alternately by each person.",
+                    ],
+                ),
+                _panel(
+                    "Metric",
+                    "Measure behavior, not promises.",
+                    [
+                        "Track whether both people initiate connection without resentment.",
+                        "Track whether hard topics can be discussed without shutdown or ridicule.",
+                        "Track whether each person makes one concrete compromise that matters to the other.",
+                    ],
+                ),
+                _panel(
+                    "Failure mode",
+                    "Avoid endless limbo.",
+                    [
+                        "A dynamic experiment needs a decision date.",
+                        "If the same painful loop repeats, the experiment is evidence, not failure.",
+                        "Do not use time-boxing to pressure someone into family, travel, or lifestyle goals they do not want.",
+                    ],
+                ),
+            ],
+        ),
+        TrizPrinciple(
+            24,
+            "Intermediary",
+            "Use a therapist, mediator, written agenda, or trusted neutral process between the hurt and the decision.",
+            "When the couple cannot talk without shutdown, the interface between people may need redesign.",
+            [
+                _panel(
+                    "Intermediary choice",
+                    "Choose a buffer that protects both people.",
+                    [
+                        "Use a couples therapist if both people want repair but cannot discuss hard topics safely.",
+                        "Use a written agenda if live conversation becomes chaotic.",
+                        "Use separate individual counseling or a grounded friend if you need clarity before speaking.",
+                    ],
+                ),
+                _panel(
+                    "Conversation structure",
+                    "Make the intermediary practical.",
+                    [
+                        "Each person gets uninterrupted time to state needs, fears, and desired future.",
+                        "No diagnosis, insults, sarcasm, or parent-child framing.",
+                        "End with specific next actions: repair sprint, planned separation, or another structured session.",
+                    ],
+                ),
+                _panel(
+                    "Failure mode",
+                    "Name where mediation can fail.",
+                    [
+                        "An intermediary cannot create desire if one person is already done.",
+                        "A written agenda can still become a weapon if it is used to win.",
+                        "Therapy is not a substitute for safety planning if there is abuse or coercion.",
+                    ],
+                ),
+            ],
+        ),
+        TrizPrinciple(
+            35,
+            "Parameter change",
+            "Change frequency, format, setting, and intensity of connection attempts before concluding nothing can work.",
+            "The Elvis movie example may reflect a mismatch in connection format, not just lack of love.",
+            [
+                _panel(
+                    "Parameter map",
+                    "Change one relationship parameter at a time.",
+                    [
+                        "Change format: from TV/movie bids to walks, music, travel planning, cooking, or short shared rituals.",
+                        "Change frequency: one planned quality-time block instead of hoping connection appears.",
+                        "Change intensity: discuss family, money, travel, and home boundaries in separate talks rather than all at once.",
+                    ],
+                ),
+                _panel(
+                    "Prototype",
+                    "Test the parameter change.",
+                    [
+                        f"Ask {person}: 'What kind of shared time would actually feel good to you this week?'",
+                        "Create one shared travel-dream session where wine, wonder, family time, and budget all get represented.",
+                        "Create one home-boundary conversation about pets/cat structures that avoids insults and focuses on shared living standards.",
+                    ],
+                ),
+                _panel(
+                    "Failure mode",
+                    "Know when parameter tuning is not enough.",
+                    [
+                        "If core values are incompatible, changing date format will not solve the relationship.",
+                        "If one person refuses all bids for connection, the format is not the main issue.",
+                        "If resentment is too high, small experiments may need to wait until the conflict process is safer.",
+                    ],
+                ),
+            ],
+        ),
+    ]
+
+
 def generate_triz(goal: str) -> dict[str, Any]:
     topic = _topic(goal)
     hockey = "hockey" in goal.lower() and "stick" in goal.lower()
-    principles = _hockey_stick_principles() if hockey else TRIZ_STARTERS
+    relationship = _is_relationship_goal(goal)
+    principles = _hockey_stick_principles() if hockey else (_relationship_triz_principles(goal) if relationship else TRIZ_STARTERS)
     contradiction = {
         "improving": (
             "Reduce hockey-stick mass and swing weight for faster handling and release"
             if hockey
-            else "The desired improvement the user wants to maximize"
+            else (
+                "Make a clear stay-or-breakup decision while preserving dignity, safety, and honest understanding"
+                if relationship
+                else "The desired improvement the user wants to maximize"
+            )
         ),
         "worsening": (
             "Less material can reduce impact durability, torsional stiffness, shot energy transfer, and puck feel"
             if hockey
-            else "The system property that appears to get worse when improving it"
+            else (
+                "Acting too fast can cause regret or harm; delaying too long can deepen resentment and loneliness"
+                if relationship
+                else "The system property that appears to get worse when improving it"
+            )
         ),
         "prompt": (
             "Rewrite these two fields into a crisp material/design contradiction before selecting a principle."
             if hockey
-            else "Rewrite these two fields into a crisp contradiction before selecting a principle."
+            else (
+                "Rewrite these two fields into a humane relationship contradiction before selecting a principle."
+                if relationship
+                else "Rewrite these two fields into a crisp contradiction before selecting a principle."
+            )
         ),
     }
     analysis_brief = (
@@ -1101,6 +1540,12 @@ def generate_triz(goal: str) -> dict[str, Any]:
             "The TRIZ contradiction is mass versus durability/feel. A good answer should change layup, load-zone reinforcement, balance point, and blade core architecture, then validate with cold impact, torsion, flex, and player-feel tests.",
         ]
         if hockey
+        else [
+            "OmniFrame detected a relationship decision and adapted TRIZ away from engineering language into structured conflict-resolution moves.",
+            "The core contradiction is clarity versus care: you want a true decision about Hollie without making it from contempt, exhaustion, or a single escalated moment.",
+            "Use these principles to separate issues, prepare a calm conversation, test repair willingness, consider mediation, or plan a respectful separation.",
+        ]
+        if relationship
         else [
             "OmniFrame selected TRIZ because the prompt implies a constraint conflict.",
             "Choose a principle to open a focused workspace with generated moves, prototypes, and failure checks.",

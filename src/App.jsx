@@ -5,7 +5,7 @@ import CanvasWorkspace from "./components/CanvasWorkspace";
 import EfficacyLoop from "./components/EfficacyLoop";
 import FrameworkGalaxy from "./components/FrameworkGalaxy";
 import FrameworkLibrary from "./components/FrameworkLibrary";
-import { fetchFrameworks, routeGoal } from "./lib/api";
+import { fetchFrameworks, fetchModelOptions, routeGoal } from "./lib/api";
 
 const STARTER_GOAL =
   "Prioritize our next AI product features while balancing user adoption, engineering effort, and demo impact.";
@@ -13,6 +13,9 @@ const STARTER_GOAL =
 export default function App() {
   const [goal, setGoal] = useState(STARTER_GOAL);
   const [frameworks, setFrameworks] = useState([]);
+  const [modelOptions, setModelOptions] = useState(null);
+  const [selectedProvider, setSelectedProvider] = useState(() => localStorage.getItem("omniframe_model_provider") || "openai");
+  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem("omniframe_model_id") || "gpt-5.1");
   const [route, setRoute] = useState(null);
   const [pendingRoute, setPendingRoute] = useState(null);
   const [showFrameworkChooser, setShowFrameworkChooser] = useState(false);
@@ -27,9 +30,36 @@ export default function App() {
     fetchFrameworks()
       .then(setFrameworks)
       .catch((err) => setError(err.message));
+    fetchModelOptions()
+      .then((options) => {
+        setModelOptions(options);
+        const storedProvider = localStorage.getItem("omniframe_model_provider");
+        const storedModel = localStorage.getItem("omniframe_model_id");
+        if (!storedProvider || !storedModel) {
+          setSelectedProvider(options.default.provider);
+          setSelectedModel(options.default.model);
+          localStorage.setItem("omniframe_model_provider", options.default.provider);
+          localStorage.setItem("omniframe_model_id", options.default.model);
+        }
+      })
+      .catch((err) => setError(err.message));
   }, []);
 
+  useEffect(() => {
+    localStorage.setItem("omniframe_model_provider", selectedProvider);
+    localStorage.setItem("omniframe_model_id", selectedModel);
+  }, [selectedProvider, selectedModel]);
+
   const activeFrameworks = useMemo(() => frameworks.filter((framework) => framework.active), [frameworks]);
+  const providerOptions = modelOptions?.providers ?? [];
+  const activeProvider = providerOptions.find((provider) => provider.id === selectedProvider) ?? providerOptions[0];
+  const activeModels = activeProvider?.models ?? [];
+
+  function updateProvider(providerId) {
+    const provider = providerOptions.find((item) => item.id === providerId);
+    setSelectedProvider(providerId);
+    setSelectedModel(provider?.models?.[0]?.id ?? "");
+  }
 
   async function handleRoute(event) {
     event?.preventDefault?.();
@@ -182,6 +212,40 @@ export default function App() {
               />
 
               {error && <p className="mt-3 rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-100">{error}</p>}
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-xs font-semibold uppercase tracking-[0.16em] text-white/40">LLM provider</span>
+                  <select
+                    value={selectedProvider}
+                    onChange={(event) => updateProvider(event.target.value)}
+                    className="mt-2 w-full rounded-lg border border-white/10 bg-[#07100d] px-3 py-3 text-sm text-white outline-none transition focus:border-moss focus:ring-2 focus:ring-moss/20"
+                  >
+                    {providerOptions.map((provider) => (
+                      <option key={provider.id} value={provider.id}>
+                        {provider.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="text-xs font-semibold uppercase tracking-[0.16em] text-white/40">Analysis model</span>
+                  <select
+                    value={selectedModel}
+                    onChange={(event) => setSelectedModel(event.target.value)}
+                    className="mt-2 w-full rounded-lg border border-white/10 bg-[#07100d] px-3 py-3 text-sm text-white outline-none transition focus:border-moss focus:ring-2 focus:ring-moss/20"
+                  >
+                    {activeModels.map((model) => (
+                      <option key={model.id} value={model.id}>
+                        {model.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              {activeModels.find((model) => model.id === selectedModel)?.description && (
+                <p className="mt-2 text-xs leading-5 text-white/44">{activeModels.find((model) => model.id === selectedModel)?.description}</p>
+              )}
 
               <button
                 type="button"

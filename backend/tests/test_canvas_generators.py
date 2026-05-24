@@ -48,3 +48,15 @@ def test_triz_hockey_stick_uses_material_specific_analysis():
     assert "foam" in rendered.lower()
     assert "hockey stick" in rendered.lower() or "hockey-stick" in rendered.lower()
     assert canvas["principles"][0]["drilldown"]["panels"][1]["options"]
+
+
+def test_relationship_prompts_use_relationship_language():
+    swot = generate_swot("Find a girlfriend.")
+    swot_text = " ".join(item["text"] for section in swot["sections"] for item in section["items"])
+    assert "relationship" in swot["title"].lower()
+    assert "partner" in swot_text.lower() or "dating" in swot_text.lower()
+
+    triz = generate_triz("Help me decide whether leaving my partner Hollie is the best choice.")
+    triz_text = " ".join(triz["analysis_brief"]) + " " + " ".join(principle["application"] for principle in triz["principles"])
+    assert "Hollie" in triz_text
+    assert "relationship" in triz_text.lower()

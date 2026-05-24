@@ -13,6 +13,8 @@ from backend.app.services.router import deterministic_route
         ("Set quarterly objectives and key results for the product team", "okrs"),
         ("Analyze supplier power and substitute threats in this industry", "porters_five_forces"),
         ("Assess legal regulatory and economic risks before global expansion", "pestle"),
+        ("Help me decide whether leaving my partner Hollie is the best choice", "swot"),
+        ("Find a girlfriend", "swot"),
     ],
 )
 def test_deterministic_router(goal, expected):

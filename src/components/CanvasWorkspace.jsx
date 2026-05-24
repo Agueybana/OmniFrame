@@ -309,7 +309,7 @@ function HoverHint({ text, children }) {
   return (
     <div className="hint-target group relative">
       {children}
-      <div className="hint-bubble pointer-events-none absolute left-4 top-4 z-20 max-w-xs rounded-lg border border-moss/25 bg-[#07100d] px-3 py-2 text-xs leading-5 text-white/78 opacity-0 shadow-glow transition group-hover:translate-y-[-6px] group-hover:opacity-100">
+      <div className="hint-bubble pointer-events-none absolute z-20 rounded-lg border border-moss/25 bg-[#07100d] px-3 py-2 text-xs leading-5 text-white/78 opacity-0 shadow-glow transition group-hover:opacity-100">
         {text}
       </div>
     </div>

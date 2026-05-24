@@ -5,5 +5,7 @@ services:
       - "8080:8080"
     environment:
       PORT: "8080"
-      OMNIFRAME_USE_LLM: "false"
-
+      OMNIFRAME_USE_LLM: "${OMNIFRAME_USE_LLM:-true}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      OMNIFRAME_REASONING_EFFORT: "${OMNIFRAME_REASONING_EFFORT:-medium}"

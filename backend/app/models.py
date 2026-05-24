@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 
 class GoalRequest(BaseModel):
-    goal: str = Field(..., min_length=8, max_length=4000)
+    goal: str = Field(..., min_length=8, max_length=20000)
     framework_id: (
         Literal[
             "swot",
@@ -19,6 +19,8 @@ class GoalRequest(BaseModel):
         ]
         | None
     ) = None
+    model_provider: Literal["openai", "google"] | None = None
+    model_id: str | None = Field(default=None, max_length=120)
 
 
 class RouteResponse(BaseModel):

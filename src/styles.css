@@ -124,12 +124,27 @@ select {
 }
 
 .hint-bubble {
-  transform: translateY(0) scale(0.98);
+  top: 0.75rem;
+  right: 0.75rem;
+  max-width: min(22rem, calc(100vw - 2rem));
+  transform: translateX(104%) scale(0.98);
 }
 
-.hint-target:hover .hint-bubble,
-.hint-target:focus-within .hint-bubble {
-  transform: translateY(-6px) scale(1);
+.hint-target:hover .hint-bubble {
+  transform: translateX(100%) scale(1);
+}
+
+@media (max-width: 1100px) {
+  .hint-bubble {
+    top: auto;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    transform: translateY(110%) scale(0.98);
+  }
+
+  .hint-target:hover .hint-bubble {
+    transform: translateY(100%) scale(1);
+  }
 }
 
 .report-button {

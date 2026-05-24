@@ -15,6 +15,8 @@ zip -r "${OUTPUT}" . \
   -x ".git/*" \
   -x ".local/*" \
   -x ".run/*" \
+  -x ".env" \
+  -x ".env.*" \
   -x ".DS_Store" \
   -x "__pycache__/*" \
   -x "*/__pycache__/*" \

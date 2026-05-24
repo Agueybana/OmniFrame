@@ -16,3 +16,12 @@ def test_framework_catalog_marks_three_live_routes():
     assert response.status_code == 200
     live = [item["id"] for item in response.json() if item["active"]]
     assert live == ["swot", "lean_startup", "okrs", "porters_five_forces", "pestle", "rice", "triz"]
+
+
+def test_model_options_endpoint():
+    client = TestClient(app)
+    response = client.get("/api/model-options")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["default"]["provider"] == "openai"
+    assert any(provider["id"] == "google" for provider in payload["providers"])
