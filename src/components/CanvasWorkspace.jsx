@@ -305,9 +305,9 @@ function CanvasNavigator({ activeFocus, canGoBack, canGoForward, goBack, goForwa
   );
 }
 
-function HoverHint({ text, children }) {
+function HoverHint({ text, children, placement = "card" }) {
   return (
-    <div className="hint-target group relative">
+    <div className={`hint-target group relative ${placement === "control" ? "hint-target-control" : ""}`}>
       {children}
       <div className="hint-bubble pointer-events-none absolute z-20 rounded-lg border border-moss/25 bg-[#07100d] px-3 py-2 text-xs leading-5 text-white/78 opacity-0 shadow-glow transition group-hover:opacity-100">
         {text}
@@ -600,12 +600,22 @@ function FocusCanvasView({ focusCanvas, onChange, onExport }) {
   function regeneratePanelOptions(panelIndex) {
     const panel = focusCanvas.panels[panelIndex];
     const currentIndex = panel.regenIndex ?? 0;
-    const optionSets = panel.option_sets?.length ? panel.option_sets : buildFallbackOptionSets(focusCanvas, panel);
-    const nextIndex = currentIndex % optionSets.length;
+    const optionSets = getRegenerationOptionSets(focusCanvas, panel);
+    const currentSignature = optionSignature(panel.options ?? []);
+    let nextIndex = currentIndex % optionSets.length;
+
+    for (let attempts = 0; attempts < optionSets.length; attempts += 1) {
+      const candidateIndex = (currentIndex + attempts) % optionSets.length;
+      if (optionSignature(optionSets[candidateIndex]) !== currentSignature || optionSets.length === 1) {
+        nextIndex = candidateIndex;
+        break;
+      }
+    }
+
     onChange({
       ...focusCanvas,
       panels: focusCanvas.panels.map((item, index) =>
-        index === panelIndex ? { ...item, options: optionSets[nextIndex], regenIndex: currentIndex + 1 } : item
+        index === panelIndex ? { ...item, options: optionSets[nextIndex], regenIndex: nextIndex + 1 } : item
       )
     });
   }
@@ -627,7 +637,7 @@ function FocusCanvasView({ focusCanvas, onChange, onExport }) {
         {focusCanvas.panels.map((panel, panelIndex) => (
           <section key={`${panel.title}-${panelIndex}`} className="depth-card rounded-lg border border-white/10 bg-white/[0.04] p-4">
             <div className="flex items-start gap-3">
-              <HoverHint text="Regenerate this section's options using the current focused workspace and notes you have already selected.">
+              <HoverHint placement="control" text="Regenerate this section's options using the current focused workspace and notes you have already selected.">
                 <button
                   type="button"
                   onClick={() => regeneratePanelOptions(panelIndex)}
@@ -789,6 +799,107 @@ function buildTrizFocus(principle) {
 
 function buildFallbackOptionSets(focusCanvas, panel) {
   const context = [focusCanvas.title, focusCanvas.description, panel.value].filter(Boolean).join(" ");
+  const isRelationship = /relationship|Hollie|breakup|partner|girlfriend|boyfriend|wife|husband|dating/i.test(context);
+  const isTriz = /TRIZ|Principle/i.test(focusCanvas.eyebrow) || /Principle/i.test(focusCanvas.title);
+  const panelName = panel.title.toLowerCase();
+
+  if (isRelationship) {
+    if (panelName.includes("contradiction")) {
+      return [
+        [
+          "I want a clear stay-or-leave decision while keeping the conversation respectful, specific, and not driven by one flooded moment.",
+          "I need to know whether this is a core incompatibility or a repairable pattern of disconnection, shutdown, and mismatched priorities.",
+          "I want honesty about family, travel, home life, money expectations, and daily connection without turning the talk into blame."
+        ],
+        [
+          "I want to protect my need for learning, creating, travel, and family while also checking whether Hollie feels loved, heard, and safe.",
+          "I need a decision process that respects both people even if the conclusion is separation.",
+          "I want to stop the loop of resentment without pretending the relationship is healthier than it feels."
+        ],
+        [
+          "I need to distinguish grief, exhaustion, and loneliness from durable evidence that the relationship cannot work.",
+          "I want to make a decision from calm clarity, not sarcasm, contempt, or fear of being alone.",
+          "I need a humane way to test repair without making staying the default."
+        ]
+      ];
+    }
+    if (panelName.includes("prototype")) {
+      return [
+        [
+          "Run a 30-day repair test only if both people agree to specific behaviors: one weekly check-in, one shared activity, and one conflict de-escalation rule.",
+          "Hold one agenda-based talk on family, travel, money/salary expectations, home boundaries, and what each person needs to feel loved.",
+          "After the talk, write a private decision memo: what changed, what stayed the same, and whether you felt more connected or more alone."
+        ],
+        [
+          "Try one low-pressure connection experiment that is neither only TV nor only your interests: a walk, music, food, travel planning, or time with Antuan.",
+          "Use a no-ridicule rule: pause and restart later if either person mocks, shuts down, or escalates.",
+          "Ask Hollie what kind of shared time would actually feel good to her this week, then compare it with what feels meaningful to you."
+        ],
+        [
+          "Book a couples therapist or neutral mediator if both people want repair but the two of you cannot discuss hard topics safely alone.",
+          "Prepare a respectful separation outline in parallel so staying is a choice rather than inertia.",
+          "Set a decision review date so the experiment does not become endless limbo."
+        ]
+      ];
+    }
+    if (panelName.includes("failure")) {
+      return [
+        [
+          "The framework can become a weapon if it is used to prosecute Hollie instead of preparing calmer questions and boundaries.",
+          "A single good day can temporarily hide chronic incompatibility if the core patterns do not change.",
+          "A repair sprint is not meaningful if only one person participates."
+        ],
+        [
+          "Waiting for certainty can become avoidance if the same painful loop keeps repeating.",
+          "Leaving while flooded can create regret if you never tested whether both people would engage in repair.",
+          "Therapy or mediation cannot create mutual desire if one person is already done."
+        ],
+        [
+          "Over-focusing on logistics like TV, wine trips, or cat structures can hide the deeper question of respect, shared future, and emotional safety.",
+          "A planned conversation can still become harmful if sarcasm, contempt, or parent-child framing returns.",
+          "If there is abuse, coercion, or safety risk, framework analysis should stop and outside support should come first."
+        ]
+      ];
+    }
+    return [
+      [
+        "Separate core values from negotiable preferences before deciding what the relationship can realistically become.",
+        "Ask what behavior would prove mutual repair effort within 30 days.",
+        "Name two stay conditions and two leave conditions before the next serious conversation."
+      ],
+      [
+        "Turn the next talk into questions, not a verdict: what do we each need, what can we each change, and what is no longer workable?",
+        "Discuss family, travel, home standards, money expectations, and connection routines as separate topics.",
+        "Use specific examples without sarcasm, ridicule, or global character judgments."
+      ],
+      [
+        "Prepare both paths: what repair would require, and what a respectful breakup would require.",
+        "Ask whether the relationship feels lonely because of a solvable habit or because the future visions no longer match.",
+        "Use an outside sounding board if you cannot tell grief, anger, and clarity apart."
+      ]
+    ];
+  }
+
+  if (isTriz) {
+    return [
+      [
+        `Apply ${focusCanvas.title} by changing structure, timing, or location instead of forcing the same tradeoff harder.`,
+        "Name the property that improves, the property that worsens, and the smallest test that can separate them.",
+        "Add one failure mode that would prove this principle is the wrong lens."
+      ],
+      [
+        "Create a low-cost prototype that exaggerates the principle so the effect is visible quickly.",
+        "Define the measurement that decides whether the contradiction improved or merely moved elsewhere.",
+        "List one conservative version and one aggressive version of the inventive move."
+      ],
+      [
+        "Turn the idea into a before/after comparison with a baseline, an experimental variant, and a stop condition.",
+        "Ask what hidden cost this principle introduces in operations, usability, trust, durability, or emotional safety.",
+        "Convert the best option into a report-ready sentence with owner, evidence, and deadline."
+      ]
+    ];
+  }
+
   return [
     [
       `Make this more specific to: ${focusCanvas.title}.`,
@@ -806,6 +917,26 @@ function buildFallbackOptionSets(focusCanvas, panel) {
       "Add a stakeholder-ready sentence suitable for the exported PDF report."
     ]
   ];
+}
+
+function getRegenerationOptionSets(focusCanvas, panel) {
+  const allSets = [...(panel.option_sets ?? []), ...buildFallbackOptionSets(focusCanvas, panel)]
+    .map((set) => (Array.isArray(set) ? set.filter(Boolean) : []))
+    .filter((set) => set.length > 0);
+  const seen = new Set();
+  const uniqueSets = [];
+  for (const set of allSets) {
+    const signature = optionSignature(set);
+    if (!seen.has(signature)) {
+      seen.add(signature);
+      uniqueSets.push(set);
+    }
+  }
+  return uniqueSets.length > 0 ? uniqueSets : [["Add a more specific option.", "Add an evidence requirement.", "Add a failure mode."]];
+}
+
+function optionSignature(options) {
+  return options.map((option) => String(option).trim().toLowerCase()).join("||");
 }
 
 function openReportWindow(route, canvas, focusCanvases) {

@@ -153,12 +153,17 @@ def _is_relationship_goal(goal: str) -> bool:
 
 
 def _relationship_name(goal: str) -> str:
-    explicit = re.search(r"\(([^)]{2,40})\)", goal)
-    if explicit:
-        return _compact(explicit.group(1), 40)
+    named_partner = re.search(r"(?:partner|girlfriend|boyfriend|wife|husband|with her|with him)\s*\(([^),]{2,40})\)", goal, flags=re.I)
+    if named_partner:
+        return _compact(named_partner.group(1), 40)
     for candidate in ["Hollie"]:
         if re.search(rf"\b{re.escape(candidate)}\b", goal, flags=re.I):
             return candidate
+    explicit = re.search(r"\(([^)]{2,40})\)", goal)
+    if explicit:
+        value = explicit.group(1)
+        if "," not in value and len(value.split()) <= 3:
+            return _compact(value, 40)
     return "the other person"
 
 

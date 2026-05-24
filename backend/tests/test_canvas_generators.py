@@ -60,3 +60,19 @@ def test_relationship_prompts_use_relationship_language():
     triz_text = " ".join(triz["analysis_brief"]) + " " + " ".join(principle["application"] for principle in triz["principles"])
     assert "Hollie" in triz_text
     assert "relationship" in triz_text.lower()
+
+
+def test_relationship_triz_keeps_partner_name_when_travel_list_is_present():
+    triz = generate_triz(
+        "Help me decide whether leaving my partner and having a breakup with her (Hollie) is the best choice. "
+        "I want to travel abroad to Egypt, Jordan, Greece, Italy, Japan."
+    )
+    rendered = " ".join(triz["analysis_brief"]) + " " + " ".join(
+        panel["options"][0]
+        for principle in triz["principles"]
+        for panel in principle["drilldown"]["panels"]
+        if panel.get("options")
+    )
+
+    assert "Hollie" in rendered
+    assert "Egypt, Jordan, Greece, Italy, Japan and I" not in rendered
