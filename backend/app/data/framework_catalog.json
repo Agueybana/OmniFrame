@@ -9,7 +9,57 @@
     "tooling": "Miro, Mural, Lucidchart, Cascade Strategy",
     "alternatives": "TOWS, SOAR, PESTLE",
     "origin_authors": "Albert Humphrey, Stanford Research Institute, 1960s",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "strengths",
+        "label": "Strengths",
+        "description": "Internal capabilities, assets, and advantages that support the decision or strategy.",
+        "prompt": "Name specific internal strengths tied to the user's goal—not generic traits.",
+        "questions": [
+          "What unique assets, skills, or relationships can we leverage?",
+          "Which advantages are durable versus temporary?",
+          "What evidence supports each claimed strength?",
+          "How does each strength connect to the desired outcome?"
+        ]
+      },
+      {
+        "id": "weaknesses",
+        "label": "Weaknesses",
+        "description": "Internal limitations, gaps, or constraints that could undermine execution.",
+        "prompt": "Surface honest internal weaknesses that are specific to this context.",
+        "questions": [
+          "What internal gaps could slow or distort the decision?",
+          "Which weaknesses are fixable in the near term versus structural?",
+          "What habits, missing evidence, or trust gaps matter here?",
+          "How might each weakness interact with external threats?"
+        ]
+      },
+      {
+        "id": "opportunities",
+        "label": "Opportunities",
+        "description": "External openings, timing advantages, or favorable conditions to exploit.",
+        "prompt": "Identify external opportunities the user could realistically act on.",
+        "questions": [
+          "What external tailwinds or openings are visible now?",
+          "Which partnerships, channels, or timing windows matter?",
+          "What customer or user improvements become possible?",
+          "What would confirm an opportunity is real versus imagined?"
+        ]
+      },
+      {
+        "id": "threats",
+        "label": "Threats",
+        "description": "External risks, competitive pressures, or failure modes that could reduce success.",
+        "prompt": "Name credible external threats tied to the user's specific situation.",
+        "questions": [
+          "What substitutes, competitors, or regulatory risks apply?",
+          "Which timing or switching risks could block progress?",
+          "What social, legal, or technical risks are most plausible?",
+          "What early warning signals would indicate a threat is materializing?"
+        ]
+      }
+    ]
   },
   {
     "rank": 2,
@@ -21,7 +71,45 @@
     "tooling": "LeanStack, Strategyzer, Javelin Board",
     "alternatives": "Double Diamond, Stage-Gate, Design Thinking / JTBD",
     "origin_authors": "Eric Ries, 2008/2011",
-    "usage_rights": "Concepts are free to apply; books and specific training material are copyrighted"
+    "usage_rights": "Concepts are free to apply; books and specific training material are copyrighted",
+    "components": [
+      {
+        "id": "build_measure_learn",
+        "label": "Build-Measure-Learn",
+        "description": "The iterative cycle of building a test artifact, measuring behavior, and learning what to do next.",
+        "prompt": "Define the smallest Build-Measure-Learn loop that tests the riskiest assumption.",
+        "questions": [
+          "What is the riskiest assumption that must be tested first?",
+          "What is the smallest artifact or concierge workflow to test it?",
+          "What behavior signal will prove or disprove the assumption?",
+          "What pivot, persevere, or stop rule applies after the test?"
+        ]
+      },
+      {
+        "id": "mvp",
+        "label": "MVP",
+        "description": "The minimum viable product—the smallest deliverable that enables validated learning.",
+        "prompt": "Define an MVP narrow enough to run quickly but rich enough to produce behavior data.",
+        "questions": [
+          "What is the smallest version that still tests the core hypothesis?",
+          "Which features are excluded to preserve speed and clarity?",
+          "Who is the first user cohort and what will they actually do?",
+          "How will success or failure be measured within days, not months?"
+        ]
+      },
+      {
+        "id": "actionable_metrics",
+        "label": "actionable metrics",
+        "description": "Metrics tied to real user behavior and decision thresholds, not vanity counts.",
+        "prompt": "Choose metrics that drive a clear learn-or-pivot decision.",
+        "questions": [
+          "Which metric reflects meaningful behavior rather than interest?",
+          "What baseline exists today for that metric?",
+          "What threshold would justify scaling, pivoting, or stopping?",
+          "How will the metric be collected without biasing the experiment?"
+        ]
+      }
+    ]
   },
   {
     "rank": 3,
@@ -33,7 +121,33 @@
     "tooling": "Quantive, Perdoo, Lattice, 15Five, Workboard",
     "alternatives": "V2MOM, Balanced Scorecard, OGSM",
     "origin_authors": "Andy Grove, Intel, 1970s; popularized by John Doerr",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "objectives",
+        "label": "Objectives",
+        "description": "Qualitative, directional goals that describe what success should feel like.",
+        "prompt": "Write objectives that are ambitious, specific to the domain, and free of metric laundry lists.",
+        "questions": [
+          "What outcome would make this quarter meaningfully different?",
+          "Is the objective directional without smuggling in the metrics?",
+          "Does the objective connect to the user's stated goal and constraints?",
+          "Would teams know when they are off-track from the wording alone?"
+        ]
+      },
+      {
+        "id": "key_results",
+        "label": "Key Results",
+        "description": "Measurable, time-bound results that prove an objective was achieved.",
+        "prompt": "Define key results that are measurable, behavior-based, and hard to game.",
+        "questions": [
+          "What number or observable outcome proves progress?",
+          "Are the key results outcome-based rather than output-based?",
+          "What evidence threshold defines green, yellow, and red?",
+          "Which initiatives could plausibly move each key result?"
+        ]
+      }
+    ]
   },
   {
     "rank": 4,
@@ -45,7 +159,69 @@
     "tooling": "HBS framework tools, Strategyzer, proprietary consulting platforms",
     "alternatives": "PESTLE, Blue Ocean Strategy, VRIO",
     "origin_authors": "Michael E. Porter, Harvard Business School, 1979",
-    "usage_rights": "Free to apply conceptually; original texts and exact matrices may be copyrighted"
+    "usage_rights": "Free to apply conceptually; original texts and exact matrices may be copyrighted",
+    "components": [
+      {
+        "id": "rivalry",
+        "label": "Rivalry",
+        "description": "Intensity of competition among existing players in the market.",
+        "prompt": "Assess rivalry with named competitors or competitor categories from the user's domain.",
+        "questions": [
+          "Who are the direct rivals and how aggressively do they compete on price or features?",
+          "Is the market fragmented or dominated by a few players?",
+          "What switching costs or differentiation reduce rivalry pressure?",
+          "Does rivalry create moat, margin pressure, or distribution constraints?"
+        ]
+      },
+      {
+        "id": "new_entrants",
+        "label": "new entrants",
+        "description": "Ease with which new competitors can enter and disrupt the space.",
+        "prompt": "Evaluate barriers to entry and plausible new-entrant threats.",
+        "questions": [
+          "What capital, regulation, or network effects block new entrants?",
+          "Which adjacent players could enter with minimal repositioning?",
+          "How fast could a well-funded entrant replicate the core offer?",
+          "What wedge would a new entrant use against incumbents?"
+        ]
+      },
+      {
+        "id": "substitutes",
+        "label": "substitutes",
+        "description": "Alternative solutions that satisfy the same job with different means.",
+        "prompt": "Identify substitutes customers use today, including manual workarounds.",
+        "questions": [
+          "What do users do when they do not choose this category at all?",
+          "Which substitutes are improving faster than the core offer?",
+          "Where is switching to a substitute easy or habitual?",
+          "What price or performance gap would trigger substitution?"
+        ]
+      },
+      {
+        "id": "buyer_power",
+        "label": "buyer power",
+        "description": "Leverage customers have to demand lower prices or better terms.",
+        "prompt": "Analyze buyer concentration, alternatives, and price sensitivity.",
+        "questions": [
+          "How concentrated are buyers and how easy is comparison shopping?",
+          "What information or switching costs reduce buyer power?",
+          "Can buyers integrate backward or build in-house alternatives?",
+          "Which buyer segments have the most negotiating leverage?"
+        ]
+      },
+      {
+        "id": "supplier_power",
+        "label": "supplier power",
+        "description": "Leverage upstream providers have over cost, quality, or availability.",
+        "prompt": "Map critical suppliers and their ability to capture value.",
+        "questions": [
+          "Which inputs are scarce, specialized, or single-sourced?",
+          "Can suppliers forward-integrate or bypass the user's position?",
+          "How replaceable are the most important suppliers?",
+          "What contractual or technical mitigations reduce supplier power?"
+        ]
+      }
+    ]
   },
   {
     "rank": 5,
@@ -57,7 +233,81 @@
     "tooling": "StratNavApp, Cascade, enterprise risk management SaaS",
     "alternatives": "SWOT, Porter's Five Forces, VUCA",
     "origin_authors": "Francis J. Aguilar, Harvard, 1967; originally ETPS",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "political",
+        "label": "Political",
+        "description": "Government policy, stability, trade rules, and political incentives affecting the domain.",
+        "prompt": "Identify political forces tailored to the user's geography and industry.",
+        "questions": [
+          "Which policies, subsidies, or sanctions could help or hurt this effort?",
+          "How stable is the relevant political environment over the planning horizon?",
+          "Are there lobbying, compliance, or procurement politics to monitor?",
+          "What political signals would trigger a strategy change?"
+        ]
+      },
+      {
+        "id": "economic",
+        "label": "Economic",
+        "description": "Macroeconomic conditions, funding climate, and cost structures shaping viability.",
+        "prompt": "Assess economic tailwinds and headwinds for the specific market.",
+        "questions": [
+          "How do interest rates, inflation, or spending cycles affect demand?",
+          "What budget constraints do target buyers face?",
+          "Which cost inputs are most volatile?",
+          "What economic indicator would confirm timing to act or wait?"
+        ]
+      },
+      {
+        "id": "social",
+        "label": "Social",
+        "description": "Demographic, cultural, and behavioral trends influencing adoption or perception.",
+        "prompt": "Connect social trends to how users actually behave in this domain.",
+        "questions": [
+          "Which demographic or cultural shifts change willingness to adopt?",
+          "What norms or stigma could accelerate or block uptake?",
+          "How do community or workforce attitudes affect execution?",
+          "What social proof would increase trust?"
+        ]
+      },
+      {
+        "id": "technological",
+        "label": "Technological",
+        "description": "Technology shifts, platform changes, and innovation pace relevant to the problem.",
+        "prompt": "Map technology forces that enable, commoditize, or obsolete parts of the plan.",
+        "questions": [
+          "Which emerging technologies reduce cost or unlock new capabilities?",
+          "Where is the relevant tech moving from custom to commodity?",
+          "What technical dependencies could break or accelerate the roadmap?",
+          "Which standards or platform shifts require early positioning?"
+        ]
+      },
+      {
+        "id": "legal",
+        "label": "Legal",
+        "description": "Laws, regulations, liability, and compliance obligations in scope.",
+        "prompt": "Surface legal constraints and compliance triggers specific to the domain.",
+        "questions": [
+          "Which regulations directly govern this product or workflow?",
+          "What licensing, privacy, or liability rules affect launch timing?",
+          "Are pending legal changes likely to help or constrain the plan?",
+          "What compliance evidence must exist before scaling?"
+        ]
+      },
+      {
+        "id": "environmental",
+        "label": "Environmental",
+        "description": "Climate, sustainability, resource, and environmental constraints or opportunities.",
+        "prompt": "Evaluate environmental factors that affect operations, perception, or regulation.",
+        "questions": [
+          "Which environmental regulations or reporting duties apply?",
+          "How do climate or resource risks affect supply or operations?",
+          "Could sustainability positioning create advantage or requirement?",
+          "What environmental metrics matter to buyers or regulators?"
+        ]
+      }
+    ]
   },
   {
     "rank": 6,
@@ -69,7 +319,57 @@
     "tooling": "Spider Strategies, ClearPoint Strategy, BSC Designer",
     "alternatives": "OKRs, Hoshin Kanri, McKinsey 7S",
     "origin_authors": "Robert Kaplan and David Norton, 1992",
-    "usage_rights": "Free to apply conceptually; software implementations may be licensed"
+    "usage_rights": "Free to apply conceptually; software implementations may be licensed",
+    "components": [
+      {
+        "id": "financial",
+        "label": "Financial",
+        "description": "In Balanced Scorecard, Financial is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze financial in direct relation to the user's goal. Use when established organizations need to balance financial outcomes with long-term capability and employee development.",
+        "questions": [
+          "What does financial look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on financial?",
+          "How does financial interact with other parts of Balanced Scorecard?",
+          "What decision or next action follows from what we learn about financial?"
+        ]
+      },
+      {
+        "id": "customer",
+        "label": "Customer",
+        "description": "In Balanced Scorecard, Customer is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze customer in direct relation to the user's goal. Use when established organizations need to balance financial outcomes with long-term capability and employee development.",
+        "questions": [
+          "What does customer look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on customer?",
+          "How does customer interact with other parts of Balanced Scorecard?",
+          "What decision or next action follows from what we learn about customer?"
+        ]
+      },
+      {
+        "id": "internal_process",
+        "label": "Internal Process",
+        "description": "In Balanced Scorecard, Internal Process is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze internal process in direct relation to the user's goal. Use when established organizations need to balance financial outcomes with long-term capability and employee development.",
+        "questions": [
+          "What does internal process look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on internal process?",
+          "How does internal process interact with other parts of Balanced Scorecard?",
+          "What decision or next action follows from what we learn about internal process?"
+        ]
+      },
+      {
+        "id": "learning_and_growth",
+        "label": "Learning and Growth",
+        "description": "In Balanced Scorecard, Learning and Growth is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze learning and growth in direct relation to the user's goal. Use when established organizations need to balance financial outcomes with long-term capability and employee development.",
+        "questions": [
+          "What does learning and growth look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on learning and growth?",
+          "How does learning and growth interact with other parts of Balanced Scorecard?",
+          "What decision or next action follows from what we learn about learning and growth?"
+        ]
+      }
+    ]
   },
   {
     "rank": 7,
@@ -81,7 +381,45 @@
     "tooling": "Strategyzer, Thrv, Dovetail",
     "alternatives": "Outcome-Driven Innovation, NABC, HEART",
     "origin_authors": "Anthony Ulwick and Clayton Christensen, 2003 era",
-    "usage_rights": "Free to apply conceptually; Ulwick's ODI methodology is trademarked"
+    "usage_rights": "Free to apply conceptually; Ulwick's ODI methodology is trademarked",
+    "components": [
+      {
+        "id": "user_needs",
+        "label": "User needs",
+        "description": "In Jobs To Be Done, User needs is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze user needs in direct relation to the user's goal. Use when product growth has stalled and the team needs to identify the actual job users are hiring a product to do.",
+        "questions": [
+          "What does user needs look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on user needs?",
+          "How does user needs interact with other parts of Jobs To Be Done?",
+          "What decision or next action follows from what we learn about user needs?"
+        ]
+      },
+      {
+        "id": "core_tasks",
+        "label": "core tasks",
+        "description": "In Jobs To Be Done, core tasks is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze core tasks in direct relation to the user's goal. Use when product growth has stalled and the team needs to identify the actual job users are hiring a product to do.",
+        "questions": [
+          "What does core tasks look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on core tasks?",
+          "How does core tasks interact with other parts of Jobs To Be Done?",
+          "What decision or next action follows from what we learn about core tasks?"
+        ]
+      },
+      {
+        "id": "hired_fired_products",
+        "label": "hired/fired products",
+        "description": "In Jobs To Be Done, hired/fired products is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze hired/fired products in direct relation to the user's goal. Use when product growth has stalled and the team needs to identify the actual job users are hiring a product to do.",
+        "questions": [
+          "What does hired/fired products look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on hired/fired products?",
+          "How does hired/fired products interact with other parts of Jobs To Be Done?",
+          "What decision or next action follows from what we learn about hired/fired products?"
+        ]
+      }
+    ]
   },
   {
     "rank": 8,
@@ -93,7 +431,45 @@
     "tooling": "PitchBook, Gartner data, financial modeling templates",
     "alternatives": "Porter's Five Forces, Blue Ocean Strategy, PESTLE",
     "origin_authors": "General business and VC theory, 1990s tech boom",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "total_addressable_market",
+        "label": "Total Addressable Market",
+        "description": "In TAM / SAM / SOM, Total Addressable Market is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze total addressable market in direct relation to the user's goal. Use when pitching, budgeting, or proving the market ceiling and plausible capture size of a product.",
+        "questions": [
+          "What does total addressable market look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on total addressable market?",
+          "How does total addressable market interact with other parts of TAM / SAM / SOM?",
+          "What decision or next action follows from what we learn about total addressable market?"
+        ]
+      },
+      {
+        "id": "serviceable_addressable_market",
+        "label": "Serviceable Addressable Market",
+        "description": "In TAM / SAM / SOM, Serviceable Addressable Market is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze serviceable addressable market in direct relation to the user's goal. Use when pitching, budgeting, or proving the market ceiling and plausible capture size of a product.",
+        "questions": [
+          "What does serviceable addressable market look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on serviceable addressable market?",
+          "How does serviceable addressable market interact with other parts of TAM / SAM / SOM?",
+          "What decision or next action follows from what we learn about serviceable addressable market?"
+        ]
+      },
+      {
+        "id": "obtainable_market",
+        "label": "Obtainable Market",
+        "description": "In TAM / SAM / SOM, Obtainable Market is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze obtainable market in direct relation to the user's goal. Use when pitching, budgeting, or proving the market ceiling and plausible capture size of a product.",
+        "questions": [
+          "What does obtainable market look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on obtainable market?",
+          "How does obtainable market interact with other parts of TAM / SAM / SOM?",
+          "What decision or next action follows from what we learn about obtainable market?"
+        ]
+      }
+    ]
   },
   {
     "rank": 9,
@@ -105,7 +481,57 @@
     "tooling": "Jira, Asana, Monday.com, Trello",
     "alternatives": "RICE Scoring, ICE Scoring, PIE Framework",
     "origin_authors": "Dai Clegg, Oracle, 1994; DSDM Consortium",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "must_have",
+        "label": "Must-have",
+        "description": "In MoSCoW Method, Must-have is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze must-have in direct relation to the user's goal. Use when scope creep is threatening delivery and hard prioritization is required before launch.",
+        "questions": [
+          "What does must-have look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on must-have?",
+          "How does must-have interact with other parts of MoSCoW Method?",
+          "What decision or next action follows from what we learn about must-have?"
+        ]
+      },
+      {
+        "id": "should_have",
+        "label": "Should-have",
+        "description": "In MoSCoW Method, Should-have is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze should-have in direct relation to the user's goal. Use when scope creep is threatening delivery and hard prioritization is required before launch.",
+        "questions": [
+          "What does should-have look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on should-have?",
+          "How does should-have interact with other parts of MoSCoW Method?",
+          "What decision or next action follows from what we learn about should-have?"
+        ]
+      },
+      {
+        "id": "could_have",
+        "label": "Could-have",
+        "description": "In MoSCoW Method, Could-have is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze could-have in direct relation to the user's goal. Use when scope creep is threatening delivery and hard prioritization is required before launch.",
+        "questions": [
+          "What does could-have look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on could-have?",
+          "How does could-have interact with other parts of MoSCoW Method?",
+          "What decision or next action follows from what we learn about could-have?"
+        ]
+      },
+      {
+        "id": "won_t_have",
+        "label": "Won't-have",
+        "description": "In MoSCoW Method, Won't-have is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze won't-have in direct relation to the user's goal. Use when scope creep is threatening delivery and hard prioritization is required before launch.",
+        "questions": [
+          "What does won't-have look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on won't-have?",
+          "How does won't-have interact with other parts of MoSCoW Method?",
+          "What decision or next action follows from what we learn about won't-have?"
+        ]
+      }
+    ]
   },
   {
     "rank": 10,
@@ -117,7 +543,33 @@
     "tooling": "Strategyzer, Blue Ocean Studio",
     "alternatives": "Porter's Five Forces, Innovator's Dilemma, Wardley Mapping",
     "origin_authors": "W. Chan Kim and Renee Mauborgne, INSEAD, 2005",
-    "usage_rights": "Blue Ocean Strategy is a registered trademark; conceptual application is free"
+    "usage_rights": "Blue Ocean Strategy is a registered trademark; conceptual application is free",
+    "components": [
+      {
+        "id": "strategy_canvas",
+        "label": "Strategy canvas",
+        "description": "In Blue Ocean Strategy, Strategy canvas is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze strategy canvas in direct relation to the user's goal. Use when a market is crowded and the goal is to create uncontested demand instead of competing on price.",
+        "questions": [
+          "What does strategy canvas look like in this specific situation?",
+          "Which alternatives exist for executing strategy canvas?",
+          "What resources or dependencies does strategy canvas require?",
+          "What decision or next action follows from what we learn about strategy canvas?"
+        ]
+      },
+      {
+        "id": "eliminate_reduce_raise_create",
+        "label": "Eliminate-Reduce-Raise-Create",
+        "description": "In Blue Ocean Strategy, Eliminate-Reduce-Raise-Create is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze eliminate-reduce-raise-create in direct relation to the user's goal. Use when a market is crowded and the goal is to create uncontested demand instead of competing on price.",
+        "questions": [
+          "What does eliminate-reduce-raise-create look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on eliminate-reduce-raise-create?",
+          "How does eliminate-reduce-raise-create interact with other parts of Blue Ocean Strategy?",
+          "What decision or next action follows from what we learn about eliminate-reduce-raise-create?"
+        ]
+      }
+    ]
   },
   {
     "rank": 11,
@@ -129,7 +581,69 @@
     "tooling": "Mixpanel, Amplitude, PostHog",
     "alternatives": "HEART, Lean Startup, JTBD",
     "origin_authors": "Dave McClure, 500 Startups, 2007",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "acquisition",
+        "label": "Acquisition",
+        "description": "In AARRR Pirate Metrics, Acquisition is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze acquisition in direct relation to the user's goal. Use when diagnosing where users abandon a software journey or growth funnel.",
+        "questions": [
+          "What does acquisition look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on acquisition?",
+          "How does acquisition interact with other parts of AARRR Pirate Metrics?",
+          "What decision or next action follows from what we learn about acquisition?"
+        ]
+      },
+      {
+        "id": "activation",
+        "label": "Activation",
+        "description": "In AARRR Pirate Metrics, Activation is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze activation in direct relation to the user's goal. Use when diagnosing where users abandon a software journey or growth funnel.",
+        "questions": [
+          "What does activation look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on activation?",
+          "How does activation interact with other parts of AARRR Pirate Metrics?",
+          "What decision or next action follows from what we learn about activation?"
+        ]
+      },
+      {
+        "id": "retention",
+        "label": "Retention",
+        "description": "In AARRR Pirate Metrics, Retention is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze retention in direct relation to the user's goal. Use when diagnosing where users abandon a software journey or growth funnel.",
+        "questions": [
+          "What does retention look like in this specific situation?",
+          "What baseline and target define success for retention?",
+          "Which behaviors or events should move retention?",
+          "What decision or next action follows from what we learn about retention?"
+        ]
+      },
+      {
+        "id": "referral",
+        "label": "Referral",
+        "description": "In AARRR Pirate Metrics, Referral is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze referral in direct relation to the user's goal. Use when diagnosing where users abandon a software journey or growth funnel.",
+        "questions": [
+          "What does referral look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on referral?",
+          "How does referral interact with other parts of AARRR Pirate Metrics?",
+          "What decision or next action follows from what we learn about referral?"
+        ]
+      },
+      {
+        "id": "revenue",
+        "label": "Revenue",
+        "description": "In AARRR Pirate Metrics, Revenue is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze revenue in direct relation to the user's goal. Use when diagnosing where users abandon a software journey or growth funnel.",
+        "questions": [
+          "What does revenue look like in this specific situation?",
+          "What baseline and target define success for revenue?",
+          "Which behaviors or events should move revenue?",
+          "What decision or next action follows from what we learn about revenue?"
+        ]
+      }
+    ]
   },
   {
     "rank": 12,
@@ -141,7 +655,57 @@
     "tooling": "Aha!, Productboard, Linear",
     "alternatives": "ICE Scoring, MoSCoW, PIE Framework",
     "origin_authors": "Intercom, popularized by Sean McBride/Sean Murphy references, 2016 era",
-    "usage_rights": "Public domain / open concept / free to use"
+    "usage_rights": "Public domain / open concept / free to use",
+    "components": [
+      {
+        "id": "reach",
+        "label": "Reach",
+        "description": "How many users or events the initiative affects in a given time period.",
+        "prompt": "Estimate reach with explicit assumptions tied to the user's audience.",
+        "questions": [
+          "How many users, accounts, or events will this affect per month or quarter?",
+          "Which segment defines the reach numerator?",
+          "What data supports the reach estimate?",
+          "How sensitive is priority to a 2x error in reach?"
+        ]
+      },
+      {
+        "id": "impact",
+        "label": "Impact",
+        "description": "Expected magnitude of outcome improvement if the initiative succeeds.",
+        "prompt": "Score impact based on concrete outcome movement, not enthusiasm.",
+        "questions": [
+          "What outcome metric would move and by roughly how much?",
+          "Is impact measured per user, per account, or per transaction?",
+          "What would a minimal, moderate, and massive impact look like?",
+          "How does impact compare across competing initiatives?"
+        ]
+      },
+      {
+        "id": "confidence",
+        "label": "Confidence",
+        "description": "Degree of certainty that reach, impact, and effort estimates are accurate.",
+        "prompt": "Justify confidence with evidence, prototypes, or analogous cases.",
+        "questions": [
+          "What evidence already exists for reach and impact assumptions?",
+          "Which parts of the estimate are guesswork versus measured?",
+          "What quick test would raise confidence before full build?",
+          "What confidence level still justifies proceeding?"
+        ]
+      },
+      {
+        "id": "effort",
+        "label": "Effort",
+        "description": "Total person-time or calendar time required to deliver the initiative.",
+        "prompt": "Estimate effort including design, build, rollout, and operational cost.",
+        "questions": [
+          "How many person-weeks or person-months are required end to end?",
+          "Which dependencies inflate effort beyond engineering alone?",
+          "What scope reduction would cut effort materially?",
+          "Does effort include maintenance and support after launch?"
+        ]
+      }
+    ]
   },
   {
     "rank": 13,
@@ -153,7 +717,57 @@
     "tooling": "Figma, Miro, Mural, InVision",
     "alternatives": "Lean Startup, Cynefin, Stage-Gate",
     "origin_authors": "British Design Council, 2004",
-    "usage_rights": "Free to use; attribution to the Design Council is commonly expected"
+    "usage_rights": "Free to use; attribution to the Design Council is commonly expected",
+    "components": [
+      {
+        "id": "discover",
+        "label": "Discover",
+        "description": "In Double Diamond, Discover is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze discover in direct relation to the user's goal. Use when a team is jumping to solutions too quickly and needs divergent problem exploration before convergence.",
+        "questions": [
+          "What does discover look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on discover?",
+          "How does discover interact with other parts of Double Diamond?",
+          "What decision or next action follows from what we learn about discover?"
+        ]
+      },
+      {
+        "id": "define",
+        "label": "Define",
+        "description": "In Double Diamond, Define is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze define in direct relation to the user's goal. Use when a team is jumping to solutions too quickly and needs divergent problem exploration before convergence.",
+        "questions": [
+          "What does define look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on define?",
+          "How does define interact with other parts of Double Diamond?",
+          "What decision or next action follows from what we learn about define?"
+        ]
+      },
+      {
+        "id": "develop",
+        "label": "Develop",
+        "description": "In Double Diamond, Develop is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze develop in direct relation to the user's goal. Use when a team is jumping to solutions too quickly and needs divergent problem exploration before convergence.",
+        "questions": [
+          "What does develop look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on develop?",
+          "How does develop interact with other parts of Double Diamond?",
+          "What decision or next action follows from what we learn about develop?"
+        ]
+      },
+      {
+        "id": "deliver",
+        "label": "Deliver",
+        "description": "In Double Diamond, Deliver is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze deliver in direct relation to the user's goal. Use when a team is jumping to solutions too quickly and needs divergent problem exploration before convergence.",
+        "questions": [
+          "What does deliver look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on deliver?",
+          "How does deliver interact with other parts of Double Diamond?",
+          "What decision or next action follows from what we learn about deliver?"
+        ]
+      }
+    ]
   },
   {
     "rank": 14,
@@ -165,7 +779,93 @@
     "tooling": "Sopheon, Planview, ITONICS",
     "alternatives": "Lean Startup, Double Diamond, OODA Loop",
     "origin_authors": "Robert G. Cooper, 1980s",
-    "usage_rights": "Stage-Gate is a registered trademark; phase-gate theory is widely used"
+    "usage_rights": "Stage-Gate is a registered trademark; phase-gate theory is widely used",
+    "components": [
+      {
+        "id": "discovery",
+        "label": "Discovery",
+        "description": "In Stage-Gate Process, Discovery is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze discovery in direct relation to the user's goal. Use for expensive hardware, manufacturing, or pharma work where mistakes are costly and sign-off gates are required.",
+        "questions": [
+          "What does discovery look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on discovery?",
+          "How does discovery interact with other parts of Stage-Gate Process?",
+          "What decision or next action follows from what we learn about discovery?"
+        ]
+      },
+      {
+        "id": "scoping",
+        "label": "Scoping",
+        "description": "In Stage-Gate Process, Scoping is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze scoping in direct relation to the user's goal. Use for expensive hardware, manufacturing, or pharma work where mistakes are costly and sign-off gates are required.",
+        "questions": [
+          "What does scoping look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on scoping?",
+          "How does scoping interact with other parts of Stage-Gate Process?",
+          "What decision or next action follows from what we learn about scoping?"
+        ]
+      },
+      {
+        "id": "business_case",
+        "label": "Business Case",
+        "description": "In Stage-Gate Process, Business Case is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze business case in direct relation to the user's goal. Use for expensive hardware, manufacturing, or pharma work where mistakes are costly and sign-off gates are required.",
+        "questions": [
+          "What does business case look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on business case?",
+          "How does business case interact with other parts of Stage-Gate Process?",
+          "What decision or next action follows from what we learn about business case?"
+        ]
+      },
+      {
+        "id": "development",
+        "label": "Development",
+        "description": "In Stage-Gate Process, Development is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze development in direct relation to the user's goal. Use for expensive hardware, manufacturing, or pharma work where mistakes are costly and sign-off gates are required.",
+        "questions": [
+          "What does development look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on development?",
+          "How does development interact with other parts of Stage-Gate Process?",
+          "What decision or next action follows from what we learn about development?"
+        ]
+      },
+      {
+        "id": "testing_and_validation",
+        "label": "Testing and Validation",
+        "description": "In Stage-Gate Process, Testing and Validation is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze testing and validation in direct relation to the user's goal. Use for expensive hardware, manufacturing, or pharma work where mistakes are costly and sign-off gates are required.",
+        "questions": [
+          "What does testing and validation look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on testing and validation?",
+          "How does testing and validation interact with other parts of Stage-Gate Process?",
+          "What decision or next action follows from what we learn about testing and validation?"
+        ]
+      },
+      {
+        "id": "launch",
+        "label": "Launch",
+        "description": "In Stage-Gate Process, Launch is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze launch in direct relation to the user's goal. Use for expensive hardware, manufacturing, or pharma work where mistakes are costly and sign-off gates are required.",
+        "questions": [
+          "What does launch look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on launch?",
+          "How does launch interact with other parts of Stage-Gate Process?",
+          "What decision or next action follows from what we learn about launch?"
+        ]
+      },
+      {
+        "id": "post_launch_review",
+        "label": "Post-Launch Review",
+        "description": "In Stage-Gate Process, Post-Launch Review is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze post-launch review in direct relation to the user's goal. Use for expensive hardware, manufacturing, or pharma work where mistakes are costly and sign-off gates are required.",
+        "questions": [
+          "What does post-launch review look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on post-launch review?",
+          "How does post-launch review interact with other parts of Stage-Gate Process?",
+          "What decision or next action follows from what we learn about post-launch review?"
+        ]
+      }
+    ]
   },
   {
     "rank": 15,
@@ -177,7 +877,57 @@
     "tooling": "Splunk cyber workflows, proprietary trading systems",
     "alternatives": "Lean Startup, PACE, Cynefin",
     "origin_authors": "Col. John Boyd, USAF, 1950s/1960s",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "observe",
+        "label": "Observe",
+        "description": "In OODA Loop, Observe is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze observe in direct relation to the user's goal. Use when speed and adaptive feedback loops are the main advantage over a slower competitor.",
+        "questions": [
+          "What does observe look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on observe?",
+          "How does observe interact with other parts of OODA Loop?",
+          "What decision or next action follows from what we learn about observe?"
+        ]
+      },
+      {
+        "id": "orient",
+        "label": "Orient",
+        "description": "In OODA Loop, Orient is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze orient in direct relation to the user's goal. Use when speed and adaptive feedback loops are the main advantage over a slower competitor.",
+        "questions": [
+          "What does orient look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on orient?",
+          "How does orient interact with other parts of OODA Loop?",
+          "What decision or next action follows from what we learn about orient?"
+        ]
+      },
+      {
+        "id": "decide",
+        "label": "Decide",
+        "description": "In OODA Loop, Decide is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze decide in direct relation to the user's goal. Use when speed and adaptive feedback loops are the main advantage over a slower competitor.",
+        "questions": [
+          "What does decide look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on decide?",
+          "How does decide interact with other parts of OODA Loop?",
+          "What decision or next action follows from what we learn about decide?"
+        ]
+      },
+      {
+        "id": "act",
+        "label": "Act",
+        "description": "In OODA Loop, Act is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze act in direct relation to the user's goal. Use when speed and adaptive feedback loops are the main advantage over a slower competitor.",
+        "questions": [
+          "What does act look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on act?",
+          "How does act interact with other parts of OODA Loop?",
+          "What decision or next action follows from what we learn about act?"
+        ]
+      }
+    ]
   },
   {
     "rank": 16,
@@ -189,7 +939,45 @@
     "tooling": "HBS Online, specialized consulting tools",
     "alternatives": "Blue Ocean Strategy, Theory of Constraints, Wardley Mapping",
     "origin_authors": "Clayton Christensen, Harvard Business School, 1997",
-    "usage_rights": "Free to apply conceptually"
+    "usage_rights": "Free to apply conceptually",
+    "components": [
+      {
+        "id": "sustaining_innovation",
+        "label": "Sustaining Innovation",
+        "description": "In Innovator's Dilemma, Sustaining Innovation is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze sustaining innovation in direct relation to the user's goal. Use when an incumbent must judge whether low-end disruption will eventually threaten the core business.",
+        "questions": [
+          "What does sustaining innovation look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on sustaining innovation?",
+          "How does sustaining innovation interact with other parts of Innovator's Dilemma?",
+          "What decision or next action follows from what we learn about sustaining innovation?"
+        ]
+      },
+      {
+        "id": "disruptive_innovation",
+        "label": "Disruptive Innovation",
+        "description": "In Innovator's Dilemma, Disruptive Innovation is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze disruptive innovation in direct relation to the user's goal. Use when an incumbent must judge whether low-end disruption will eventually threaten the core business.",
+        "questions": [
+          "What does disruptive innovation look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on disruptive innovation?",
+          "How does disruptive innovation interact with other parts of Innovator's Dilemma?",
+          "What decision or next action follows from what we learn about disruptive innovation?"
+        ]
+      },
+      {
+        "id": "value_networks",
+        "label": "Value Networks",
+        "description": "In Innovator's Dilemma, Value Networks is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze value networks in direct relation to the user's goal. Use when an incumbent must judge whether low-end disruption will eventually threaten the core business.",
+        "questions": [
+          "What does value networks look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on value networks?",
+          "How does value networks interact with other parts of Innovator's Dilemma?",
+          "What decision or next action follows from what we learn about value networks?"
+        ]
+      }
+    ]
   },
   {
     "rank": 17,
@@ -201,7 +989,69 @@
     "tooling": "Salesforce Trailhead, Workday integrations",
     "alternatives": "OKRs, OGSM, Balanced Scorecard",
     "origin_authors": "Marc Benioff, Salesforce, 1999",
-    "usage_rights": "Free to use"
+    "usage_rights": "Free to use",
+    "components": [
+      {
+        "id": "vision",
+        "label": "Vision",
+        "description": "In V2MOM, Vision is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze vision in direct relation to the user's goal. Use when a project or team needs a one-page alignment tool connecting daily work to core values.",
+        "questions": [
+          "What does vision look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on vision?",
+          "How does vision interact with other parts of V2MOM?",
+          "What decision or next action follows from what we learn about vision?"
+        ]
+      },
+      {
+        "id": "values",
+        "label": "Values",
+        "description": "In V2MOM, Values is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze values in direct relation to the user's goal. Use when a project or team needs a one-page alignment tool connecting daily work to core values.",
+        "questions": [
+          "What does values look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on values?",
+          "How does values interact with other parts of V2MOM?",
+          "What decision or next action follows from what we learn about values?"
+        ]
+      },
+      {
+        "id": "methods",
+        "label": "Methods",
+        "description": "In V2MOM, Methods is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze methods in direct relation to the user's goal. Use when a project or team needs a one-page alignment tool connecting daily work to core values.",
+        "questions": [
+          "What does methods look like in this specific situation?",
+          "Which alternatives exist for executing methods?",
+          "What resources or dependencies does methods require?",
+          "What decision or next action follows from what we learn about methods?"
+        ]
+      },
+      {
+        "id": "obstacles",
+        "label": "Obstacles",
+        "description": "In V2MOM, Obstacles is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze obstacles in direct relation to the user's goal. Use when a project or team needs a one-page alignment tool connecting daily work to core values.",
+        "questions": [
+          "What does obstacles look like in this specific situation?",
+          "What is the most credible way obstacles could materialize here?",
+          "How does obstacles interact with other parts of V2MOM?",
+          "What mitigation or monitoring should we put in place for obstacles?"
+        ]
+      },
+      {
+        "id": "measures",
+        "label": "Measures",
+        "description": "In V2MOM, Measures is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze measures in direct relation to the user's goal. Use when a project or team needs a one-page alignment tool connecting daily work to core values.",
+        "questions": [
+          "What does measures look like in this specific situation?",
+          "What baseline and target define success for measures?",
+          "Which behaviors or events should move measures?",
+          "What decision or next action follows from what we learn about measures?"
+        ]
+      }
+    ]
   },
   {
     "rank": 18,
@@ -213,7 +1063,33 @@
     "tooling": "Coda, Notion, engineering CAD platforms",
     "alternatives": "TRIZ, Double Diamond, Blue Ocean Strategy",
     "origin_authors": "Aristotle; popularized in modern engineering by Elon Musk",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "deconstruct_assumptions",
+        "label": "Deconstruct Assumptions",
+        "description": "In First Principles Thinking, Deconstruct Assumptions is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze deconstruct assumptions in direct relation to the user's goal. Use for seemingly impossible engineering or cost problems where assumptions must be stripped away.",
+        "questions": [
+          "What does deconstruct assumptions look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on deconstruct assumptions?",
+          "How does deconstruct assumptions interact with other parts of First Principles Thinking?",
+          "What decision or next action follows from what we learn about deconstruct assumptions?"
+        ]
+      },
+      {
+        "id": "rebuild_from_first_principles",
+        "label": "Rebuild from First Principles",
+        "description": "In First Principles Thinking, Rebuild from First Principles is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze rebuild from first principles in direct relation to the user's goal. Use for seemingly impossible engineering or cost problems where assumptions must be stripped away.",
+        "questions": [
+          "What does rebuild from first principles look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on rebuild from first principles?",
+          "How does rebuild from first principles interact with other parts of First Principles Thinking?",
+          "What decision or next action follows from what we learn about rebuild from first principles?"
+        ]
+      }
+    ]
   },
   {
     "rank": 19,
@@ -225,7 +1101,45 @@
     "tooling": "Trello, Notion templates, Productboard",
     "alternatives": "RICE Scoring, MoSCoW, PIE Framework",
     "origin_authors": "Sean Ellis, GrowthHackers",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "impact",
+        "label": "Impact",
+        "description": "In ICE Scoring, Impact is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze impact in direct relation to the user's goal. Use when a small team needs a lightweight prioritization model without complex data gathering.",
+        "questions": [
+          "What does impact look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on impact?",
+          "How does impact interact with other parts of ICE Scoring?",
+          "What decision or next action follows from what we learn about impact?"
+        ]
+      },
+      {
+        "id": "confidence",
+        "label": "Confidence",
+        "description": "In ICE Scoring, Confidence is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze confidence in direct relation to the user's goal. Use when a small team needs a lightweight prioritization model without complex data gathering.",
+        "questions": [
+          "What does confidence look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on confidence?",
+          "How does confidence interact with other parts of ICE Scoring?",
+          "What decision or next action follows from what we learn about confidence?"
+        ]
+      },
+      {
+        "id": "ease",
+        "label": "Ease",
+        "description": "In ICE Scoring, Ease is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze ease in direct relation to the user's goal. Use when a small team needs a lightweight prioritization model without complex data gathering.",
+        "questions": [
+          "What does ease look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on ease?",
+          "How does ease interact with other parts of ICE Scoring?",
+          "What decision or next action follows from what we learn about ease?"
+        ]
+      }
+    ]
   },
   {
     "rank": 20,
@@ -237,7 +1151,69 @@
     "tooling": "Google Analytics, Pendo, Hotjar, Amplitude",
     "alternatives": "AARRR, JTBD, ODI",
     "origin_authors": "Kerry Rodden, Hilary Hutchinson, Xin Fu, Google, 2010",
-    "usage_rights": "Free to use"
+    "usage_rights": "Free to use",
+    "components": [
+      {
+        "id": "happiness",
+        "label": "Happiness",
+        "description": "In HEART Framework, Happiness is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze happiness in direct relation to the user's goal. Use when revenue metrics exist but user experience and satisfaction need standardized measurement.",
+        "questions": [
+          "What does happiness look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on happiness?",
+          "How does happiness interact with other parts of HEART Framework?",
+          "What decision or next action follows from what we learn about happiness?"
+        ]
+      },
+      {
+        "id": "engagement",
+        "label": "Engagement",
+        "description": "In HEART Framework, Engagement is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze engagement in direct relation to the user's goal. Use when revenue metrics exist but user experience and satisfaction need standardized measurement.",
+        "questions": [
+          "What does engagement look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on engagement?",
+          "How does engagement interact with other parts of HEART Framework?",
+          "What decision or next action follows from what we learn about engagement?"
+        ]
+      },
+      {
+        "id": "adoption",
+        "label": "Adoption",
+        "description": "In HEART Framework, Adoption is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze adoption in direct relation to the user's goal. Use when revenue metrics exist but user experience and satisfaction need standardized measurement.",
+        "questions": [
+          "What does adoption look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on adoption?",
+          "How does adoption interact with other parts of HEART Framework?",
+          "What decision or next action follows from what we learn about adoption?"
+        ]
+      },
+      {
+        "id": "retention",
+        "label": "Retention",
+        "description": "In HEART Framework, Retention is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze retention in direct relation to the user's goal. Use when revenue metrics exist but user experience and satisfaction need standardized measurement.",
+        "questions": [
+          "What does retention look like in this specific situation?",
+          "What baseline and target define success for retention?",
+          "Which behaviors or events should move retention?",
+          "What decision or next action follows from what we learn about retention?"
+        ]
+      },
+      {
+        "id": "task_success",
+        "label": "Task Success",
+        "description": "In HEART Framework, Task Success is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze task success in direct relation to the user's goal. Use when revenue metrics exist but user experience and satisfaction need standardized measurement.",
+        "questions": [
+          "What does task success look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on task success?",
+          "How does task success interact with other parts of HEART Framework?",
+          "What decision or next action follows from what we learn about task success?"
+        ]
+      }
+    ]
   },
   {
     "rank": 21,
@@ -249,7 +1225,93 @@
     "tooling": "McKinsey tools, Cascade Strategy, OrgVue",
     "alternatives": "Balanced Scorecard, Hoshin Kanri, PESTLE",
     "origin_authors": "Tom Peters, Robert Waterman, Julien Phillips, McKinsey, 1980",
-    "usage_rights": "Free to apply; associated with McKinsey & Company"
+    "usage_rights": "Free to apply; associated with McKinsey & Company",
+    "components": [
+      {
+        "id": "strategy",
+        "label": "Strategy",
+        "description": "In McKinsey 7S Framework, Strategy is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze strategy in direct relation to the user's goal. Use during mergers or restructuring to test alignment between hard systems and soft human factors.",
+        "questions": [
+          "What does strategy look like in this specific situation?",
+          "Which alternatives exist for executing strategy?",
+          "What resources or dependencies does strategy require?",
+          "What decision or next action follows from what we learn about strategy?"
+        ]
+      },
+      {
+        "id": "structure",
+        "label": "Structure",
+        "description": "In McKinsey 7S Framework, Structure is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze structure in direct relation to the user's goal. Use during mergers or restructuring to test alignment between hard systems and soft human factors.",
+        "questions": [
+          "What does structure look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on structure?",
+          "How does structure interact with other parts of McKinsey 7S Framework?",
+          "What decision or next action follows from what we learn about structure?"
+        ]
+      },
+      {
+        "id": "systems",
+        "label": "Systems",
+        "description": "In McKinsey 7S Framework, Systems is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze systems in direct relation to the user's goal. Use during mergers or restructuring to test alignment between hard systems and soft human factors.",
+        "questions": [
+          "What does systems look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on systems?",
+          "How does systems interact with other parts of McKinsey 7S Framework?",
+          "What decision or next action follows from what we learn about systems?"
+        ]
+      },
+      {
+        "id": "shared_values",
+        "label": "Shared Values",
+        "description": "In McKinsey 7S Framework, Shared Values is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze shared values in direct relation to the user's goal. Use during mergers or restructuring to test alignment between hard systems and soft human factors.",
+        "questions": [
+          "What does shared values look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on shared values?",
+          "How does shared values interact with other parts of McKinsey 7S Framework?",
+          "What decision or next action follows from what we learn about shared values?"
+        ]
+      },
+      {
+        "id": "style",
+        "label": "Style",
+        "description": "In McKinsey 7S Framework, Style is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze style in direct relation to the user's goal. Use during mergers or restructuring to test alignment between hard systems and soft human factors.",
+        "questions": [
+          "What does style look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on style?",
+          "How does style interact with other parts of McKinsey 7S Framework?",
+          "What decision or next action follows from what we learn about style?"
+        ]
+      },
+      {
+        "id": "staff",
+        "label": "Staff",
+        "description": "In McKinsey 7S Framework, Staff is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze staff in direct relation to the user's goal. Use during mergers or restructuring to test alignment between hard systems and soft human factors.",
+        "questions": [
+          "What does staff look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on staff?",
+          "How does staff interact with other parts of McKinsey 7S Framework?",
+          "What decision or next action follows from what we learn about staff?"
+        ]
+      },
+      {
+        "id": "skills",
+        "label": "Skills",
+        "description": "In McKinsey 7S Framework, Skills is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze skills in direct relation to the user's goal. Use during mergers or restructuring to test alignment between hard systems and soft human factors.",
+        "questions": [
+          "What does skills look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on skills?",
+          "How does skills interact with other parts of McKinsey 7S Framework?",
+          "What decision or next action follows from what we learn about skills?"
+        ]
+      }
+    ]
   },
   {
     "rank": 22,
@@ -261,7 +1323,57 @@
     "tooling": "LogicGate, MetricStream",
     "alternatives": "PMESII-PT, PESTLE, Cynefin",
     "origin_authors": "U.S. Army War College, 1987",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "volatility",
+        "label": "Volatility",
+        "description": "In VUCA, Volatility is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze volatility in direct relation to the user's goal. Use when long-term planning is unreliable and the team needs resilience instead of prediction.",
+        "questions": [
+          "What does volatility look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on volatility?",
+          "How does volatility interact with other parts of VUCA?",
+          "What decision or next action follows from what we learn about volatility?"
+        ]
+      },
+      {
+        "id": "uncertainty",
+        "label": "Uncertainty",
+        "description": "In VUCA, Uncertainty is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze uncertainty in direct relation to the user's goal. Use when long-term planning is unreliable and the team needs resilience instead of prediction.",
+        "questions": [
+          "What does uncertainty look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on uncertainty?",
+          "How does uncertainty interact with other parts of VUCA?",
+          "What decision or next action follows from what we learn about uncertainty?"
+        ]
+      },
+      {
+        "id": "complexity",
+        "label": "Complexity",
+        "description": "In VUCA, Complexity is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze complexity in direct relation to the user's goal. Use when long-term planning is unreliable and the team needs resilience instead of prediction.",
+        "questions": [
+          "What does complexity look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on complexity?",
+          "How does complexity interact with other parts of VUCA?",
+          "What decision or next action follows from what we learn about complexity?"
+        ]
+      },
+      {
+        "id": "ambiguity",
+        "label": "Ambiguity",
+        "description": "In VUCA, Ambiguity is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze ambiguity in direct relation to the user's goal. Use when long-term planning is unreliable and the team needs resilience instead of prediction.",
+        "questions": [
+          "What does ambiguity look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on ambiguity?",
+          "How does ambiguity interact with other parts of VUCA?",
+          "What decision or next action follows from what we learn about ambiguity?"
+        ]
+      }
+    ]
   },
   {
     "rank": 23,
@@ -273,7 +1385,69 @@
     "tooling": "Goldratt consulting portals, Kanban tools",
     "alternatives": "Six Thinking Hats, Innovator's Dilemma, Lean Startup",
     "origin_authors": "Eliyahu M. Goldratt, 1984",
-    "usage_rights": "Free to apply; official consulting is proprietary"
+    "usage_rights": "Free to apply; official consulting is proprietary",
+    "components": [
+      {
+        "id": "identify",
+        "label": "Identify",
+        "description": "In Theory of Constraints, Identify is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze identify in direct relation to the user's goal. Use when a production line, software pipeline, or sales funnel is blocked by one narrow bottleneck.",
+        "questions": [
+          "What does identify look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on identify?",
+          "How does identify interact with other parts of Theory of Constraints?",
+          "What decision or next action follows from what we learn about identify?"
+        ]
+      },
+      {
+        "id": "exploit",
+        "label": "Exploit",
+        "description": "In Theory of Constraints, Exploit is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze exploit in direct relation to the user's goal. Use when a production line, software pipeline, or sales funnel is blocked by one narrow bottleneck.",
+        "questions": [
+          "What does exploit look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on exploit?",
+          "How does exploit interact with other parts of Theory of Constraints?",
+          "What decision or next action follows from what we learn about exploit?"
+        ]
+      },
+      {
+        "id": "subordinate",
+        "label": "Subordinate",
+        "description": "In Theory of Constraints, Subordinate is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze subordinate in direct relation to the user's goal. Use when a production line, software pipeline, or sales funnel is blocked by one narrow bottleneck.",
+        "questions": [
+          "What does subordinate look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on subordinate?",
+          "How does subordinate interact with other parts of Theory of Constraints?",
+          "What decision or next action follows from what we learn about subordinate?"
+        ]
+      },
+      {
+        "id": "elevate",
+        "label": "Elevate",
+        "description": "In Theory of Constraints, Elevate is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze elevate in direct relation to the user's goal. Use when a production line, software pipeline, or sales funnel is blocked by one narrow bottleneck.",
+        "questions": [
+          "What does elevate look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on elevate?",
+          "How does elevate interact with other parts of Theory of Constraints?",
+          "What decision or next action follows from what we learn about elevate?"
+        ]
+      },
+      {
+        "id": "repeat",
+        "label": "Repeat",
+        "description": "In Theory of Constraints, Repeat is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze repeat in direct relation to the user's goal. Use when a production line, software pipeline, or sales funnel is blocked by one narrow bottleneck.",
+        "questions": [
+          "What does repeat look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on repeat?",
+          "How does repeat interact with other parts of Theory of Constraints?",
+          "What decision or next action follows from what we learn about repeat?"
+        ]
+      }
+    ]
   },
   {
     "rank": 24,
@@ -285,7 +1459,57 @@
     "tooling": "Lucidchart, Cascade Strategy, Smartsheet",
     "alternatives": "SWOT, SOAR, Blue Ocean Strategy",
     "origin_authors": "Heinz Weihrich, 1982",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "so_strategies",
+        "label": "SO Strategies",
+        "description": "In TOWS Matrix, SO Strategies is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze so strategies in direct relation to the user's goal. Use after SWOT when the team needs actionable strategies from combined internal and external factors.",
+        "questions": [
+          "What does so strategies look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on so strategies?",
+          "How does so strategies interact with other parts of TOWS Matrix?",
+          "What decision or next action follows from what we learn about so strategies?"
+        ]
+      },
+      {
+        "id": "st_strategies",
+        "label": "ST Strategies",
+        "description": "In TOWS Matrix, ST Strategies is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze st strategies in direct relation to the user's goal. Use after SWOT when the team needs actionable strategies from combined internal and external factors.",
+        "questions": [
+          "What does st strategies look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on st strategies?",
+          "How does st strategies interact with other parts of TOWS Matrix?",
+          "What decision or next action follows from what we learn about st strategies?"
+        ]
+      },
+      {
+        "id": "wo_strategies",
+        "label": "WO Strategies",
+        "description": "In TOWS Matrix, WO Strategies is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze wo strategies in direct relation to the user's goal. Use after SWOT when the team needs actionable strategies from combined internal and external factors.",
+        "questions": [
+          "What does wo strategies look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on wo strategies?",
+          "How does wo strategies interact with other parts of TOWS Matrix?",
+          "What decision or next action follows from what we learn about wo strategies?"
+        ]
+      },
+      {
+        "id": "wt_strategies",
+        "label": "WT Strategies",
+        "description": "In TOWS Matrix, WT Strategies is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze wt strategies in direct relation to the user's goal. Use after SWOT when the team needs actionable strategies from combined internal and external factors.",
+        "questions": [
+          "What does wt strategies look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on wt strategies?",
+          "How does wt strategies interact with other parts of TOWS Matrix?",
+          "What decision or next action follows from what we learn about wt strategies?"
+        ]
+      }
+    ]
   },
   {
     "rank": 25,
@@ -297,7 +1521,57 @@
     "tooling": "Minitab Engage, Kainexus, i-nexus",
     "alternatives": "Balanced Scorecard, OKRs, OGSM",
     "origin_authors": "Yoji Akao, Japan, 1950s/1960s",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "long_term_goals",
+        "label": "Long-Term Goals",
+        "description": "In Hoshin Kanri / X-Matrix, Long-Term Goals is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze long-term goals in direct relation to the user's goal. Use when an enterprise must connect long-term strategy to daily operational metrics.",
+        "questions": [
+          "What does long-term goals look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on long-term goals?",
+          "How does long-term goals interact with other parts of Hoshin Kanri / X-Matrix?",
+          "What decision or next action follows from what we learn about long-term goals?"
+        ]
+      },
+      {
+        "id": "annual_objectives",
+        "label": "Annual Objectives",
+        "description": "In Hoshin Kanri / X-Matrix, Annual Objectives is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze annual objectives in direct relation to the user's goal. Use when an enterprise must connect long-term strategy to daily operational metrics.",
+        "questions": [
+          "What does annual objectives look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on annual objectives?",
+          "How does annual objectives interact with other parts of Hoshin Kanri / X-Matrix?",
+          "What decision or next action follows from what we learn about annual objectives?"
+        ]
+      },
+      {
+        "id": "top_level_priorities",
+        "label": "Top-Level Priorities",
+        "description": "In Hoshin Kanri / X-Matrix, Top-Level Priorities is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze top-level priorities in direct relation to the user's goal. Use when an enterprise must connect long-term strategy to daily operational metrics.",
+        "questions": [
+          "What does top-level priorities look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on top-level priorities?",
+          "How does top-level priorities interact with other parts of Hoshin Kanri / X-Matrix?",
+          "What decision or next action follows from what we learn about top-level priorities?"
+        ]
+      },
+      {
+        "id": "targets_to_improve",
+        "label": "Targets to Improve",
+        "description": "In Hoshin Kanri / X-Matrix, Targets to Improve is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze targets to improve in direct relation to the user's goal. Use when an enterprise must connect long-term strategy to daily operational metrics.",
+        "questions": [
+          "What does targets to improve look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on targets to improve?",
+          "How does targets to improve interact with other parts of Hoshin Kanri / X-Matrix?",
+          "What decision or next action follows from what we learn about targets to improve?"
+        ]
+      }
+    ]
   },
   {
     "rank": 26,
@@ -309,7 +1583,57 @@
     "tooling": "Strategyzer, PitchBook workflows",
     "alternatives": "Porter's Five Forces, SWOT, Innovator's Dilemma",
     "origin_authors": "Jay B. Barney, 1991",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "value",
+        "label": "Value",
+        "description": "In VRIO Framework, Value is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze value in direct relation to the user's goal. Use to assess whether a feature, patent, dataset, or capability creates sustainable advantage.",
+        "questions": [
+          "What does value look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on value?",
+          "How does value interact with other parts of VRIO Framework?",
+          "What decision or next action follows from what we learn about value?"
+        ]
+      },
+      {
+        "id": "rarity",
+        "label": "Rarity",
+        "description": "In VRIO Framework, Rarity is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze rarity in direct relation to the user's goal. Use to assess whether a feature, patent, dataset, or capability creates sustainable advantage.",
+        "questions": [
+          "What does rarity look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on rarity?",
+          "How does rarity interact with other parts of VRIO Framework?",
+          "What decision or next action follows from what we learn about rarity?"
+        ]
+      },
+      {
+        "id": "imitability",
+        "label": "Imitability",
+        "description": "In VRIO Framework, Imitability is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze imitability in direct relation to the user's goal. Use to assess whether a feature, patent, dataset, or capability creates sustainable advantage.",
+        "questions": [
+          "What does imitability look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on imitability?",
+          "How does imitability interact with other parts of VRIO Framework?",
+          "What decision or next action follows from what we learn about imitability?"
+        ]
+      },
+      {
+        "id": "organization",
+        "label": "Organization",
+        "description": "In VRIO Framework, Organization is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze organization in direct relation to the user's goal. Use to assess whether a feature, patent, dataset, or capability creates sustainable advantage.",
+        "questions": [
+          "What does organization look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on organization?",
+          "How does organization interact with other parts of VRIO Framework?",
+          "What decision or next action follows from what we learn about organization?"
+        ]
+      }
+    ]
   },
   {
     "rank": 27,
@@ -321,7 +1645,69 @@
     "tooling": "Cognitive Edge SenseMaker",
     "alternatives": "OODA Loop, VUCA, First Principles",
     "origin_authors": "Dave Snowden, IBM, 1999",
-    "usage_rights": "Creative Commons BY-SA; attribution to Snowden/Cognitive Edge required"
+    "usage_rights": "Creative Commons BY-SA; attribution to Snowden/Cognitive Edge required",
+    "components": [
+      {
+        "id": "clear",
+        "label": "Clear",
+        "description": "In Cynefin Framework, Clear is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze clear in direct relation to the user's goal. Use when leaders need to classify the nature of a problem before choosing a management approach.",
+        "questions": [
+          "What does clear look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on clear?",
+          "How does clear interact with other parts of Cynefin Framework?",
+          "What decision or next action follows from what we learn about clear?"
+        ]
+      },
+      {
+        "id": "complicated",
+        "label": "Complicated",
+        "description": "In Cynefin Framework, Complicated is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze complicated in direct relation to the user's goal. Use when leaders need to classify the nature of a problem before choosing a management approach.",
+        "questions": [
+          "What does complicated look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on complicated?",
+          "How does complicated interact with other parts of Cynefin Framework?",
+          "What decision or next action follows from what we learn about complicated?"
+        ]
+      },
+      {
+        "id": "complex",
+        "label": "Complex",
+        "description": "In Cynefin Framework, Complex is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze complex in direct relation to the user's goal. Use when leaders need to classify the nature of a problem before choosing a management approach.",
+        "questions": [
+          "What does complex look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on complex?",
+          "How does complex interact with other parts of Cynefin Framework?",
+          "What decision or next action follows from what we learn about complex?"
+        ]
+      },
+      {
+        "id": "chaotic",
+        "label": "Chaotic",
+        "description": "In Cynefin Framework, Chaotic is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze chaotic in direct relation to the user's goal. Use when leaders need to classify the nature of a problem before choosing a management approach.",
+        "questions": [
+          "What does chaotic look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on chaotic?",
+          "How does chaotic interact with other parts of Cynefin Framework?",
+          "What decision or next action follows from what we learn about chaotic?"
+        ]
+      },
+      {
+        "id": "confusion",
+        "label": "Confusion",
+        "description": "In Cynefin Framework, Confusion is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze confusion in direct relation to the user's goal. Use when leaders need to classify the nature of a problem before choosing a management approach.",
+        "questions": [
+          "What does confusion look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on confusion?",
+          "How does confusion interact with other parts of Cynefin Framework?",
+          "What decision or next action follows from what we learn about confusion?"
+        ]
+      }
+    ]
   },
   {
     "rank": 28,
@@ -333,7 +1719,33 @@
     "tooling": "OnlineWardleyMaps, Mapkeep, Miro",
     "alternatives": "Blue Ocean Strategy, Innovator's Dilemma, JTBD",
     "origin_authors": "Simon Wardley, 2005",
-    "usage_rights": "Creative Commons Attribution-ShareAlike / free to use with attribution"
+    "usage_rights": "Creative Commons Attribution-ShareAlike / free to use with attribution",
+    "components": [
+      {
+        "id": "value_chain",
+        "label": "Value Chain",
+        "description": "In Wardley Mapping, Value Chain is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze value chain in direct relation to the user's goal. Use when deciding what to build, buy, outsource, or treat as utility.",
+        "questions": [
+          "What does value chain look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on value chain?",
+          "How does value chain interact with other parts of Wardley Mapping?",
+          "What decision or next action follows from what we learn about value chain?"
+        ]
+      },
+      {
+        "id": "evolution_stage",
+        "label": "Evolution Stage",
+        "description": "In Wardley Mapping, Evolution Stage is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze evolution stage in direct relation to the user's goal. Use when deciding what to build, buy, outsource, or treat as utility.",
+        "questions": [
+          "What does evolution stage look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on evolution stage?",
+          "How does evolution stage interact with other parts of Wardley Mapping?",
+          "What decision or next action follows from what we learn about evolution stage?"
+        ]
+      }
+    ]
   },
   {
     "rank": 29,
@@ -345,7 +1757,33 @@
     "tooling": "IHS Markit Goldfire, specialized TRIZ software",
     "alternatives": "First Principles, FAST / Value Engineering, Double Diamond",
     "origin_authors": "Genrich Altshuller, USSR, 1946",
-    "usage_rights": "Core theory is public domain; specific software implementations may be proprietary"
+    "usage_rights": "Core theory is public domain; specific software implementations may be proprietary",
+    "components": [
+      {
+        "id": "inventive_principles",
+        "label": "Inventive Principles",
+        "description": "TRIZ inventive principles that resolve contradictions through proven patterns of innovation.",
+        "prompt": "Select principles that translate into concrete design or process moves in the user's domain.",
+        "questions": [
+          "Which contradiction is blocking progress today?",
+          "Which inventive principles map cleanly to this contradiction?",
+          "How would each principle change structure, timing, materials, or interfaces?",
+          "What prototype would prove a principle actually helps?"
+        ]
+      },
+      {
+        "id": "contradiction_matrix",
+        "label": "Contradiction Matrix",
+        "description": "The paired tension between improving one parameter while worsening another.",
+        "prompt": "State the contradiction in domain language: improve X without worsening Y.",
+        "questions": [
+          "What parameter must improve and what parameter gets worse when you try?",
+          "Is the conflict technical, physical, or organizational?",
+          "Which TRIZ parameter labels best describe the tradeoff?",
+          "What failure modes appear if the contradiction is ignored?"
+        ]
+      }
+    ]
   },
   {
     "rank": 30,
@@ -357,7 +1795,81 @@
     "tooling": "Miro, Mural, SessionLab",
     "alternatives": "Cynefin, SWOT, Theory of Constraints",
     "origin_authors": "Edward de Bono, 1985",
-    "usage_rights": "Six Thinking Hats is a registered trademark; casual use is common"
+    "usage_rights": "Six Thinking Hats is a registered trademark; casual use is common",
+    "components": [
+      {
+        "id": "white_hat",
+        "label": "White Hat",
+        "description": "In Six Thinking Hats, White Hat is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze white hat in direct relation to the user's goal. Use when teams are stuck in groupthink or emotional argument and need structured perspective switching.",
+        "questions": [
+          "What does white hat look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on white hat?",
+          "How does white hat interact with other parts of Six Thinking Hats?",
+          "What decision or next action follows from what we learn about white hat?"
+        ]
+      },
+      {
+        "id": "red_hat",
+        "label": "Red Hat",
+        "description": "In Six Thinking Hats, Red Hat is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze red hat in direct relation to the user's goal. Use when teams are stuck in groupthink or emotional argument and need structured perspective switching.",
+        "questions": [
+          "What does red hat look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on red hat?",
+          "How does red hat interact with other parts of Six Thinking Hats?",
+          "What decision or next action follows from what we learn about red hat?"
+        ]
+      },
+      {
+        "id": "black_hat",
+        "label": "Black Hat",
+        "description": "In Six Thinking Hats, Black Hat is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze black hat in direct relation to the user's goal. Use when teams are stuck in groupthink or emotional argument and need structured perspective switching.",
+        "questions": [
+          "What does black hat look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on black hat?",
+          "How does black hat interact with other parts of Six Thinking Hats?",
+          "What decision or next action follows from what we learn about black hat?"
+        ]
+      },
+      {
+        "id": "yellow_hat",
+        "label": "Yellow Hat",
+        "description": "In Six Thinking Hats, Yellow Hat is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze yellow hat in direct relation to the user's goal. Use when teams are stuck in groupthink or emotional argument and need structured perspective switching.",
+        "questions": [
+          "What does yellow hat look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on yellow hat?",
+          "How does yellow hat interact with other parts of Six Thinking Hats?",
+          "What decision or next action follows from what we learn about yellow hat?"
+        ]
+      },
+      {
+        "id": "green_hat",
+        "label": "Green Hat",
+        "description": "In Six Thinking Hats, Green Hat is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze green hat in direct relation to the user's goal. Use when teams are stuck in groupthink or emotional argument and need structured perspective switching.",
+        "questions": [
+          "What does green hat look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on green hat?",
+          "How does green hat interact with other parts of Six Thinking Hats?",
+          "What decision or next action follows from what we learn about green hat?"
+        ]
+      },
+      {
+        "id": "blue_hat",
+        "label": "Blue Hat",
+        "description": "In Six Thinking Hats, Blue Hat is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze blue hat in direct relation to the user's goal. Use when teams are stuck in groupthink or emotional argument and need structured perspective switching.",
+        "questions": [
+          "What does blue hat look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on blue hat?",
+          "How does blue hat interact with other parts of Six Thinking Hats?",
+          "What decision or next action follows from what we learn about blue hat?"
+        ]
+      }
+    ]
   },
   {
     "rank": 31,
@@ -369,7 +1881,57 @@
     "tooling": "Jira, Azure DevOps, Rally",
     "alternatives": "MoSCoW, RICE Scoring, ICE Scoring",
     "origin_authors": "Agile and Scrum communities",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "essential",
+        "label": "Essential",
+        "description": "In EPIC, Essential is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze essential in direct relation to the user's goal. Use to break a large software feature into executable chunks that deliver real value.",
+        "questions": [
+          "What does essential look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on essential?",
+          "How does essential interact with other parts of EPIC?",
+          "What decision or next action follows from what we learn about essential?"
+        ]
+      },
+      {
+        "id": "purposeful",
+        "label": "Purposeful",
+        "description": "In EPIC, Purposeful is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze purposeful in direct relation to the user's goal. Use to break a large software feature into executable chunks that deliver real value.",
+        "questions": [
+          "What does purposeful look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on purposeful?",
+          "How does purposeful interact with other parts of EPIC?",
+          "What decision or next action follows from what we learn about purposeful?"
+        ]
+      },
+      {
+        "id": "impactful",
+        "label": "Impactful",
+        "description": "In EPIC, Impactful is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze impactful in direct relation to the user's goal. Use to break a large software feature into executable chunks that deliver real value.",
+        "questions": [
+          "What does impactful look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on impactful?",
+          "How does impactful interact with other parts of EPIC?",
+          "What decision or next action follows from what we learn about impactful?"
+        ]
+      },
+      {
+        "id": "conditional",
+        "label": "Conditional",
+        "description": "In EPIC, Conditional is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze conditional in direct relation to the user's goal. Use to break a large software feature into executable chunks that deliver real value.",
+        "questions": [
+          "What does conditional look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on conditional?",
+          "How does conditional interact with other parts of EPIC?",
+          "What decision or next action follows from what we learn about conditional?"
+        ]
+      }
+    ]
   },
   {
     "rank": 32,
@@ -381,7 +1943,33 @@
     "tooling": "Strategyn portal",
     "alternatives": "JTBD, RICE Scoring, Blue Ocean Strategy",
     "origin_authors": "Tony Ulwick, Strategyn, 1991",
-    "usage_rights": "Outcome-Driven Innovation is a registered trademark; commercial consulting use is protected"
+    "usage_rights": "Outcome-Driven Innovation is a registered trademark; commercial consulting use is protected",
+    "components": [
+      {
+        "id": "desired_outcomes",
+        "label": "Desired Outcomes",
+        "description": "In Outcome-Driven Innovation, Desired Outcomes is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze desired outcomes in direct relation to the user's goal. Use when rigorous customer outcome math is needed to identify high-importance, low-satisfaction opportunities.",
+        "questions": [
+          "What does desired outcomes look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on desired outcomes?",
+          "How does desired outcomes interact with other parts of Outcome-Driven Innovation?",
+          "What decision or next action follows from what we learn about desired outcomes?"
+        ]
+      },
+      {
+        "id": "opportunity_algorithm",
+        "label": "Opportunity Algorithm",
+        "description": "In Outcome-Driven Innovation, Opportunity Algorithm is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze opportunity algorithm in direct relation to the user's goal. Use when rigorous customer outcome math is needed to identify high-importance, low-satisfaction opportunities.",
+        "questions": [
+          "What does opportunity algorithm look like in this specific situation?",
+          "What proof shows this opportunity algorithm is real rather than assumed?",
+          "How does opportunity algorithm interact with other parts of Outcome-Driven Innovation?",
+          "How can we act on opportunity algorithm within current constraints?"
+        ]
+      }
+    ]
   },
   {
     "rank": 33,
@@ -393,7 +1981,57 @@
     "tooling": "Clevis, Cascade Strategy",
     "alternatives": "OKRs, V2MOM, Balanced Scorecard",
     "origin_authors": "Often attributed to Japanese auto manufacturers and P&G, 1950s",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "objective",
+        "label": "Objective",
+        "description": "In OGSM, Objective is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze objective in direct relation to the user's goal. Use when top-down corporate deployment must connect high-level objectives to numerical measures.",
+        "questions": [
+          "What does objective look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on objective?",
+          "How does objective interact with other parts of OGSM?",
+          "What decision or next action follows from what we learn about objective?"
+        ]
+      },
+      {
+        "id": "goals",
+        "label": "Goals",
+        "description": "In OGSM, Goals is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze goals in direct relation to the user's goal. Use when top-down corporate deployment must connect high-level objectives to numerical measures.",
+        "questions": [
+          "What does goals look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on goals?",
+          "How does goals interact with other parts of OGSM?",
+          "What decision or next action follows from what we learn about goals?"
+        ]
+      },
+      {
+        "id": "strategies",
+        "label": "Strategies",
+        "description": "In OGSM, Strategies is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze strategies in direct relation to the user's goal. Use when top-down corporate deployment must connect high-level objectives to numerical measures.",
+        "questions": [
+          "What does strategies look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on strategies?",
+          "How does strategies interact with other parts of OGSM?",
+          "What decision or next action follows from what we learn about strategies?"
+        ]
+      },
+      {
+        "id": "measures",
+        "label": "Measures",
+        "description": "In OGSM, Measures is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze measures in direct relation to the user's goal. Use when top-down corporate deployment must connect high-level objectives to numerical measures.",
+        "questions": [
+          "What does measures look like in this specific situation?",
+          "What baseline and target define success for measures?",
+          "Which behaviors or events should move measures?",
+          "What decision or next action follows from what we learn about measures?"
+        ]
+      }
+    ]
   },
   {
     "rank": 34,
@@ -405,7 +2043,45 @@
     "tooling": "Optimizely, VWO",
     "alternatives": "ICE Scoring, RICE Scoring, MoSCoW",
     "origin_authors": "Chris Goward, WiderFunnel",
-    "usage_rights": "Free to use"
+    "usage_rights": "Free to use",
+    "components": [
+      {
+        "id": "potential",
+        "label": "Potential",
+        "description": "In PIE Framework, Potential is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze potential in direct relation to the user's goal. Use when marketing or optimization teams need to prioritize many A/B tests quickly.",
+        "questions": [
+          "What does potential look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on potential?",
+          "How does potential interact with other parts of PIE Framework?",
+          "What decision or next action follows from what we learn about potential?"
+        ]
+      },
+      {
+        "id": "importance",
+        "label": "Importance",
+        "description": "In PIE Framework, Importance is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze importance in direct relation to the user's goal. Use when marketing or optimization teams need to prioritize many A/B tests quickly.",
+        "questions": [
+          "What does importance look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on importance?",
+          "How does importance interact with other parts of PIE Framework?",
+          "What decision or next action follows from what we learn about importance?"
+        ]
+      },
+      {
+        "id": "ease",
+        "label": "Ease",
+        "description": "In PIE Framework, Ease is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze ease in direct relation to the user's goal. Use when marketing or optimization teams need to prioritize many A/B tests quickly.",
+        "questions": [
+          "What does ease look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on ease?",
+          "How does ease interact with other parts of PIE Framework?",
+          "What decision or next action follows from what we learn about ease?"
+        ]
+      }
+    ]
   },
   {
     "rank": 35,
@@ -417,7 +2093,57 @@
     "tooling": "PagerDuty, Splunk, incident management SaaS",
     "alternatives": "OODA Loop, Commander's Intent, CARVER",
     "origin_authors": "U.S. Military",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "primary",
+        "label": "Primary",
+        "description": "In PACE, Primary is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze primary in direct relation to the user's goal. Use when system failure has catastrophic consequences and redundant fallback paths must be planned.",
+        "questions": [
+          "What does primary look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on primary?",
+          "How does primary interact with other parts of PACE?",
+          "What decision or next action follows from what we learn about primary?"
+        ]
+      },
+      {
+        "id": "alternate",
+        "label": "Alternate",
+        "description": "In PACE, Alternate is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze alternate in direct relation to the user's goal. Use when system failure has catastrophic consequences and redundant fallback paths must be planned.",
+        "questions": [
+          "What does alternate look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on alternate?",
+          "How does alternate interact with other parts of PACE?",
+          "What decision or next action follows from what we learn about alternate?"
+        ]
+      },
+      {
+        "id": "contingency",
+        "label": "Contingency",
+        "description": "In PACE, Contingency is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze contingency in direct relation to the user's goal. Use when system failure has catastrophic consequences and redundant fallback paths must be planned.",
+        "questions": [
+          "What does contingency look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on contingency?",
+          "How does contingency interact with other parts of PACE?",
+          "What decision or next action follows from what we learn about contingency?"
+        ]
+      },
+      {
+        "id": "emergency",
+        "label": "Emergency",
+        "description": "In PACE, Emergency is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze emergency in direct relation to the user's goal. Use when system failure has catastrophic consequences and redundant fallback paths must be planned.",
+        "questions": [
+          "What does emergency look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on emergency?",
+          "How does emergency interact with other parts of PACE?",
+          "What decision or next action follows from what we learn about emergency?"
+        ]
+      }
+    ]
   },
   {
     "rank": 36,
@@ -429,7 +2155,45 @@
     "tooling": "Lattice, Asana goal-setting workflows",
     "alternatives": "Ends, Ways, Means; OKRs; MOST",
     "origin_authors": "Prussian Auftragstaktik, modernized by U.S. Military",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "purpose",
+        "label": "Purpose",
+        "description": "In Commander's Intent, Purpose is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze purpose in direct relation to the user's goal. Use when decentralized teams need freedom to adapt tactics while preserving the end state.",
+        "questions": [
+          "What does purpose look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on purpose?",
+          "How does purpose interact with other parts of Commander's Intent?",
+          "What decision or next action follows from what we learn about purpose?"
+        ]
+      },
+      {
+        "id": "method",
+        "label": "Method",
+        "description": "In Commander's Intent, Method is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze method in direct relation to the user's goal. Use when decentralized teams need freedom to adapt tactics while preserving the end state.",
+        "questions": [
+          "What does method look like in this specific situation?",
+          "Which alternatives exist for executing method?",
+          "What resources or dependencies does method require?",
+          "What decision or next action follows from what we learn about method?"
+        ]
+      },
+      {
+        "id": "end_state",
+        "label": "End State",
+        "description": "In Commander's Intent, End State is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze end state in direct relation to the user's goal. Use when decentralized teams need freedom to adapt tactics while preserving the end state.",
+        "questions": [
+          "What does end state look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on end state?",
+          "How does end state interact with other parts of Commander's Intent?",
+          "What decision or next action follows from what we learn about end state?"
+        ]
+      }
+    ]
   },
   {
     "rank": 37,
@@ -441,7 +2205,45 @@
     "tooling": "Consulting templates, Cascade",
     "alternatives": "Commander's Intent, MOST, OKRs",
     "origin_authors": "Arthur F. Lykke Jr., U.S. Army War College, 1989",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "ends",
+        "label": "Ends",
+        "description": "In Ends, Ways, Means, Ends is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze ends in direct relation to the user's goal. Use when a project may be failing because goals, execution methods, and resources are misaligned.",
+        "questions": [
+          "What does ends look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on ends?",
+          "How does ends interact with other parts of Ends, Ways, Means?",
+          "What decision or next action follows from what we learn about ends?"
+        ]
+      },
+      {
+        "id": "ways",
+        "label": "Ways",
+        "description": "In Ends, Ways, Means, Ways is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze ways in direct relation to the user's goal. Use when a project may be failing because goals, execution methods, and resources are misaligned.",
+        "questions": [
+          "What does ways look like in this specific situation?",
+          "Which alternatives exist for executing ways?",
+          "What resources or dependencies does ways require?",
+          "What decision or next action follows from what we learn about ways?"
+        ]
+      },
+      {
+        "id": "means",
+        "label": "Means",
+        "description": "In Ends, Ways, Means, Means is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze means in direct relation to the user's goal. Use when a project may be failing because goals, execution methods, and resources are misaligned.",
+        "questions": [
+          "What does means look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on means?",
+          "How does means interact with other parts of Ends, Ways, Means?",
+          "What decision or next action follows from what we learn about means?"
+        ]
+      }
+    ]
   },
   {
     "rank": 38,
@@ -453,7 +2255,57 @@
     "tooling": "Lucidchart, Smartsheet",
     "alternatives": "OGSM, V2MOM, OKRs",
     "origin_authors": "General business analysis theory",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "mission",
+        "label": "Mission",
+        "description": "In MOST Analysis, Mission is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze mission in direct relation to the user's goal. Use to verify whether daily tactics connect upward to the company's mission.",
+        "questions": [
+          "What does mission look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on mission?",
+          "How does mission interact with other parts of MOST Analysis?",
+          "What decision or next action follows from what we learn about mission?"
+        ]
+      },
+      {
+        "id": "objectives",
+        "label": "Objectives",
+        "description": "In MOST Analysis, Objectives is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze objectives in direct relation to the user's goal. Use to verify whether daily tactics connect upward to the company's mission.",
+        "questions": [
+          "What does objectives look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on objectives?",
+          "How does objectives interact with other parts of MOST Analysis?",
+          "What decision or next action follows from what we learn about objectives?"
+        ]
+      },
+      {
+        "id": "strategies",
+        "label": "Strategies",
+        "description": "In MOST Analysis, Strategies is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze strategies in direct relation to the user's goal. Use to verify whether daily tactics connect upward to the company's mission.",
+        "questions": [
+          "What does strategies look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on strategies?",
+          "How does strategies interact with other parts of MOST Analysis?",
+          "What decision or next action follows from what we learn about strategies?"
+        ]
+      },
+      {
+        "id": "tactics",
+        "label": "Tactics",
+        "description": "In MOST Analysis, Tactics is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze tactics in direct relation to the user's goal. Use to verify whether daily tactics connect upward to the company's mission.",
+        "questions": [
+          "What does tactics look like in this specific situation?",
+          "Which alternatives exist for executing tactics?",
+          "What resources or dependencies does tactics require?",
+          "What decision or next action follows from what we learn about tactics?"
+        ]
+      }
+    ]
   },
   {
     "rank": 39,
@@ -465,7 +2317,57 @@
     "tooling": "SRI International portals, incubator pitch templates",
     "alternatives": "JTBD, pitch deck formats, RICE Scoring",
     "origin_authors": "Carlson and Wilmot, SRI International, 2006",
-    "usage_rights": "Free to apply / no strict IP restrictions on framework usage"
+    "usage_rights": "Free to apply / no strict IP restrictions on framework usage",
+    "components": [
+      {
+        "id": "need",
+        "label": "Need",
+        "description": "In NABC, Need is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze need in direct relation to the user's goal. Use when technical teams need to pitch a project clearly to non-technical executives.",
+        "questions": [
+          "What does need look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on need?",
+          "How does need interact with other parts of NABC?",
+          "What decision or next action follows from what we learn about need?"
+        ]
+      },
+      {
+        "id": "approach",
+        "label": "Approach",
+        "description": "In NABC, Approach is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze approach in direct relation to the user's goal. Use when technical teams need to pitch a project clearly to non-technical executives.",
+        "questions": [
+          "What does approach look like in this specific situation?",
+          "Which alternatives exist for executing approach?",
+          "What resources or dependencies does approach require?",
+          "What decision or next action follows from what we learn about approach?"
+        ]
+      },
+      {
+        "id": "benefits",
+        "label": "Benefits",
+        "description": "In NABC, Benefits is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze benefits in direct relation to the user's goal. Use when technical teams need to pitch a project clearly to non-technical executives.",
+        "questions": [
+          "What does benefits look like in this specific situation?",
+          "What proof shows this benefits is real rather than assumed?",
+          "How does benefits interact with other parts of NABC?",
+          "How can we act on benefits within current constraints?"
+        ]
+      },
+      {
+        "id": "competition",
+        "label": "Competition",
+        "description": "In NABC, Competition is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze competition in direct relation to the user's goal. Use when technical teams need to pitch a project clearly to non-technical executives.",
+        "questions": [
+          "What does competition look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on competition?",
+          "How does competition interact with other parts of NABC?",
+          "What decision or next action follows from what we learn about competition?"
+        ]
+      }
+    ]
   },
   {
     "rank": 40,
@@ -477,7 +2379,57 @@
     "tooling": "Lucidchart, Miro, strategy workshops",
     "alternatives": "SWOT, TOWS, V2MOM",
     "origin_authors": "Jacqueline Stavros, David Cooperrider, D. Lynn Kelley, 2003",
-    "usage_rights": "Free to use"
+    "usage_rights": "Free to use",
+    "components": [
+      {
+        "id": "strengths",
+        "label": "Strengths",
+        "description": "In SOAR Analysis, Strengths is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze strengths in direct relation to the user's goal. Use when morale is low or SWOT is too negative and the team needs an appreciative future-state frame.",
+        "questions": [
+          "What does strengths look like in this specific situation?",
+          "What proof shows this strengths is real rather than assumed?",
+          "How does strengths interact with other parts of SOAR Analysis?",
+          "How can we act on strengths within current constraints?"
+        ]
+      },
+      {
+        "id": "opportunities",
+        "label": "Opportunities",
+        "description": "In SOAR Analysis, Opportunities is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze opportunities in direct relation to the user's goal. Use when morale is low or SWOT is too negative and the team needs an appreciative future-state frame.",
+        "questions": [
+          "What does opportunities look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on opportunities?",
+          "How does opportunities interact with other parts of SOAR Analysis?",
+          "What decision or next action follows from what we learn about opportunities?"
+        ]
+      },
+      {
+        "id": "aspirations",
+        "label": "Aspirations",
+        "description": "In SOAR Analysis, Aspirations is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze aspirations in direct relation to the user's goal. Use when morale is low or SWOT is too negative and the team needs an appreciative future-state frame.",
+        "questions": [
+          "What does aspirations look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on aspirations?",
+          "How does aspirations interact with other parts of SOAR Analysis?",
+          "What decision or next action follows from what we learn about aspirations?"
+        ]
+      },
+      {
+        "id": "results",
+        "label": "Results",
+        "description": "In SOAR Analysis, Results is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze results in direct relation to the user's goal. Use when morale is low or SWOT is too negative and the team needs an appreciative future-state frame.",
+        "questions": [
+          "What does results look like in this specific situation?",
+          "What baseline and target define success for results?",
+          "Which behaviors or events should move results?",
+          "What decision or next action follows from what we learn about results?"
+        ]
+      }
+    ]
   },
   {
     "rank": 41,
@@ -489,7 +2441,93 @@
     "tooling": "Defense logistics software, Palantir military implementations",
     "alternatives": "JCIDS, OODA Loop, Scenario Planning",
     "origin_authors": "U.S. Army",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "receipt_of_mission",
+        "label": "Receipt of Mission",
+        "description": "In Military Decision-Making Process, Receipt of Mission is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze receipt of mission in direct relation to the user's goal. Use for complex, high-stakes operations requiring course-of-action generation, wargaming, and comparison.",
+        "questions": [
+          "What does receipt of mission look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on receipt of mission?",
+          "How does receipt of mission interact with other parts of Military Decision-Making Process?",
+          "What decision or next action follows from what we learn about receipt of mission?"
+        ]
+      },
+      {
+        "id": "mission_analysis",
+        "label": "Mission Analysis",
+        "description": "In Military Decision-Making Process, Mission Analysis is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze mission analysis in direct relation to the user's goal. Use for complex, high-stakes operations requiring course-of-action generation, wargaming, and comparison.",
+        "questions": [
+          "What does mission analysis look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on mission analysis?",
+          "How does mission analysis interact with other parts of Military Decision-Making Process?",
+          "What decision or next action follows from what we learn about mission analysis?"
+        ]
+      },
+      {
+        "id": "coa_development",
+        "label": "COA Development",
+        "description": "In Military Decision-Making Process, COA Development is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze coa development in direct relation to the user's goal. Use for complex, high-stakes operations requiring course-of-action generation, wargaming, and comparison.",
+        "questions": [
+          "What does coa development look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on coa development?",
+          "How does coa development interact with other parts of Military Decision-Making Process?",
+          "What decision or next action follows from what we learn about coa development?"
+        ]
+      },
+      {
+        "id": "coa_analysis",
+        "label": "COA Analysis",
+        "description": "In Military Decision-Making Process, COA Analysis is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze coa analysis in direct relation to the user's goal. Use for complex, high-stakes operations requiring course-of-action generation, wargaming, and comparison.",
+        "questions": [
+          "What does coa analysis look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on coa analysis?",
+          "How does coa analysis interact with other parts of Military Decision-Making Process?",
+          "What decision or next action follows from what we learn about coa analysis?"
+        ]
+      },
+      {
+        "id": "coa_comparison",
+        "label": "COA Comparison",
+        "description": "In Military Decision-Making Process, COA Comparison is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze coa comparison in direct relation to the user's goal. Use for complex, high-stakes operations requiring course-of-action generation, wargaming, and comparison.",
+        "questions": [
+          "What does coa comparison look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on coa comparison?",
+          "How does coa comparison interact with other parts of Military Decision-Making Process?",
+          "What decision or next action follows from what we learn about coa comparison?"
+        ]
+      },
+      {
+        "id": "coa_approval",
+        "label": "COA Approval",
+        "description": "In Military Decision-Making Process, COA Approval is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze coa approval in direct relation to the user's goal. Use for complex, high-stakes operations requiring course-of-action generation, wargaming, and comparison.",
+        "questions": [
+          "What does coa approval look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on coa approval?",
+          "How does coa approval interact with other parts of Military Decision-Making Process?",
+          "What decision or next action follows from what we learn about coa approval?"
+        ]
+      },
+      {
+        "id": "orders_production",
+        "label": "Orders Production",
+        "description": "In Military Decision-Making Process, Orders Production is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze orders production in direct relation to the user's goal. Use for complex, high-stakes operations requiring course-of-action generation, wargaming, and comparison.",
+        "questions": [
+          "What does orders production look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on orders production?",
+          "How does orders production interact with other parts of Military Decision-Making Process?",
+          "What decision or next action follows from what we learn about orders production?"
+        ]
+      }
+    ]
   },
   {
     "rank": 42,
@@ -501,7 +2539,45 @@
     "tooling": "Threat modeling tools, Palantir, Maltego",
     "alternatives": "Porter's Five Forces, CARVER, SWOT",
     "origin_authors": "Carl von Clausewitz, 1832",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "center_of_gravity",
+        "label": "Center of Gravity",
+        "description": "In COG Analysis, Center of Gravity is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze center of gravity in direct relation to the user's goal. Use to identify and protect or attack the central strength that holds a system together.",
+        "questions": [
+          "What does center of gravity look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on center of gravity?",
+          "How does center of gravity interact with other parts of COG Analysis?",
+          "What decision or next action follows from what we learn about center of gravity?"
+        ]
+      },
+      {
+        "id": "capabilities",
+        "label": "Capabilities",
+        "description": "In COG Analysis, Capabilities is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze capabilities in direct relation to the user's goal. Use to identify and protect or attack the central strength that holds a system together.",
+        "questions": [
+          "What does capabilities look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on capabilities?",
+          "How does capabilities interact with other parts of COG Analysis?",
+          "What decision or next action follows from what we learn about capabilities?"
+        ]
+      },
+      {
+        "id": "vulnerabilities",
+        "label": "Vulnerabilities",
+        "description": "In COG Analysis, Vulnerabilities is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze vulnerabilities in direct relation to the user's goal. Use to identify and protect or attack the central strength that holds a system together.",
+        "questions": [
+          "What does vulnerabilities look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on vulnerabilities?",
+          "How does vulnerabilities interact with other parts of COG Analysis?",
+          "What decision or next action follows from what we learn about vulnerabilities?"
+        ]
+      }
+    ]
   },
   {
     "rank": 43,
@@ -513,7 +2589,69 @@
     "tooling": "Rapid7, Nessus integrations, risk management tools",
     "alternatives": "RICE Scoring, PIE Framework, COG Analysis",
     "origin_authors": "U.S. Special Forces, Vietnam era",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "criticality",
+        "label": "Criticality",
+        "description": "In CARVER Matrix, Criticality is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze criticality in direct relation to the user's goal. Use to numerically rank targets, vulnerabilities, or projects by value and exploitability.",
+        "questions": [
+          "What does criticality look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on criticality?",
+          "How does criticality interact with other parts of CARVER Matrix?",
+          "What decision or next action follows from what we learn about criticality?"
+        ]
+      },
+      {
+        "id": "accessibility",
+        "label": "Accessibility",
+        "description": "In CARVER Matrix, Accessibility is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze accessibility in direct relation to the user's goal. Use to numerically rank targets, vulnerabilities, or projects by value and exploitability.",
+        "questions": [
+          "What does accessibility look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on accessibility?",
+          "How does accessibility interact with other parts of CARVER Matrix?",
+          "What decision or next action follows from what we learn about accessibility?"
+        ]
+      },
+      {
+        "id": "vulnerability",
+        "label": "Vulnerability",
+        "description": "In CARVER Matrix, Vulnerability is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze vulnerability in direct relation to the user's goal. Use to numerically rank targets, vulnerabilities, or projects by value and exploitability.",
+        "questions": [
+          "What does vulnerability look like in this specific situation?",
+          "What is the most credible way vulnerability could materialize here?",
+          "How does vulnerability interact with other parts of CARVER Matrix?",
+          "What mitigation or monitoring should we put in place for vulnerability?"
+        ]
+      },
+      {
+        "id": "effect",
+        "label": "Effect",
+        "description": "In CARVER Matrix, Effect is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze effect in direct relation to the user's goal. Use to numerically rank targets, vulnerabilities, or projects by value and exploitability.",
+        "questions": [
+          "What does effect look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on effect?",
+          "How does effect interact with other parts of CARVER Matrix?",
+          "What decision or next action follows from what we learn about effect?"
+        ]
+      },
+      {
+        "id": "recognizability",
+        "label": "Recognizability",
+        "description": "In CARVER Matrix, Recognizability is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze recognizability in direct relation to the user's goal. Use to numerically rank targets, vulnerabilities, or projects by value and exploitability.",
+        "questions": [
+          "What does recognizability look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on recognizability?",
+          "How does recognizability interact with other parts of CARVER Matrix?",
+          "What decision or next action follows from what we learn about recognizability?"
+        ]
+      }
+    ]
   },
   {
     "rank": 44,
@@ -525,7 +2663,105 @@
     "tooling": "DoD acquisition portals, ArchiMate enterprise architecture tools",
     "alternatives": "McKinsey 7S, JCIDS, Balanced Scorecard",
     "origin_authors": "U.S. Department of Defense",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "doctrine",
+        "label": "Doctrine",
+        "description": "In DOTMLPF-P, Doctrine is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze doctrine in direct relation to the user's goal. Use when a large technology acquisition requires training, personnel, infrastructure, and policy readiness.",
+        "questions": [
+          "What does doctrine look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on doctrine?",
+          "How does doctrine interact with other parts of DOTMLPF-P?",
+          "What decision or next action follows from what we learn about doctrine?"
+        ]
+      },
+      {
+        "id": "organization",
+        "label": "Organization",
+        "description": "In DOTMLPF-P, Organization is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze organization in direct relation to the user's goal. Use when a large technology acquisition requires training, personnel, infrastructure, and policy readiness.",
+        "questions": [
+          "What does organization look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on organization?",
+          "How does organization interact with other parts of DOTMLPF-P?",
+          "What decision or next action follows from what we learn about organization?"
+        ]
+      },
+      {
+        "id": "training",
+        "label": "Training",
+        "description": "In DOTMLPF-P, Training is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze training in direct relation to the user's goal. Use when a large technology acquisition requires training, personnel, infrastructure, and policy readiness.",
+        "questions": [
+          "What does training look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on training?",
+          "How does training interact with other parts of DOTMLPF-P?",
+          "What decision or next action follows from what we learn about training?"
+        ]
+      },
+      {
+        "id": "materiel",
+        "label": "Materiel",
+        "description": "In DOTMLPF-P, Materiel is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze materiel in direct relation to the user's goal. Use when a large technology acquisition requires training, personnel, infrastructure, and policy readiness.",
+        "questions": [
+          "What does materiel look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on materiel?",
+          "How does materiel interact with other parts of DOTMLPF-P?",
+          "What decision or next action follows from what we learn about materiel?"
+        ]
+      },
+      {
+        "id": "leadership",
+        "label": "Leadership",
+        "description": "In DOTMLPF-P, Leadership is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze leadership in direct relation to the user's goal. Use when a large technology acquisition requires training, personnel, infrastructure, and policy readiness.",
+        "questions": [
+          "What does leadership look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on leadership?",
+          "How does leadership interact with other parts of DOTMLPF-P?",
+          "What decision or next action follows from what we learn about leadership?"
+        ]
+      },
+      {
+        "id": "personnel",
+        "label": "Personnel",
+        "description": "In DOTMLPF-P, Personnel is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze personnel in direct relation to the user's goal. Use when a large technology acquisition requires training, personnel, infrastructure, and policy readiness.",
+        "questions": [
+          "What does personnel look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on personnel?",
+          "How does personnel interact with other parts of DOTMLPF-P?",
+          "What decision or next action follows from what we learn about personnel?"
+        ]
+      },
+      {
+        "id": "facilities",
+        "label": "Facilities",
+        "description": "In DOTMLPF-P, Facilities is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze facilities in direct relation to the user's goal. Use when a large technology acquisition requires training, personnel, infrastructure, and policy readiness.",
+        "questions": [
+          "What does facilities look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on facilities?",
+          "How does facilities interact with other parts of DOTMLPF-P?",
+          "What decision or next action follows from what we learn about facilities?"
+        ]
+      },
+      {
+        "id": "policy",
+        "label": "Policy",
+        "description": "In DOTMLPF-P, Policy is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze policy in direct relation to the user's goal. Use when a large technology acquisition requires training, personnel, infrastructure, and policy readiness.",
+        "questions": [
+          "What does policy look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on policy?",
+          "How does policy interact with other parts of DOTMLPF-P?",
+          "What decision or next action follows from what we learn about policy?"
+        ]
+      }
+    ]
   },
   {
     "rank": 45,
@@ -537,7 +2773,93 @@
     "tooling": "Intelligence community analytical portals",
     "alternatives": "PMESII-PT, PESTLE, Ends/Ways/Means",
     "origin_authors": "U.S. Military doctrine",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "diplomatic",
+        "label": "Diplomatic",
+        "description": "In DIME / DIMEFIL, Diplomatic is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze diplomatic in direct relation to the user's goal. Use for macro strategy when every lever of power and influence must be audited.",
+        "questions": [
+          "What does diplomatic look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on diplomatic?",
+          "How does diplomatic interact with other parts of DIME / DIMEFIL?",
+          "What decision or next action follows from what we learn about diplomatic?"
+        ]
+      },
+      {
+        "id": "information",
+        "label": "Information",
+        "description": "In DIME / DIMEFIL, Information is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze information in direct relation to the user's goal. Use for macro strategy when every lever of power and influence must be audited.",
+        "questions": [
+          "What does information look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on information?",
+          "How does information interact with other parts of DIME / DIMEFIL?",
+          "What decision or next action follows from what we learn about information?"
+        ]
+      },
+      {
+        "id": "military",
+        "label": "Military",
+        "description": "In DIME / DIMEFIL, Military is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze military in direct relation to the user's goal. Use for macro strategy when every lever of power and influence must be audited.",
+        "questions": [
+          "What does military look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on military?",
+          "How does military interact with other parts of DIME / DIMEFIL?",
+          "What decision or next action follows from what we learn about military?"
+        ]
+      },
+      {
+        "id": "economic",
+        "label": "Economic",
+        "description": "In DIME / DIMEFIL, Economic is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze economic in direct relation to the user's goal. Use for macro strategy when every lever of power and influence must be audited.",
+        "questions": [
+          "What does economic look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on economic?",
+          "How does economic interact with other parts of DIME / DIMEFIL?",
+          "What decision or next action follows from what we learn about economic?"
+        ]
+      },
+      {
+        "id": "financial",
+        "label": "Financial",
+        "description": "In DIME / DIMEFIL, Financial is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze financial in direct relation to the user's goal. Use for macro strategy when every lever of power and influence must be audited.",
+        "questions": [
+          "What does financial look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on financial?",
+          "How does financial interact with other parts of DIME / DIMEFIL?",
+          "What decision or next action follows from what we learn about financial?"
+        ]
+      },
+      {
+        "id": "intelligence",
+        "label": "Intelligence",
+        "description": "In DIME / DIMEFIL, Intelligence is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze intelligence in direct relation to the user's goal. Use for macro strategy when every lever of power and influence must be audited.",
+        "questions": [
+          "What does intelligence look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on intelligence?",
+          "How does intelligence interact with other parts of DIME / DIMEFIL?",
+          "What decision or next action follows from what we learn about intelligence?"
+        ]
+      },
+      {
+        "id": "law_enforcement",
+        "label": "Law enforcement",
+        "description": "In DIME / DIMEFIL, Law enforcement is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze law enforcement in direct relation to the user's goal. Use for macro strategy when every lever of power and influence must be audited.",
+        "questions": [
+          "What does law enforcement look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on law enforcement?",
+          "How does law enforcement interact with other parts of DIME / DIMEFIL?",
+          "What decision or next action follows from what we learn about law enforcement?"
+        ]
+      }
+    ]
   },
   {
     "rank": 46,
@@ -549,7 +2871,105 @@
     "tooling": "Palantir, ESRI ArcGIS",
     "alternatives": "PESTLE, VUCA, DIME/DIMEFIL",
     "origin_authors": "U.S. Military doctrine",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "political",
+        "label": "Political",
+        "description": "In PMESII-PT, Political is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze political in direct relation to the user's goal. Use for exhaustive environmental scanning of a hostile or complex geographic region.",
+        "questions": [
+          "What does political look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on political?",
+          "How does political interact with other parts of PMESII-PT?",
+          "What decision or next action follows from what we learn about political?"
+        ]
+      },
+      {
+        "id": "military",
+        "label": "Military",
+        "description": "In PMESII-PT, Military is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze military in direct relation to the user's goal. Use for exhaustive environmental scanning of a hostile or complex geographic region.",
+        "questions": [
+          "What does military look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on military?",
+          "How does military interact with other parts of PMESII-PT?",
+          "What decision or next action follows from what we learn about military?"
+        ]
+      },
+      {
+        "id": "economic",
+        "label": "Economic",
+        "description": "In PMESII-PT, Economic is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze economic in direct relation to the user's goal. Use for exhaustive environmental scanning of a hostile or complex geographic region.",
+        "questions": [
+          "What does economic look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on economic?",
+          "How does economic interact with other parts of PMESII-PT?",
+          "What decision or next action follows from what we learn about economic?"
+        ]
+      },
+      {
+        "id": "social",
+        "label": "Social",
+        "description": "In PMESII-PT, Social is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze social in direct relation to the user's goal. Use for exhaustive environmental scanning of a hostile or complex geographic region.",
+        "questions": [
+          "What does social look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on social?",
+          "How does social interact with other parts of PMESII-PT?",
+          "What decision or next action follows from what we learn about social?"
+        ]
+      },
+      {
+        "id": "information",
+        "label": "Information",
+        "description": "In PMESII-PT, Information is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze information in direct relation to the user's goal. Use for exhaustive environmental scanning of a hostile or complex geographic region.",
+        "questions": [
+          "What does information look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on information?",
+          "How does information interact with other parts of PMESII-PT?",
+          "What decision or next action follows from what we learn about information?"
+        ]
+      },
+      {
+        "id": "infrastructure",
+        "label": "Infrastructure",
+        "description": "In PMESII-PT, Infrastructure is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze infrastructure in direct relation to the user's goal. Use for exhaustive environmental scanning of a hostile or complex geographic region.",
+        "questions": [
+          "What does infrastructure look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on infrastructure?",
+          "How does infrastructure interact with other parts of PMESII-PT?",
+          "What decision or next action follows from what we learn about infrastructure?"
+        ]
+      },
+      {
+        "id": "physical_environment",
+        "label": "Physical Environment",
+        "description": "In PMESII-PT, Physical Environment is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze physical environment in direct relation to the user's goal. Use for exhaustive environmental scanning of a hostile or complex geographic region.",
+        "questions": [
+          "What does physical environment look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on physical environment?",
+          "How does physical environment interact with other parts of PMESII-PT?",
+          "What decision or next action follows from what we learn about physical environment?"
+        ]
+      },
+      {
+        "id": "time",
+        "label": "Time",
+        "description": "In PMESII-PT, Time is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze time in direct relation to the user's goal. Use for exhaustive environmental scanning of a hostile or complex geographic region.",
+        "questions": [
+          "What does time look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on time?",
+          "How does time interact with other parts of PMESII-PT?",
+          "What decision or next action follows from what we learn about time?"
+        ]
+      }
+    ]
   },
   {
     "rank": 47,
@@ -561,7 +2981,45 @@
     "tooling": "DoD training portals, LMS platforms",
     "alternatives": "MoSCoW, OKRs, Commander's Intent",
     "origin_authors": "U.S. Military doctrine",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "mission_essential_tasks",
+        "label": "Mission-Essential Tasks",
+        "description": "In METL, Mission-Essential Tasks is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze mission-essential tasks in direct relation to the user's goal. Use when a team is doing too much busy work and must isolate non-negotiable tasks required for mission success.",
+        "questions": [
+          "What does mission-essential tasks look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on mission-essential tasks?",
+          "How does mission-essential tasks interact with other parts of METL?",
+          "What decision or next action follows from what we learn about mission-essential tasks?"
+        ]
+      },
+      {
+        "id": "supporting_tasks",
+        "label": "Supporting Tasks",
+        "description": "In METL, Supporting Tasks is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze supporting tasks in direct relation to the user's goal. Use when a team is doing too much busy work and must isolate non-negotiable tasks required for mission success.",
+        "questions": [
+          "What does supporting tasks look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on supporting tasks?",
+          "How does supporting tasks interact with other parts of METL?",
+          "What decision or next action follows from what we learn about supporting tasks?"
+        ]
+      },
+      {
+        "id": "training_standards",
+        "label": "Training Standards",
+        "description": "In METL, Training Standards is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze training standards in direct relation to the user's goal. Use when a team is doing too much busy work and must isolate non-negotiable tasks required for mission success.",
+        "questions": [
+          "What does training standards look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on training standards?",
+          "How does training standards interact with other parts of METL?",
+          "What decision or next action follows from what we learn about training standards?"
+        ]
+      }
+    ]
   },
   {
     "rank": 48,
@@ -573,7 +3031,45 @@
     "tooling": "Value analysis software, CAD engineering suites",
     "alternatives": "TRIZ, First Principles, Lean Startup",
     "origin_authors": "Charles Bytheway, 1964",
-    "usage_rights": "Core concept is public domain; SAVE International manages certification"
+    "usage_rights": "Core concept is public domain; SAVE International manages certification",
+    "components": [
+      {
+        "id": "function_definition",
+        "label": "Function Definition",
+        "description": "In FAST / Value Engineering, Function Definition is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze function definition in direct relation to the user's goal. Use when a product is too expensive and the team must find cheaper ways to perform the same function.",
+        "questions": [
+          "What does function definition look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on function definition?",
+          "How does function definition interact with other parts of FAST / Value Engineering?",
+          "What decision or next action follows from what we learn about function definition?"
+        ]
+      },
+      {
+        "id": "fast_diagram",
+        "label": "FAST Diagram",
+        "description": "In FAST / Value Engineering, FAST Diagram is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze fast diagram in direct relation to the user's goal. Use when a product is too expensive and the team must find cheaper ways to perform the same function.",
+        "questions": [
+          "What does fast diagram look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on fast diagram?",
+          "How does fast diagram interact with other parts of FAST / Value Engineering?",
+          "What decision or next action follows from what we learn about fast diagram?"
+        ]
+      },
+      {
+        "id": "value_and_cost_analysis",
+        "label": "Value and Cost Analysis",
+        "description": "In FAST / Value Engineering, Value and Cost Analysis is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze value and cost analysis in direct relation to the user's goal. Use when a product is too expensive and the team must find cheaper ways to perform the same function.",
+        "questions": [
+          "What does value and cost analysis look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on value and cost analysis?",
+          "How does value and cost analysis interact with other parts of FAST / Value Engineering?",
+          "What decision or next action follows from what we learn about value and cost analysis?"
+        ]
+      }
+    ]
   },
   {
     "rank": 49,
@@ -585,7 +3081,57 @@
     "tooling": "Defense Acquisition University portals and databases",
     "alternatives": "DOTMLPF-P, Stage-Gate, MDMP",
     "origin_authors": "U.S. Department of Defense, 2003",
-    "usage_rights": "Public domain / free to use"
+    "usage_rights": "Public domain / free to use",
+    "components": [
+      {
+        "id": "capability_gap",
+        "label": "Capability Gap",
+        "description": "In JCIDS, Capability Gap is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze capability gap in direct relation to the user's goal. Use in large bureaucratic ecosystems to formally prove a capability gap before requesting budget.",
+        "questions": [
+          "What does capability gap look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on capability gap?",
+          "How does capability gap interact with other parts of JCIDS?",
+          "What decision or next action follows from what we learn about capability gap?"
+        ]
+      },
+      {
+        "id": "requirements",
+        "label": "Requirements",
+        "description": "In JCIDS, Requirements is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze requirements in direct relation to the user's goal. Use in large bureaucratic ecosystems to formally prove a capability gap before requesting budget.",
+        "questions": [
+          "What does requirements look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on requirements?",
+          "How does requirements interact with other parts of JCIDS?",
+          "What decision or next action follows from what we learn about requirements?"
+        ]
+      },
+      {
+        "id": "solution_analysis",
+        "label": "Solution Analysis",
+        "description": "In JCIDS, Solution Analysis is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze solution analysis in direct relation to the user's goal. Use in large bureaucratic ecosystems to formally prove a capability gap before requesting budget.",
+        "questions": [
+          "What does solution analysis look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on solution analysis?",
+          "How does solution analysis interact with other parts of JCIDS?",
+          "What decision or next action follows from what we learn about solution analysis?"
+        ]
+      },
+      {
+        "id": "validation",
+        "label": "Validation",
+        "description": "In JCIDS, Validation is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze validation in direct relation to the user's goal. Use in large bureaucratic ecosystems to formally prove a capability gap before requesting budget.",
+        "questions": [
+          "What does validation look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on validation?",
+          "How does validation interact with other parts of JCIDS?",
+          "What decision or next action follows from what we learn about validation?"
+        ]
+      }
+    ]
   },
   {
     "rank": 50,
@@ -597,6 +3143,104 @@
     "tooling": "Tableau, Elicit, Palantir, proprietary data lakes",
     "alternatives": "Outcome-Driven Innovation, TRIZ, Wardley Mapping",
     "origin_authors": "Stephen T. Markham, Traversing the Valley of Death",
-    "usage_rights": "Methodology is free to apply; proprietary workbook pages require permission"
+    "usage_rights": "Methodology is free to apply; proprietary workbook pages require permission",
+    "components": [
+      {
+        "id": "question",
+        "label": "Question",
+        "description": "In 8-Step Big Data Process, Question is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze question in direct relation to the user's goal. Use when intuition fails and procedural data mining is needed to validate an innovation's viability.",
+        "questions": [
+          "What does question look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on question?",
+          "How does question interact with other parts of 8-Step Big Data Process?",
+          "What decision or next action follows from what we learn about question?"
+        ]
+      },
+      {
+        "id": "dictionaries",
+        "label": "Dictionaries",
+        "description": "In 8-Step Big Data Process, Dictionaries is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze dictionaries in direct relation to the user's goal. Use when intuition fails and procedural data mining is needed to validate an innovation's viability.",
+        "questions": [
+          "What does dictionaries look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on dictionaries?",
+          "How does dictionaries interact with other parts of 8-Step Big Data Process?",
+          "What decision or next action follows from what we learn about dictionaries?"
+        ]
+      },
+      {
+        "id": "rules",
+        "label": "Rules",
+        "description": "In 8-Step Big Data Process, Rules is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze rules in direct relation to the user's goal. Use when intuition fails and procedural data mining is needed to validate an innovation's viability.",
+        "questions": [
+          "What does rules look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on rules?",
+          "How does rules interact with other parts of 8-Step Big Data Process?",
+          "What decision or next action follows from what we learn about rules?"
+        ]
+      },
+      {
+        "id": "gather",
+        "label": "Gather",
+        "description": "In 8-Step Big Data Process, Gather is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze gather in direct relation to the user's goal. Use when intuition fails and procedural data mining is needed to validate an innovation's viability.",
+        "questions": [
+          "What does gather look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on gather?",
+          "How does gather interact with other parts of 8-Step Big Data Process?",
+          "What decision or next action follows from what we learn about gather?"
+        ]
+      },
+      {
+        "id": "analyze",
+        "label": "Analyze",
+        "description": "In 8-Step Big Data Process, Analyze is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze analyze in direct relation to the user's goal. Use when intuition fails and procedural data mining is needed to validate an innovation's viability.",
+        "questions": [
+          "What does analyze look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on analyze?",
+          "How does analyze interact with other parts of 8-Step Big Data Process?",
+          "What decision or next action follows from what we learn about analyze?"
+        ]
+      },
+      {
+        "id": "decide",
+        "label": "Decide",
+        "description": "In 8-Step Big Data Process, Decide is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze decide in direct relation to the user's goal. Use when intuition fails and procedural data mining is needed to validate an innovation's viability.",
+        "questions": [
+          "What does decide look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on decide?",
+          "How does decide interact with other parts of 8-Step Big Data Process?",
+          "What decision or next action follows from what we learn about decide?"
+        ]
+      },
+      {
+        "id": "validate",
+        "label": "Validate",
+        "description": "In 8-Step Big Data Process, Validate is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze validate in direct relation to the user's goal. Use when intuition fails and procedural data mining is needed to validate an innovation's viability.",
+        "questions": [
+          "What does validate look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on validate?",
+          "How does validate interact with other parts of 8-Step Big Data Process?",
+          "What decision or next action follows from what we learn about validate?"
+        ]
+      },
+      {
+        "id": "communicate",
+        "label": "Communicate",
+        "description": "In 8-Step Big Data Process, Communicate is a core lens for examining the problem through that framework's structure.",
+        "prompt": "Analyze communicate in direct relation to the user's goal. Use when intuition fails and procedural data mining is needed to validate an innovation's viability.",
+        "questions": [
+          "What does communicate look like in this specific situation?",
+          "Which evidence would confirm or challenge our read on communicate?",
+          "How does communicate interact with other parts of 8-Step Big Data Process?",
+          "What decision or next action follows from what we learn about communicate?"
+        ]
+      }
+    ]
   }
 ]

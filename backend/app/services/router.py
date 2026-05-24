@@ -391,7 +391,11 @@ async def _openai_json(prompt: str, model_id: str) -> dict | None:
                 texts.append(content["text"])
     if not texts and data.get("output_text"):
         texts.append(data["output_text"])
-    return _json_from_text("\n".join(texts))
+    result = _json_from_text("\n".join(texts))
+    print(result)
+    if result:
+        return result
+    return None
 
 
 async def _google_json(prompt: str, model_id: str) -> dict | None:
