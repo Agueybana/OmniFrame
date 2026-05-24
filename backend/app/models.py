@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class GoalRequest(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     goal: str = Field(..., min_length=8, max_length=20000)
     framework_id: (
         Literal[
@@ -47,6 +48,7 @@ class FeedbackResponse(BaseModel):
 
 
 class OptionRefreshRequest(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     goal: str = Field(..., min_length=1, max_length=20000)
     framework_id: Literal["swot", "lean_startup", "okrs", "porters_five_forces", "pestle", "rice", "triz"]
     focus_title: str = Field(..., min_length=1, max_length=500)

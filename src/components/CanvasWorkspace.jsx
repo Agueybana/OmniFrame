@@ -26,7 +26,7 @@ const FRAMEWORK_ICONS = {
   triz: Lightbulb
 };
 
-export default function CanvasWorkspace({ route }) {
+export default function CanvasWorkspace({ route, projectId = null }) {
   const [canvas, setCanvas] = useState(route?.canvas ?? null);
   const [focusCanvases, setFocusCanvases] = useState([]);
   const [focusIndex, setFocusIndex] = useState(-1);
@@ -1378,7 +1378,9 @@ function getPanelKind(panel) {
 }
 
 function getCanvasPanorama(canvas) {
+  console.log(canvas.type);
   if (canvas.type === "quadrant") {
+    console.log(canvas.sections);
     return (canvas.sections ?? []).slice(0, 4).map((section) => {
       const first = normalizeInsight(section.items?.[0] ?? {});
       return {

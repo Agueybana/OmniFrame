@@ -5,7 +5,15 @@ import CanvasWorkspace from "./components/CanvasWorkspace";
 import EfficacyLoop from "./components/EfficacyLoop";
 import FrameworkGalaxy from "./components/FrameworkGalaxy";
 import FrameworkLibrary from "./components/FrameworkLibrary";
-import { fetchFrameworks, fetchModelOptions, routeGoal } from "./lib/api";
+import {
+  clearProjectId,
+  fetchFrameworks,
+  fetchModelOptions,
+  getProjectId,
+  persistSessionProject,
+  routeGoal,
+  upsertProfile
+} from "./lib/api";
 
 const STARTER_GOAL =
   "Prioritize our next AI product features while balancing user adoption, engineering effort, and demo impact.";
@@ -17,6 +25,7 @@ export default function App() {
   const [selectedProvider, setSelectedProvider] = useState(() => localStorage.getItem("omniframe_model_provider") || "openai");
   const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem("omniframe_model_id") || "gpt-5.1");
   const [route, setRoute] = useState(null);
+  const [sessionProjectId, setSessionProjectId] = useState(() => getProjectId());
   const [pendingRoute, setPendingRoute] = useState(null);
   const [showFrameworkChooser, setShowFrameworkChooser] = useState(false);
   const [status, setStatus] = useState("idle");
@@ -27,6 +36,9 @@ export default function App() {
   const routeActionRef = useRef(null);
 
   useEffect(() => {
+    upsertProfile().catch(() => {
+      // Profile persistence is optional when the database is unavailable.
+    });
     fetchFrameworks()
       .then(setFrameworks)
       .catch((err) => setError(err.message));
@@ -87,13 +99,24 @@ export default function App() {
     }
   }
 
-  function acceptRecommendedFramework() {
-    if (!pendingRoute) return;
-    setRoute(pendingRoute);
+  async function finalizeRoute(result) {
+    const currentGoal = result.goal?.trim() || goalInputRef.current?.value?.trim() || goal.trim();
+    try {
+      const project = await persistSessionProject(currentGoal, result.framework_id);
+      setSessionProjectId(project.id);
+    } catch {
+      // Project persistence is optional when the database is unavailable.
+    }
+    setRoute({ ...result, goal: currentGoal });
     setPendingRoute(null);
     setShowFrameworkChooser(false);
     setStatus("ready");
     setTimeout(() => workspaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  }
+
+  async function acceptRecommendedFramework() {
+    if (!pendingRoute) return;
+    await finalizeRoute(pendingRoute);
   }
 
   async function chooseFramework(frameworkId) {
@@ -103,18 +126,19 @@ export default function App() {
     try {
       const result = await routeGoal(currentGoal, frameworkId);
       result.goal = currentGoal;
-      setRoute(result);
-      setPendingRoute(null);
-      setShowFrameworkChooser(false);
-      setStatus("ready");
       window.pendo?.track?.("omniframe_framework_override_selected", {
         framework_id: result.framework_id
       });
-      setTimeout(() => workspaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+      await finalizeRoute(result);
     } catch (err) {
       setStatus("reviewing");
       setError(err.message);
     }
+  }
+
+  function handleClearSession() {
+    clearProjectId();
+    window.location.assign("/");
   }
 
   routeActionRef.current = handleRoute;
@@ -213,6 +237,16 @@ export default function App() {
                 placeholder="Example: Decide which AI feature to build first for our hackathon demo."
               />
 
+              {sessionProjectId && (
+                <button
+                  type="button"
+                  onClick={handleClearSession}
+                  className="mt-2 text-sm font-semibold text-moss/80 underline-offset-2 transition hover:text-moss hover:underline"
+                >
+                  Clear Analysis / New Goal
+                </button>
+              )}
+
               {error && <p className="mt-3 rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-100">{error}</p>}
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -272,7 +306,7 @@ export default function App() {
       </section>
 
       <div ref={workspaceRef}>
-        <CanvasWorkspace route={route} />
+        <CanvasWorkspace route={route} projectId={sessionProjectId} />
       </div>
       <FrameworkLibrary frameworks={frameworks} />
       <EfficacyLoop goal={goal} route={route} />

@@ -1,22 +1,48 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from pathlib import Path
 
+from alembic import command
+from alembic.config import Config
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from dotenv import load_dotenv
 
+from .db.session import check_database_connection, get_database_url, is_database_configured, reset_engine
 from .models import FeedbackRequest, FeedbackResponse, GoalRequest, OptionRefreshRequest, OptionRefreshResponse, RouteResponse
+from .routers.persistence import router as persistence_router
 from .services.frameworks import load_framework_catalog
 from .services.router import refresh_panel_options, route_goal
 from .services.wisdom_graph import store_feedback
 
 
-load_dotenv()
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-app = FastAPI(title="OmniFrame API", version="0.1.0")
+load_dotenv(PROJECT_ROOT / ".env")
+
+
+def run_migrations() -> None:
+    database_url = get_database_url()
+    if not database_url or database_url.startswith("sqlite"):
+        return
+    alembic_ini = Path(__file__).resolve().parents[2] / "alembic.ini"
+    if not alembic_ini.exists():
+        return
+    config = Config(str(alembic_ini))
+    command.upgrade(config, "head")
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    reset_engine()
+    run_migrations()
+    yield
+
+
+app = FastAPI(title="OmniFrame API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -26,10 +52,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(persistence_router)
+
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "service": "omniframe"}
+    db_status = "unavailable"
+    if is_database_configured():
+        db_status = "ok" if check_database_connection() else "unavailable"
+    return {"status": "ok", "service": "omniframe", "db": db_status}
 
 
 @app.get("/api/frameworks")

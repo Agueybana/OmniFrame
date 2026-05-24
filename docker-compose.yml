@@ -1,11 +1,34 @@
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-omniframe}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-omniframe}"
+      POSTGRES_DB: "${POSTGRES_DB:-omniframe}"
+    ports:
+      - "5433:5432"
+    volumes:
+      - omniframe_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-omniframe} -d ${POSTGRES_DB:-omniframe}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   omniframe:
     build: .
     ports:
       - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
       PORT: "8080"
+      DATABASE_URL: "postgresql+psycopg://${POSTGRES_USER:-omniframe}:${POSTGRES_PASSWORD:-omniframe}@db:5432/${POSTGRES_DB:-omniframe}"
       OMNIFRAME_USE_LLM: "${OMNIFRAME_USE_LLM:-true}"
       OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
       GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
       OMNIFRAME_REASONING_EFFORT: "${OMNIFRAME_REASONING_EFFORT:-medium}"
+
+volumes:
+  omniframe_pgdata:

@@ -66,10 +66,22 @@ If inference fails or credentials are absent, OmniFrame falls back to determinis
 
 ```bash
 cd /Users/gabrielsuarez/OmniFrame
-docker compose up --build
+docker compose up db          # postgres only for local dev
+docker compose up --build     # app + postgres
+alembic upgrade head          # if migrations are not auto-run on startup
 ```
 
-Open http://localhost:8080.
+Open http://localhost:8080 when running the full stack.
+
+For local development with `npm run dev`, start Postgres separately:
+
+```bash
+docker compose up db
+cp .env.example .env
+npm run dev
+```
+
+The backend reads `DATABASE_URL` from `.env`. Postgres is exposed on host port **5433** (to avoid conflicts with other local Postgres instances on 5432). Anonymous profiles are created on first load and sent via the `X-OmniFrame-Profile-Id` header.
 
 ## AWS Elastic Beanstalk ZIP
 
