@@ -54,43 +54,70 @@ class DomainBrief:
     adoption_risks: list[str]
 
 
+def domain_brief_from_mapping(data: dict[str, Any] | None, goal: str) -> DomainBrief:
+    fallback = extract_domain_brief(goal)
+    if not isinstance(data, dict):
+        return fallback
+
+    def text_field(name: str, default: str) -> str:
+        value = data.get(name)
+        if not isinstance(value, str) or not value.strip():
+            return default
+        return _compact(value, 700)
+
+    def list_field(name: str, default: list[str], limit: int = 5) -> list[str]:
+        value = data.get(name)
+        if not isinstance(value, list):
+            return default
+        cleaned = [_compact(str(item), 220) for item in value if str(item).strip()]
+        return cleaned[:limit] or default
+
+    return complete_domain_brief(DomainBrief(
+        subject=text_field("subject", fallback.subject),
+        domain=text_field("domain", fallback.domain),
+        users=text_field("users", fallback.users),
+        workflow=text_field("workflow", fallback.workflow),
+        value_hypothesis=text_field("value_hypothesis", fallback.value_hypothesis),
+        constraints=text_field("constraints", fallback.constraints),
+        proof_metrics=list_field("proof_metrics", fallback.proof_metrics),
+        evidence_prompts=list_field("evidence_prompts", fallback.evidence_prompts),
+        adoption_risks=list_field("adoption_risks", fallback.adoption_risks),
+    ), goal)
+
+
+def complete_domain_brief(brief: DomainBrief | None, goal: str) -> DomainBrief:
+    fallback = extract_domain_brief(goal)
+    if brief is None:
+        return fallback
+
+    def padded(items: list[str], defaults: list[str], count: int = 5) -> list[str]:
+        cleaned = [_compact(str(item), 260) for item in (items or []) if str(item).strip()]
+        for item in defaults:
+            if item not in cleaned:
+                cleaned.append(item)
+        return cleaned[:count]
+
+    return DomainBrief(
+        subject=brief.subject or fallback.subject,
+        domain=brief.domain or fallback.domain,
+        users=brief.users or fallback.users,
+        workflow=brief.workflow or fallback.workflow,
+        value_hypothesis=brief.value_hypothesis or fallback.value_hypothesis,
+        constraints=brief.constraints or fallback.constraints,
+        proof_metrics=padded(brief.proof_metrics, fallback.proof_metrics),
+        evidence_prompts=padded(brief.evidence_prompts, fallback.evidence_prompts),
+        adoption_risks=padded(brief.adoption_risks, fallback.adoption_risks),
+    )
+
+
 def extract_domain_brief(goal: str) -> DomainBrief:
     topic = _topic(goal)
     text = goal.lower()
-
-    if any(term in text for term in ["cnc", "g-code", "gcode", "cam ", "cam/", "toolpath", "machining", "machine shop"]):
-        return DomainBrief(
-            subject="commercializing a CNC/CAM file optimization algorithm",
-            domain="CNC machining, CAM programming, G-code/toolpath optimization, and manufacturing software commercialization",
-            users="CNC job shops, machinists, CAM programmers, manufacturing engineers, quoting teams, and factory owners who pay for spindle utilization",
-            workflow="analyze an existing CAM/G-code/CNC file, detect inefficient feeds, speeds, tool changes, air cuts, path order, and machine-specific constraints, then produce a safer optimized file or recommendations that can be simulated before machining",
-            value_hypothesis="customers will pay if the algorithm reliably reduces cycle time, scrap risk, tool wear, quoting uncertainty, or programming time without causing machine crashes or surface-finish defects",
-            constraints="trust in modified toolpaths, controller/post-processor compatibility, liability for crashes or scrapped parts, IP security for customer files, machinist skepticism, and proof that optimization works across materials, machines, and part geometries",
-            proof_metrics=[
-                "cycle-time reduction versus baseline CAM/G-code",
-                "successful simulation or dry-run pass rate",
-                "tool-wear or tooling-cost reduction",
-                "scrap/rework rate after optimized file use",
-                "machine-hour ROI per job",
-            ],
-            evidence_prompts=[
-                "Benchmark 20 anonymized CNC jobs across aluminum, steel, plastics, and complex 3-axis/5-axis geometries.",
-                "Ask CAM programmers which optimizations they trust enough to run on a real machine.",
-                "Compare output against Fusion, Mastercam, Siemens NX, and manual machinist edits where available.",
-                "Run optimized files through simulation/backplotting before any live cut.",
-            ],
-            adoption_risks=[
-                "A single bad toolpath can break trust faster than many small cycle-time wins can build it.",
-                "CAM vendors and controller ecosystems may already own distribution and integration points.",
-                "Customers may refuse to upload proprietary part files without strong security and on-prem options.",
-            ],
-        )
-
     if any(term in text for term in ["algorithm", "ai", "model", "software", "saas", "commercialize", "monetize"]):
         return DomainBrief(
             subject=topic,
-            domain="software commercialization and algorithm-to-product translation",
-            users="technical buyers, operators, product teams, and early adopters with a painful workflow the algorithm can improve",
+            domain=f"the product, technical, and market domain implied by '{topic}'",
+            users="the specific buyers, operators, users, and stakeholders implied by the prompt",
             workflow=f"turn the algorithm behind '{topic}' into a repeatable product workflow with input data, user-visible output, validation evidence, and a credible sales motion",
             value_hypothesis="customers will pay if the algorithm creates a measurable advantage over their current manual, spreadsheet, vendor, or internal workflow",
             constraints="proof quality, integration effort, data access, user trust, switching costs, privacy/IP concerns, and the gap between technical performance and buyer willingness to pay",
@@ -116,7 +143,7 @@ def extract_domain_brief(goal: str) -> DomainBrief:
 
     return DomainBrief(
         subject=topic,
-        domain="strategy and execution planning",
+        domain=f"the domain implied by '{topic}'",
         users="the stakeholders most affected by the requested decision or initiative",
         workflow=f"convert '{topic}' into a concrete decision, experiment, metric, or execution path",
         value_hypothesis="the work is valuable if it changes a real decision, reduces uncertainty, or makes the next action clearer",
@@ -369,7 +396,6 @@ RELATIONSHIP_WORDS = {
     "husband",
     "relationship",
     "dating",
-    "hollie",
     "family",
     "couple",
 }
@@ -384,9 +410,9 @@ def _relationship_name(goal: str) -> str:
     named_partner = re.search(r"(?:partner|girlfriend|boyfriend|wife|husband|with her|with him)\s*\(([^),]{2,40})\)", goal, flags=re.I)
     if named_partner:
         return _compact(named_partner.group(1), 40)
-    for candidate in ["Hollie"]:
-        if re.search(rf"\b{re.escape(candidate)}\b", goal, flags=re.I):
-            return candidate
+    named_after_context = re.search(r"\b(?:her|him|them|partner|girlfriend|boyfriend|wife|husband)\s+([A-Z][a-zA-Z]{1,39})\b", goal)
+    if named_after_context:
+        return _compact(named_after_context.group(1), 40)
     explicit = re.search(r"\(([^)]{2,40})\)", goal)
     if explicit:
         value = explicit.group(1)
@@ -531,7 +557,7 @@ def _relationship_swot(goal: str, topic: str) -> dict[str, Any]:
                 [
                     "Wait until you can describe the problem without ridicule before holding the decisive conversation.",
                     "If there is any risk of harm, coercion, or abuse, prioritize safety and outside support immediately.",
-                    "Do not use the framework output as a weapon against Hollie; use it to prepare a calmer decision process.",
+                    f"Do not use the framework output as a weapon against {person}; use it to prepare a calmer decision process.",
                 ],
                 "Decision made from calm state",
             ),
@@ -723,8 +749,8 @@ def _project_specific_swot(projects: list[ParsedProject], topic: str) -> dict[st
     }
 
 
-def generate_swot(goal: str) -> dict[str, Any]:
-    brief = extract_domain_brief(goal)
+def generate_swot(goal: str, domain_brief: DomainBrief | None = None) -> dict[str, Any]:
+    brief = complete_domain_brief(domain_brief, goal)
     topic = brief.subject
     if _is_relationship_goal(goal):
         return _relationship_swot(goal, _topic(goal))
@@ -1174,8 +1200,8 @@ def _feature_rows_from_projects(projects: list[ParsedProject]) -> list[dict[str,
     return rows
 
 
-def generate_rice(goal: str) -> dict[str, Any]:
-    brief = extract_domain_brief(goal)
+def generate_rice(goal: str, domain_brief: DomainBrief | None = None) -> dict[str, Any]:
+    brief = complete_domain_brief(domain_brief, goal)
     topic = brief.subject
     projects = _extract_projects(goal)
     rows = _feature_rows_from_projects(projects) if projects else []
@@ -1290,391 +1316,6 @@ def _triz_principle_dict(principle: TrizPrinciple) -> dict[str, Any]:
     }
 
 
-def _hockey_stick_principles() -> list[TrizPrinciple]:
-    return [
-        TrizPrinciple(
-            1,
-            "Segmentation",
-            "Separate the hockey stick into shaft, blade, hosel/heel, grip, and kick-zone modules so weight can be removed only where stiffness and impact loads allow it.",
-            "A lighter stick is not one uniform material problem. The shaft needs low swing weight and torsional stiffness, while the blade needs impact toughness, puck feel, and edge durability.",
-            [
-                _panel(
-                    "Contradiction rewrite",
-                    "Frame the hockey-stick tradeoff in concrete engineering terms.",
-                    [
-                        "Reduce total mass and swing weight while preserving shot energy transfer, blade durability, torsional stiffness, and puck feel.",
-                        "Remove material from low-load shaft zones without weakening the heel, blade edge, or lower-shaft slash-impact region.",
-                        "Lower blade mass for faster handling while keeping enough damping and stiffness for passing accuracy.",
-                    ],
-                    value="Reduce total mass and swing weight while preserving shot energy transfer, blade durability, torsional stiffness, and puck feel.",
-                    option_sets=[
-                        [
-                            "Reduce shaft mass while maintaining flex profile, torsional rigidity, and resistance to slash impacts.",
-                            "Lower blade inertia while preserving puck feel, face stability, and edge chip resistance.",
-                            "Move reinforcement out of low-stress zones and into heel, lower shaft, and blade perimeter load paths.",
-                        ]
-                    ],
-                ),
-                _panel(
-                    "Material architecture",
-                    "Choose material moves that fit modern composite stick construction.",
-                    [
-                        "Use a high-modulus unidirectional carbon fiber shaft with localized aramid or S-glass toughening in slash-prone lower-shaft zones.",
-                        "Try spread-tow carbon plies to reduce resin-rich gaps and keep stiffness with less laminate mass.",
-                        "Use a lightweight foam blade core with carbon skins, then reinforce the perimeter and heel with tougher fiber patches.",
-                    ],
-                    option_sets=[
-                        [
-                            "Compare standard-modulus carbon, high-modulus carbon, and hybrid carbon/aramid layups for stiffness-to-weight and impact tolerance.",
-                            "Prototype a variable wall-thickness shaft: thinner upper shaft, reinforced lower shaft, and added hoop plies near the hosel.",
-                            "Evaluate toughened epoxy resin systems before exotic fibers, because resin toughness often controls impact damage growth.",
-                        ],
-                        [
-                            "Reserve boron or graphene-enhanced materials for small reinforcement zones where cost and brittleness are acceptable.",
-                            "Add basalt or aramid veil layers only where blade chipping and slash impact are the dominant failure modes.",
-                            "Use finite-element load maps to remove laminate from neutral/low-stress regions instead of making the whole stick thinner.",
-                        ],
-                    ],
-                ),
-                _panel(
-                    "Prototype test",
-                    "Pick the smallest physical test that proves the lighter design is not fragile.",
-                    [
-                        "Build three coupon sets: current layup, high-modulus carbon layup, and carbon/aramid hybrid; test bending stiffness, torsion, and impact damage.",
-                        "Make a segmented blade/shaft prototype and compare swing weight, slap-shot deflection, wrist-shot release, and puck-feel ratings.",
-                        "Run a slash-impact fixture on the lower shaft before any on-ice user testing.",
-                    ],
-                    option_sets=[
-                        [
-                            "Measure center of mass and moment of inertia, not just grams, because a lighter blade can feel faster than the same mass removed near the handle.",
-                            "Use strain gauges or painted witness marks at the heel, lower shaft, and blade toe to find where mass cannot be removed.",
-                            "Run cold-temperature impact tests because hockey sticks fail differently at rink temperatures than at room temperature.",
-                        ]
-                    ],
-                ),
-                _panel(
-                    "Failure mode",
-                    "Identify what could get worse when the stick gets lighter.",
-                    [
-                        "High-modulus carbon can be stiff and light but may reduce impact tolerance if not toughened with resin or hybrid fibers.",
-                        "A lighter blade can reduce puck feel if the foam core and damping layers are over-thinned.",
-                        "Removing wall thickness in the lower shaft can create slash-impact cracks even if lab bending stiffness looks acceptable.",
-                    ],
-                    option_sets=[
-                        [
-                            "Watch for brittle heel failures, blade-face delamination, toe chipping, and torsional flutter during hard passes.",
-                            "Do not treat advertised low weight as success unless durability, flex repeatability, and player feel survive testing.",
-                            "Cost and repairability may worsen if exotic reinforcement is applied across the whole stick instead of high-load zones.",
-                        ]
-                    ],
-                ),
-            ],
-        ),
-        TrizPrinciple(
-            31,
-            "Porous materials",
-            "Use lightweight internal cores and controlled hollow spaces so the stick keeps outer shell stiffness without carrying unnecessary solid material.",
-            "Modern sticks already exploit hollow composite shafts and foam blade cores; the inventive move is making internal structure more deliberate.",
-            [
-                _panel(
-                    "Core strategy",
-                    "Select where hollow, foam, or lattice structure can reduce mass.",
-                    [
-                        "Keep the shaft as a hollow composite tube but vary wall thickness by load zone.",
-                        "Use blade foam density gradients: denser near heel and perimeter, lighter in lower-stress central zones.",
-                        "Test ribbed or lattice blade cores only if they improve puck feel and resist water ingress.",
-                    ],
-                ),
-                _panel(
-                    "Prototype test",
-                    "Prove the lighter core survives the use case.",
-                    [
-                        "Compare blade torsional stiffness, rebound consistency, and moisture ingress after impact.",
-                        "Run repeated slap-shot and board-impact cycles on baseline and lightweight core prototypes.",
-                        "Measure acoustic/vibration feedback because player feel can degrade before structural failure.",
-                    ],
-                ),
-                _panel(
-                    "Failure mode",
-                    "Watch for hidden core-driven failures.",
-                    [
-                        "A too-light blade core can create dead spots, delamination, or edge collapse.",
-                        "Internal voids can concentrate stress if the laminate is not supported during impact.",
-                        "Foam density changes can shift balance and alter release feel even when total weight improves.",
-                    ],
-                ),
-            ],
-        ),
-        TrizPrinciple(
-            35,
-            "Parameter change",
-            "Change fiber orientation, modulus, resin toughness, wall thickness, balance point, and kick-zone geometry instead of only chasing lower total weight.",
-            "The user asked for lighter, but performance is governed by stiffness-to-weight, impact energy absorption, and moment of inertia.",
-            [
-                _panel(
-                    "Parameter map",
-                    "Pick the parameters to vary in the experiment.",
-                    [
-                        "Vary fiber orientation: 0-degree plies for bending stiffness, +/-45-degree plies for torsion, 90-degree hoop plies for crush resistance.",
-                        "Move mass reduction toward the blade and lower shaft first because it changes swing weight more than handle trimming.",
-                        "Use a tougher resin or local aramid patches where impact failure dominates instead of globally adding carbon.",
-                    ],
-                ),
-                _panel(
-                    "Prototype test",
-                    "Run a design-of-experiments instead of one-off samples.",
-                    [
-                        "Build a 2x2 test: standard vs high-modulus carbon and normal vs toughened resin.",
-                        "Measure mass, balance point, flex profile, torsional stiffness, impact survival, and player-rated puck feel.",
-                        "Use the best coupon result to decide the first full-stick layup.",
-                    ],
-                ),
-                _panel(
-                    "Failure mode",
-                    "Name what a parameter change might break.",
-                    [
-                        "Changing kick-zone geometry can alter release timing even if weight improves.",
-                        "Higher stiffness can make the stick feel harsher and reduce puck handling confidence.",
-                        "Moving the balance point can feel worse even if scale weight is lower.",
-                    ],
-                ),
-            ],
-        ),
-        TrizPrinciple(
-            40,
-            "Composite materials",
-            "Use a hybrid composite instead of a single material: carbon for stiffness-to-weight, aramid/S-glass for toughness, toughened epoxy for damage resistance, and foam/core structures for blade mass control.",
-            "The hockey-stick problem is naturally composite: no single material optimizes lightness, shot power, slash resistance, blade feel, and cost.",
-            [
-                _panel(
-                    "Material shortlist",
-                    "Create a grounded shortlist before exotic materials distract the build.",
-                    [
-                        "Baseline: unidirectional carbon fiber/epoxy shaft with foam-core carbon blade.",
-                        "Durability hybrid: carbon primary plies plus aramid or S-glass in lower shaft, heel, and blade perimeter.",
-                        "Advanced test: high-modulus or spread-tow carbon with toughened epoxy; reserve boron or graphene-enhanced resin for small reinforcement trials.",
-                    ],
-                    option_sets=[
-                        [
-                            "Avoid aluminum or titanium as primary stick materials for the V1 unless the goal is a specialty training stick; composites dominate because stiffness-to-weight is better.",
-                            "Use wood only as a control sample for puck feel and damping, not as the path to minimum mass.",
-                            "Consider recycled carbon only if sustainability is a requirement, because fiber consistency and certification can complicate performance claims.",
-                        ]
-                    ],
-                ),
-                _panel(
-                    "Supplier question",
-                    "Ask the question a materials engineer or vendor must answer.",
-                    [
-                        "What is the specific modulus, tensile strength, impact toughness, and resin system for the proposed carbon prepreg?",
-                        "How does the layup perform after cold-temperature impact and cyclic slap-shot loading?",
-                        "What mass reduction comes from fiber choice versus layup optimization versus blade core redesign?",
-                    ],
-                ),
-                _panel(
-                    "Failure mode",
-                    "Keep the advanced material honest.",
-                    [
-                        "Exotic fibers can increase cost and brittleness while producing only small weight savings.",
-                        "Marketing materials may cite carbon grade without revealing layup, resin, void content, or durability.",
-                        "A material that wins coupon stiffness can still lose full-stick feel.",
-                    ],
-                ),
-            ],
-        ),
-        TrizPrinciple(
-            3,
-            "Local quality",
-            "Make high-load regions strong and low-load regions light instead of applying the same laminate everywhere.",
-            "The stick has very different local jobs: the handle transmits grip, the shaft stores/release energy, the heel takes stress, and the blade controls feel.",
-            [
-                _panel(
-                    "Load-zone design",
-                    "Choose where the stick deserves different construction.",
-                    [
-                        "Reinforce the heel and lower shaft with tougher hybrid plies while thinning the upper shaft wall.",
-                        "Use blade-edge reinforcement for chipping without adding mass to the entire face.",
-                        "Tune the kick zone locally so weight reduction does not break shot timing.",
-                    ],
-                ),
-                _panel(
-                    "Prototype test",
-                    "Validate local reinforcement with targeted loads.",
-                    [
-                        "Test heel bending, lower-shaft slash impact, blade toe impact, and full-stick flex separately.",
-                        "Measure whether local reinforcement changes balance point or release feel.",
-                        "Run player blind tests on baseline and load-zone prototypes.",
-                    ],
-                ),
-                _panel(
-                    "Failure mode",
-                    "Watch for stress transfer created by local reinforcement.",
-                    [
-                        "A reinforced region can move failure to the neighboring thin region.",
-                        "Local stiffness jumps can create harsh feel or unpredictable flex.",
-                        "Manufacturing complexity can erase the weight and cost advantage.",
-                    ],
-                ),
-            ],
-        ),
-    ]
-
-
-def _cnc_triz_principles() -> list[TrizPrinciple]:
-    return [
-        TrizPrinciple(
-            10,
-            "Preliminary action",
-            "Move expensive validation before live machining: simulate, backplot, dry-run, and risk-score optimized CNC/G-code before a spindle ever cuts material.",
-            "The contradiction is speed versus safety. A CNC optimization algorithm must reduce cycle time without causing crashes, scrap, tool wear, or tolerance failures.",
-            [
-                _panel(
-                    "Contradiction rewrite",
-                    "Frame the CNC commercialization contradiction in production terms.",
-                    [
-                        "Improve CNC cycle time and programming efficiency without increasing crash risk, scrap, tool wear, or machinist mistrust.",
-                        "Let the algorithm suggest feed/speed, toolpath order, and air-cut reductions while preserving controller/post-processor safety.",
-                        "Increase automation without removing human review from high-risk machining decisions.",
-                    ],
-                    value="Improve CNC cycle time and programming efficiency without increasing crash risk, scrap, tool wear, or machinist mistrust.",
-                ),
-                _panel(
-                    "Inventive move",
-                    "Move proof and safety checks before production use.",
-                    [
-                        "Generate an optimization report first, then require simulation and CAM programmer approval before rewriting production files.",
-                        "Run every optimized file through a controller-aware backplot/simulation gate.",
-                        "Score changes by risk: low-risk air-cut and tool-order improvements can be automated before feed/speed changes.",
-                    ],
-                ),
-                _panel(
-                    "Prototype",
-                    "Build the smallest safe test.",
-                    [
-                        "Use 10 anonymized CNC files and compare baseline cycle time, optimized estimate, simulation pass, and machinist acceptance.",
-                        "Pilot on one machine/controller family before claiming general CNC compatibility.",
-                        "Offer an ROI report instead of a production-ready rewritten file in the first customer test.",
-                    ],
-                ),
-                _panel(
-                    "Failure mode",
-                    "Name what can break trust.",
-                    [
-                        "An optimization that passes math but fails controller-specific behavior can scrap a part or damage a tool.",
-                        "Customers may reject cloud upload if part files are proprietary or defense/aerospace sensitive.",
-                        "A cycle-time win can be meaningless if it worsens surface finish, tolerance, or tool life.",
-                    ],
-                ),
-            ],
-        ),
-        TrizPrinciple(
-            24,
-            "Intermediary",
-            "Introduce a machinist/CAM programmer review layer between the algorithm and production CNC files.",
-            "The product can commercialize faster if it begins as trusted decision support rather than full autonomous file rewriting.",
-            [
-                _panel(
-                    "Intermediary design",
-                    "Choose the trust layer.",
-                    [
-                        "Use a review queue showing original G-code/CAM intent, proposed change, expected savings, and risk reason.",
-                        "Add explainability: why the toolpath order, feed, speed, or retract move changed.",
-                        "Let users approve categories of low-risk changes while locking high-risk changes behind review.",
-                    ],
-                ),
-                _panel(
-                    "Metric",
-                    "Measure whether the intermediary is earning trust.",
-                    [
-                        "Percentage of recommendations accepted by CAM programmers without correction.",
-                        "Number of unsafe recommendations caught before simulation or live machining.",
-                        "Time from CNC file upload to approved optimization report.",
-                    ],
-                ),
-                _panel(
-                    "Failure mode",
-                    "Avoid becoming a slow consulting workflow.",
-                    [
-                        "If every change needs deep expert review, the product may not scale beyond services.",
-                        "If explanations are too technical for owners but too shallow for machinists, neither buyer trusts the product.",
-                        "If approval UX is painful, users may return to existing CAM workflows.",
-                    ],
-                ),
-            ],
-        ),
-        TrizPrinciple(
-            3,
-            "Local quality",
-            "Optimize different CNC file regions differently: air cuts, roughing, finishing, tool changes, retracts, and tolerance-critical moves should not share one risk rule.",
-            "A global optimization may be unsafe. CNC value comes from local improvements that respect machining context.",
-            [
-                _panel(
-                    "Segmentation map",
-                    "Split the CNC file into risk zones.",
-                    [
-                        "Separate air-cut removal, rapid moves, tool change order, roughing feeds, finishing feeds, and tolerance-critical surfaces.",
-                        "Automate low-risk cycle-time wins first; only recommend high-risk geometry/feed changes.",
-                        "Expose which zones were untouched because risk or missing metadata was too high.",
-                    ],
-                ),
-                _panel(
-                    "Prototype",
-                    "Test one local optimization class first.",
-                    [
-                        "Start with air-cut and retract-path reduction because it can reduce time without changing cutting conditions.",
-                        "Benchmark roughing-only optimization separately from finishing passes.",
-                        "Report savings by zone so buyers understand where ROI comes from.",
-                    ],
-                ),
-                _panel(
-                    "Failure mode",
-                    "Watch local optimization side effects.",
-                    [
-                        "Changing tool order can affect setup assumptions or fixture access.",
-                        "Reducing retracts can introduce collision risk if fixtures are not modeled.",
-                        "Optimizing roughing may shift heat, chip evacuation, or tool load in ways the file alone does not reveal.",
-                    ],
-                ),
-            ],
-        ),
-        TrizPrinciple(
-            25,
-            "Self-service",
-            "Let the CNC file, machine profile, material, tool library, and simulation result drive the recommendation rather than forcing the user to describe everything manually.",
-            "Commercialization improves when the product can infer enough context to be useful while clearly asking for missing data.",
-            [
-                _panel(
-                    "Required context",
-                    "Define what the algorithm must know.",
-                    [
-                        "Require machine/controller, material, tool library, tolerance criticality, fixture assumptions, and post-processor where possible.",
-                        "Ask for missing fields only when they change safety or ROI.",
-                        "Show confidence by recommendation, not just one global score.",
-                    ],
-                ),
-                _panel(
-                    "Metric",
-                    "Measure self-service usefulness.",
-                    [
-                        "Percentage of uploaded files that reach a recommendation without support.",
-                        "Number of missing-context prompts per file.",
-                        "Pilot user confidence after reviewing the output.",
-                    ],
-                ),
-                _panel(
-                    "Failure mode",
-                    "Avoid false confidence.",
-                    [
-                        "Inferring missing machine context can create unsafe recommendations.",
-                        "Too many required fields can kill adoption before users see value.",
-                        "A black-box confidence score will not satisfy expert CAM programmers.",
-                    ],
-                ),
-            ],
-        ),
-    ]
-
-
 def _relationship_triz_principles(goal: str) -> list[TrizPrinciple]:
     person = _relationship_name(goal)
     return [
@@ -1748,7 +1389,7 @@ def _relationship_triz_principles(goal: str) -> list[TrizPrinciple]:
                     ],
                     option_sets=[
                         [
-                            "Do not use the canvas as a script to prosecute Hollie. Use it to prepare calmer questions and your own boundaries.",
+                            f"Do not use the canvas as a script to prosecute {person}. Use it to prepare calmer questions and your own boundaries.",
                             "Do not let a single good date erase chronic incompatibilities if the core issues remain unchanged.",
                             "Do not let fear of grief keep you in a relationship that both people know is no longer mutual.",
                         ]
@@ -1899,75 +1540,27 @@ def _relationship_triz_principles(goal: str) -> list[TrizPrinciple]:
     ]
 
 
-def generate_triz(goal: str) -> dict[str, Any]:
-    topic = _topic(goal)
-    hockey = "hockey" in goal.lower() and "stick" in goal.lower()
-    cnc = any(term in goal.lower() for term in ["cnc", "g-code", "gcode", "toolpath", "machining"])
+def generate_triz(goal: str, domain_brief: DomainBrief | None = None) -> dict[str, Any]:
+    brief = complete_domain_brief(domain_brief, goal)
+    topic = brief.subject
     relationship = _is_relationship_goal(goal)
-    principles = _hockey_stick_principles() if hockey else (_cnc_triz_principles() if cnc else (_relationship_triz_principles(goal) if relationship else TRIZ_STARTERS))
+    principles = _relationship_triz_principles(goal) if relationship else TRIZ_STARTERS
     contradiction = {
-        "improving": (
-            "Reduce hockey-stick mass and swing weight for faster handling and release"
-            if hockey
-            else (
-                "Reduce CNC cycle time, programming effort, and machine-hour cost with algorithmic optimization"
-                if cnc
-            else (
-                "Make a clear stay-or-breakup decision while preserving dignity, safety, and honest understanding"
-                if relationship
-                else "The desired improvement the user wants to maximize"
-            )
-            )
-        ),
-        "worsening": (
-            "Less material can reduce impact durability, torsional stiffness, shot energy transfer, and puck feel"
-            if hockey
-            else (
-                "Unsafe toolpath changes can increase crash risk, scrap, tool wear, tolerance failures, or machinist mistrust"
-                if cnc
-            else (
-                "Acting too fast can cause regret or harm; delaying too long can deepen resentment and loneliness"
-                if relationship
-                else "The system property that appears to get worse when improving it"
-            )
-            )
-        ),
-        "prompt": (
-            "Rewrite these two fields into a crisp material/design contradiction before selecting a principle."
-            if hockey
-            else (
-                "Rewrite these two fields into a crisp CNC production contradiction before selecting a principle."
-                if cnc
-            else (
-                "Rewrite these two fields into a humane relationship contradiction before selecting a principle."
-                if relationship
-                else "Rewrite these two fields into a crisp contradiction before selecting a principle."
-            )
-            )
-        ),
+        "improving": f"Improve the desired outcome for {topic}: {brief.value_hypothesis}",
+        "worsening": f"Protect against the main constraints and side effects: {brief.constraints}",
+        "prompt": f"Rewrite these two fields into a domain-specific contradiction for {topic} before selecting a principle.",
     }
     analysis_brief = (
         [
-            "Research brief: modern performance hockey sticks are typically composite systems, not simple metal or wood parts: carbon fiber/epoxy shafts, foam-core composite blades, and localized reinforcement drive the design space.",
-            "Material shortlist: high-modulus or spread-tow carbon can reduce mass, aramid/Kevlar or S-glass can improve impact toughness, toughened epoxy can slow damage growth, and boron/graphene-style additives should be tested only in small high-load zones.",
-            "The TRIZ contradiction is mass versus durability/feel. A good answer should change layup, load-zone reinforcement, balance point, and blade core architecture, then validate with cold impact, torsion, flex, and player-feel tests.",
-        ]
-        if hockey
-        else [
-            "Research brief: CNC/CAM optimization is valuable only when it safely improves cycle time, tool changes, air cuts, feed/speed strategy, or programming effort without breaking controller-specific assumptions.",
-            "Commercialization constraint: job shops and manufacturing engineers will demand simulation, explainability, file security, controller/post-processor compatibility, and clear ROI before trusting optimized CNC output.",
-            "The TRIZ contradiction is automation versus safety. The best first product may be a reviewed optimization report and simulation-ready recommendation, not fully autonomous production file rewriting.",
-        ]
-        if cnc
-        else [
             "OmniFrame detected a relationship decision and adapted TRIZ away from engineering language into structured conflict-resolution moves.",
-            "The core contradiction is clarity versus care: you want a true decision about Hollie without making it from contempt, exhaustion, or a single escalated moment.",
+            "The core contradiction is clarity versus care: the user wants a true decision without making it from contempt, exhaustion, or one escalated moment.",
             "Use these principles to separate issues, prepare a calm conversation, test repair willingness, consider mediation, or plan a respectful separation.",
         ]
         if relationship
         else [
-            "OmniFrame selected TRIZ because the prompt implies a constraint conflict.",
-            "Choose a principle to open a focused workspace with generated moves, prototypes, and failure checks.",
+            f"OmniFrame read the domain as {brief.domain}.",
+            f"The TRIZ contradiction should improve {brief.value_hypothesis} while protecting against {brief.constraints}.",
+            f"Use the focused workspaces to translate each principle into a domain-specific move, prototype, and failure check for {brief.workflow}.",
         ]
     )
     return {
@@ -1979,40 +1572,16 @@ def generate_triz(goal: str) -> dict[str, Any]:
         "principles": [_triz_principle_dict(principle) for principle in principles],
         "solution_cards": [
             {
-                "title": "Load-zone composite layup" if hockey else ("Simulation-first optimization" if cnc else "Separate in time"),
-                "body": (
-                    "Use high stiffness-to-weight carbon where bending loads dominate, but add toughening plies only in heel, lower-shaft, and blade-edge impact zones."
-                    if hockey
-                    else (
-                        "Generate a reviewed optimization report and simulation-ready CNC output before any live machine run."
-                        if cnc
-                        else "Make the system behave one way during exploration and another way during execution."
-                    )
-                ),
+                "title": "Separate in time",
+                "body": f"Move the expensive or risky part of {brief.workflow} before the critical user-facing moment.",
             },
             {
-                "title": "Blade core redesign" if hockey else ("Risk-zoned toolpath changes" if cnc else "Separate in structure"),
-                "body": (
-                    "Reduce blade inertia with a tuned foam or ribbed core while preserving perimeter stiffness, puck feel, and water/damage resistance."
-                    if hockey
-                    else (
-                        "Automate low-risk air-cut and ordering improvements before recommending high-risk feed, speed, or geometry changes."
-                        if cnc
-                        else "Split the fragile or expensive part away from the part that must move quickly."
-                    )
-                ),
+                "title": "Separate in structure",
+                "body": f"Split the part of the system that creates value from the part that creates risk: {brief.constraints}.",
             },
             {
-                "title": "Test before exotic materials" if hockey else ("Machinist review layer" if cnc else "Introduce a mediation layer"),
-                "body": (
-                    "Run coupon and full-stick tests for flex, torsion, cold impact, cyclic shot loading, balance point, and player feel before choosing boron, graphene, or other premium additives."
-                    if hockey
-                    else (
-                        "Use a CAM programmer approval queue to convert a black-box algorithm into trusted decision support."
-                        if cnc
-                        else "Use an adapter, queue, policy engine, or human review gate to absorb the conflict."
-                    )
-                ),
+                "title": "Introduce a mediation layer",
+                "body": f"Use review, simulation, facilitation, policy, or tooling between the raw idea and the high-stakes decision for {topic}.",
             },
         ],
     }
@@ -2058,8 +1627,8 @@ def _board_item(title: str, body: str, options: list[str], metric: str = "") -> 
     }
 
 
-def generate_lean_startup(goal: str) -> dict[str, Any]:
-    brief = extract_domain_brief(goal)
+def generate_lean_startup(goal: str, domain_brief: DomainBrief | None = None) -> dict[str, Any]:
+    brief = complete_domain_brief(domain_brief, goal)
     topic = brief.subject
     return {
         "type": "framework_board",
@@ -2147,8 +1716,8 @@ def generate_lean_startup(goal: str) -> dict[str, Any]:
     }
 
 
-def generate_okrs(goal: str) -> dict[str, Any]:
-    brief = extract_domain_brief(goal)
+def generate_okrs(goal: str, domain_brief: DomainBrief | None = None) -> dict[str, Any]:
+    brief = complete_domain_brief(domain_brief, goal)
     topic = brief.subject
     return {
         "type": "okr_board",
@@ -2205,8 +1774,8 @@ def generate_okrs(goal: str) -> dict[str, Any]:
     }
 
 
-def generate_porters_five_forces(goal: str) -> dict[str, Any]:
-    brief = extract_domain_brief(goal)
+def generate_porters_five_forces(goal: str, domain_brief: DomainBrief | None = None) -> dict[str, Any]:
+    brief = complete_domain_brief(domain_brief, goal)
     topic = brief.subject
     forces = [
         (
@@ -2267,8 +1836,8 @@ def generate_porters_five_forces(goal: str) -> dict[str, Any]:
     }
 
 
-def generate_pestle(goal: str) -> dict[str, Any]:
-    brief = extract_domain_brief(goal)
+def generate_pestle(goal: str, domain_brief: DomainBrief | None = None) -> dict[str, Any]:
+    brief = complete_domain_brief(domain_brief, goal)
     topic = brief.subject
     factors = [
         ("Political", "Policy, government incentives, procurement behavior, geopolitical pressure."),
@@ -2320,5 +1889,5 @@ GENERATORS = {
 }
 
 
-def build_canvas(framework_id: str, goal: str) -> dict[str, Any]:
-    return GENERATORS[framework_id](goal)
+def build_canvas(framework_id: str, goal: str, domain_brief: DomainBrief | None = None) -> dict[str, Any]:
+    return GENERATORS[framework_id](goal, domain_brief)

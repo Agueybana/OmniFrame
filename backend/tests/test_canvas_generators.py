@@ -1,4 +1,4 @@
-from backend.app.services.canvas_generators import build_canvas, generate_rice, generate_swot, generate_triz
+from backend.app.services.canvas_generators import DomainBrief, build_canvas, generate_rice, generate_swot, generate_triz
 
 
 def test_rice_infers_triangle_event_features():
@@ -40,14 +40,24 @@ def test_swot_uses_project_specific_table_content():
     assert "Nexus" in rendered
 
 
-def test_triz_hockey_stick_uses_material_specific_analysis():
-    canvas = generate_triz("Build a lighter hockey stick.")
-    rendered = " ".join(canvas["analysis_brief"]) + " " + " ".join(principle["application"] for principle in canvas["principles"])
+def test_triz_uses_domain_brief_without_example_branches():
+    brief = DomainBrief(
+        subject="lighter portable field shelter",
+        domain="outdoor equipment structural design",
+        users="field researchers, disaster-response teams, equipment designers, and materials engineers",
+        workflow="change shelter construction while preserving setup speed, wind resistance, durability, and pack weight",
+        value_hypothesis="users value lower carry weight only if setup speed, weather resistance, and durability survive field use",
+        constraints="lower mass can reduce wind tolerance, joint strength, weather resistance, or repairability",
+        proof_metrics=["packed-weight reduction", "wind-load survival", "setup time"],
+        evidence_prompts=["Test material coupons and full shelter prototypes."],
+        adoption_risks=["A light shelter that fails in weather loses trust."],
+    )
+    canvas = generate_triz("Build a lighter portable field shelter.", brief)
+    rendered = " ".join(canvas["analysis_brief"]) + " " + str(canvas["solution_cards"])
 
-    assert "carbon" in rendered.lower()
-    assert "foam" in rendered.lower()
-    assert "hockey stick" in rendered.lower() or "hockey-stick" in rendered.lower()
-    assert canvas["principles"][0]["drilldown"]["panels"][1]["options"]
+    assert "outdoor equipment structural design" in rendered
+    assert "pack weight" in rendered.lower()
+    assert canvas["principles"][0]["drilldown"]["panels"] == []
 
 
 def test_relationship_prompts_use_relationship_language():
@@ -56,15 +66,15 @@ def test_relationship_prompts_use_relationship_language():
     assert "relationship" in swot["title"].lower()
     assert "partner" in swot_text.lower() or "dating" in swot_text.lower()
 
-    triz = generate_triz("Help me decide whether leaving my partner Hollie is the best choice.")
+    triz = generate_triz("Help me decide whether leaving my partner Alex is the best choice.")
     triz_text = " ".join(triz["analysis_brief"]) + " " + " ".join(principle["application"] for principle in triz["principles"])
-    assert "Hollie" in triz_text
+    assert "Alex" in triz_text
     assert "relationship" in triz_text.lower()
 
 
 def test_relationship_triz_keeps_partner_name_when_travel_list_is_present():
     triz = generate_triz(
-        "Help me decide whether leaving my partner and having a breakup with her (Hollie) is the best choice. "
+        "Help me decide whether leaving my partner and having a breakup with her (Alex) is the best choice. "
         "I want to travel abroad to Egypt, Jordan, Greece, Italy, Japan."
     )
     rendered = " ".join(triz["analysis_brief"]) + " " + " ".join(
@@ -74,7 +84,7 @@ def test_relationship_triz_keeps_partner_name_when_travel_list_is_present():
         if panel.get("options")
     )
 
-    assert "Hollie" in rendered
+    assert "Alex" in rendered
     assert "Egypt, Jordan, Greece, Italy, Japan and I" not in rendered
 
 
@@ -90,23 +100,20 @@ def test_swot_drilldown_panels_keep_distinct_option_domains():
     assert "next move" not in " ".join(panels["Watch metric"]["option_sets"][0]).lower()
 
 
-def test_cnc_algorithm_goal_creates_domain_specific_swot():
-    canvas = generate_swot("commercialize an algorithm for optimizing a CNC file.")
-    rendered = " ".join(canvas["analysis_brief"]) + " " + " ".join(
-        item["text"] + " " + item["rationale"] + " " + " ".join(item["options"])
-        for section in canvas["sections"]
-        for item in section["items"]
+def test_domain_brief_drives_all_live_frameworks_without_hardcoded_examples():
+    goal = "commercialize a wetland drone mapping algorithm."
+    brief = DomainBrief(
+        subject="commercializing a wetland drone mapping algorithm",
+        domain="wetland restoration, drone imagery analytics, and environmental monitoring software",
+        users="restoration ecologists, conservation nonprofits, state permitting teams, and drone service providers",
+        workflow="turn drone imagery into vegetation, hydrology, invasive species, and restoration-progress evidence",
+        value_hypothesis="customers pay if the output reduces field survey time and improves grant, compliance, or restoration decisions",
+        constraints="imagery quality, seasonal variance, species classification confidence, regulatory trust, and field validation burden",
+        proof_metrics=["field survey hours saved", "classification precision", "permit evidence acceptance"],
+        evidence_prompts=["Compare model output against field transects."],
+        adoption_risks=["Regulators may reject unsupported model claims."],
     )
-
-    assert "CNC" in rendered or "G-code" in rendered
-    assert "CAM" in rendered
-    assert "cycle-time" in rendered or "cycle time" in rendered
-    assert "job shops" in rendered or "machinists" in rendered
-
-
-def test_cnc_algorithm_goal_is_specific_across_live_frameworks():
-    goal = "commercialize an algorithm for optimizing a CNC file."
     for framework_id in ["swot", "lean_startup", "okrs", "porters_five_forces", "pestle", "rice", "triz"]:
-        canvas = build_canvas(framework_id, goal)
+        canvas = build_canvas(framework_id, goal, brief)
         rendered = str(canvas)
-        assert "CNC" in rendered or "CAM" in rendered or "toolpath" in rendered
+        assert "wetland" in rendered.lower() or "drone" in rendered.lower()

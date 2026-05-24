@@ -56,7 +56,7 @@ def test_option_refresh_keeps_metric_domain(monkeypatch):
 
     assert response.status_code == 200
     options = " ".join(response.json()["option_sets"][0]).lower()
-    assert "observable change" in options
+    assert "evidence" in options or "confidence" in options
     assert "sarcasm" not in options
 
 

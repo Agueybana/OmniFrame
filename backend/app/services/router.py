@@ -7,8 +7,9 @@ from typing import TypedDict
 
 import httpx
 
-from .canvas_generators import build_canvas, extract_domain_brief
+from .canvas_generators import build_canvas, domain_brief_from_mapping, extract_domain_brief
 from .frameworks import ACTIVE_FRAMEWORK_IDS, get_framework
+from .skill_registry import framework_skill_pack, load_skill
 
 
 class RouteDecision(TypedDict):
@@ -128,7 +129,6 @@ RELATIONSHIP_TERMS = {
     "relationship",
     "dating",
     "marriage",
-    "hollie",
     "family",
     "couple",
 }
@@ -153,10 +153,10 @@ def _tokenize(goal: str) -> set[str]:
     return set(re.findall(r"[a-zA-Z][a-zA-Z-]+", goal.lower()))
 
 
-def _score_pass(goal: str, mode: str) -> dict:
+def _score_pass(goal: str, mode: str, domain_brief: dict | None = None) -> dict:
     text = goal.lower()
     tokens = _tokenize(goal)
-    brief = extract_domain_brief(goal)
+    brief = domain_brief_from_mapping(domain_brief, goal)
     scores = {framework_id: 0 for framework_id in ACTIVE_FRAMEWORK_IDS}
     signals: dict[str, list[str]] = {framework_id: [] for framework_id in ACTIVE_FRAMEWORK_IDS}
 
@@ -184,9 +184,6 @@ def _score_pass(goal: str, mode: str) -> dict:
                 add(framework_id, 2, f"phrase signal: {phrase}")
         if tokens & RELATIONSHIP_TERMS:
             add("swot", 5, "relationship or personal decision language")
-        if "cnc" in tokens or "g-code" in text or "toolpath" in tokens or "machining" in tokens:
-            add("lean_startup", 2, "CNC/CAM algorithm commercialization needs buyer proof")
-            add("swot", 2, "CNC/CAM market, trust, and integration audit")
     else:
         if any(word in tokens for word in ["rank", "prioritize", "priority", "backlog", "features", "score"]):
             add("rice", 5, "requested output is ranking or prioritization")
@@ -225,10 +222,10 @@ def _score_pass(goal: str, mode: str) -> dict:
     }
 
 
-def _adjudicate_smart_passes(goal: str, intent_pass: dict, output_pass: dict) -> dict:
+def _adjudicate_smart_passes(goal: str, intent_pass: dict, output_pass: dict, domain_brief: dict | None = None) -> dict:
     text = goal.lower()
     tokens = _tokenize(goal)
-    brief = extract_domain_brief(goal)
+    brief = domain_brief_from_mapping(domain_brief, goal)
     scores = {framework_id: intent_pass["scores"].get(framework_id, 0) + output_pass["scores"].get(framework_id, 0) for framework_id in ACTIVE_FRAMEWORK_IDS}
     criteria = []
 
@@ -279,12 +276,12 @@ def _adjudicate_smart_passes(goal: str, intent_pass: dict, output_pass: dict) ->
     }
 
 
-def smart_criteria_route(goal: str) -> RouteDecision:
-    brief = extract_domain_brief(goal)
-    intent_pass = _score_pass(goal, "intent")
-    output_pass = _score_pass(goal, "output")
+def smart_criteria_route(goal: str, domain_brief: dict | None = None) -> RouteDecision:
+    brief = domain_brief_from_mapping(domain_brief, goal)
+    intent_pass = _score_pass(goal, "intent", domain_brief)
+    output_pass = _score_pass(goal, "output", domain_brief)
     mismatch = intent_pass["winner"] != output_pass["winner"]
-    adjudicator = _adjudicate_smart_passes(goal, intent_pass, output_pass) if mismatch else None
+    adjudicator = _adjudicate_smart_passes(goal, intent_pass, output_pass, domain_brief) if mismatch else None
     selected_pass = adjudicator or intent_pass
     framework_id = selected_pass["winner"]
     agreement_text = (
@@ -323,12 +320,13 @@ def smart_criteria_route(goal: str) -> RouteDecision:
     }
 
 
-def deterministic_route(goal: str) -> RouteDecision:
-    return smart_criteria_route(goal)
+def deterministic_route(goal: str, domain_brief: dict | None = None) -> RouteDecision:
+    return smart_criteria_route(goal, domain_brief)
 
 
 def _llm_enabled(provider: str | None = None) -> bool:
-    if os.getenv("OMNIFRAME_USE_LLM", "").lower() not in {"1", "true", "yes"}:
+    flag = os.getenv("OMNIFRAME_USE_LLM", "").lower()
+    if flag in {"0", "false", "no", "off"}:
         return False
     if provider == "google":
         return bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
@@ -434,16 +432,38 @@ async def _llm_json(prompt: str, provider: str | None, model_id: str | None) -> 
         return None
 
 
-async def langchain_route(goal: str, provider: str | None = None, model_id: str | None = None) -> RouteDecision | None:
+async def langchain_domain_brief(goal: str, provider: str | None = None, model_id: str | None = None) -> dict | None:
     if not _llm_enabled(provider):
         return None
+    prompt = (
+        f"{load_skill('domain_analyst')}\n\n"
+        "Return only valid JSON matching the required Domain Analyst shape. "
+        "Do not use canned examples or hidden domain templates; infer from this exact user prompt and web context when available.\n\n"
+        f"User prompt:\n{goal}"
+    )
+    parsed = await _llm_json(prompt, provider, model_id)
+    if not isinstance(parsed, dict):
+        return None
+    required = {"subject", "domain", "users", "workflow", "value_hypothesis", "constraints", "proof_metrics", "evidence_prompts", "adoption_risks"}
+    if required.issubset(parsed.keys()):
+        return parsed
+    return None
+
+
+async def langchain_route(goal: str, provider: str | None = None, model_id: str | None = None, domain_brief: dict | None = None) -> RouteDecision | None:
+    if not _llm_enabled(provider):
+        return None
+    brief = domain_brief_from_mapping(domain_brief, goal)
 
     prompt = (
+        f"{load_skill('domain_analyst')}\n\n"
         "Route the user goal to exactly one framework: swot, lean_startup, okrs, porters_five_forces, pestle, rice, or triz.\n"
         "Return compact JSON with framework_id, confidence, and rationale.\n"
         "Use SWOT for broad strategic or personal decision audits, Lean Startup for MVP validation, OKRs for measurable alignment, "
         "Porter's Five Forces for industry structure, PESTLE for macro risk, RICE for prioritization, and TRIZ for engineering contradictions.\n"
         "For relationship, dating, breakup, or family decisions, prefer swot unless the user explicitly requests another framework.\n\n"
+        f"Domain brief JSON:\n{json.dumps(domain_brief or {}, ensure_ascii=False)}\n"
+        f"Subject: {brief.subject}\nDomain: {brief.domain}\nUsers/stakeholders: {brief.users}\nWorkflow: {brief.workflow}\n"
         f"Goal: {goal}"
     )
 
@@ -467,8 +487,16 @@ async def langchain_route(goal: str, provider: str | None = None, model_id: str 
     return None
 
 
-async def langchain_enrich_canvas(framework_id: str, goal: str, canvas: dict, provider: str | None = None, model_id: str | None = None) -> dict | None:
+async def langchain_enrich_canvas(
+    framework_id: str,
+    goal: str,
+    canvas: dict,
+    provider: str | None = None,
+    model_id: str | None = None,
+    domain_brief: dict | None = None,
+) -> dict | None:
     prompt = (
+        f"{framework_skill_pack(framework_id)}\n\n"
         "You are OmniFrame's senior framework analyst with web research enabled when available. Return only valid JSON.\n"
         "Preserve the current canvas schema and top-level type exactly, but rewrite generic content into concrete, domain-specific analysis.\n"
         "Use the user's exact context, names, constraints, and emotional/business/engineering details. If the prompt is personal or relationship-related, avoid business jargon.\n"
@@ -480,6 +508,7 @@ async def langchain_enrich_canvas(framework_id: str, goal: str, canvas: dict, pr
         "Use reputable public web context where useful, but do not include citations in the JSON unless a field already supports them.\n\n"
         f"Framework: {framework_id}\n"
         f"Goal: {goal}\n"
+        f"Domain brief JSON:\n{json.dumps(domain_brief or {}, ensure_ascii=False)}\n"
         f"Current canvas JSON:\n{json.dumps(canvas)}"
     )
     parsed = await _llm_json(prompt, provider, model_id)
@@ -495,216 +524,108 @@ def _fallback_option_sets(
     panel_value: str | None = None,
     refresh_round: int = 0,
     goal: str = "",
+    domain_brief: dict | None = None,
 ) -> list[list[str]]:
-    subject = re.sub(r"\s+", " ", focus_title.strip())[:160]
-    value_hint = re.sub(r"\s+", " ", (panel_value or "").strip())[:120]
+    subject = re.sub(r"\s+", " ", focus_title.strip())[:180]
+    value_hint = re.sub(r"\s+", " ", (panel_value or "").strip())[:160]
     reference = value_hint or subject
-    brief = extract_domain_brief(goal or focus_title)
-
-    if "CNC" in brief.domain or "CNC" in brief.subject:
-        by_kind = {
-            "evidence": [
-                [
-                    "Benchmark the optimized CNC/CAM file against the original for cycle time, air cuts, tool changes, and machine-hour cost.",
-                    "Run the output through simulation/backplotting before any live machining trial.",
-                    "Ask 5 CAM programmers which toolpath changes they would trust without manual rewrite.",
-                ],
-                [
-                    "Compare the algorithm against one manual machinist edit and one CAM-system optimization feature.",
-                    "Collect before/after evidence for surface finish, scrap risk, and tool-wear cost.",
-                    "Log every unsafe, incompatible, or low-confidence toolpath recommendation.",
-                ],
-                [
-                    "Use anonymized G-code/CAM examples from at least three materials or part families.",
-                    "Measure whether the optimized file preserves tolerances, fixtures, and controller/post-processor assumptions.",
-                    "Document the evidence a job shop owner would need before paying for a pilot.",
-                ],
-            ],
-            "action": [
-                [
-                    "Create a 7-day pilot offer: submit one CNC file, receive an optimized version, simulation report, ROI estimate, and risk notes.",
-                    "Package the algorithm as a reviewed recommendation engine before letting it rewrite production files automatically.",
-                    "Choose one buyer wedge: job shops with high spindle-hour costs, CAM programmers with repetitive files, or quoting teams needing faster estimates.",
-                ],
-                [
-                    "Build a before/after demo using a representative CNC file and show cycle-time savings with the exact toolpath changes highlighted.",
-                    "Add a confidence gate: auto-suggest low-risk improvements, require human review for risky feed/speed or geometry changes.",
-                    "Interview manufacturing engineers about integration requirements for Fusion, Mastercam, Siemens NX, Haas, Fanuc, or their current controller stack.",
-                ],
-            ],
-            "metric": [
-                [
-                    "Cycle-time reduction versus the baseline CNC/CAM file.",
-                    "Successful simulation or dry-run pass rate.",
-                    "Machine-hour ROI per optimized job.",
-                ],
-                [
-                    "Tool-wear cost reduction after optimization.",
-                    "Scrap or rework rate after optimized file use.",
-                    "Pilot buyer willingness-to-pay after reviewing the before/after report.",
-                ],
-                [
-                    "Percentage of recommendations accepted by a CAM programmer without manual correction.",
-                    "Number of controller/post-processor incompatibilities found before live machining.",
-                    "Time from file upload to trusted optimization report.",
-                ],
-            ],
-            "risk": [
-                [
-                    "A single unsafe toolpath could damage a machine, scrap a part, or destroy buyer trust.",
-                    "Controller/post-processor differences can make a good optimization unsafe on another machine.",
-                    "Customers may refuse to upload proprietary part files without on-prem, deletion, or anonymization controls.",
-                ],
-                [
-                    "The algorithm may optimize cycle time while worsening surface finish, tolerances, or tool life.",
-                    "CAM vendors may already own the integration surface and can copy obvious optimization features.",
-                    "The buyer may see the result as consulting, not repeatable software, unless the workflow is packaged clearly.",
-                ],
-            ],
-            "experiment": [
-                [
-                    "Run a concierge pilot on 10 anonymized CNC files: baseline, optimized output, simulation result, machinist review, ROI estimate.",
-                    "Test one material and one machine/controller class before claiming broad CNC compatibility.",
-                    "Use a human review gate for every optimized file until unsafe recommendation rate is below a written threshold.",
-                ],
-                [
-                    "Offer three job shops a no-risk benchmark: pay only if cycle time or tooling-cost savings exceed a pre-agreed threshold.",
-                    "Run A/B quoting: current manual estimate versus algorithm-assisted estimate for time and accuracy.",
-                    "Measure whether CAM programmers request a second file optimization after the first report.",
-                ],
-            ],
-            "definition": [
-                [
-                    "Define the V1 as: upload CNC/CAM file, detect safe optimization opportunities, generate a simulation-ready report, and require human approval before production use.",
-                    "Exclude full autonomous machine control from V1; focus on trusted recommendations and validated file changes.",
-                    "Specify supported inputs first: G-code, CAM export, controller type, material, tool library, and machine constraints.",
-                ],
-                [
-                    "Define the buyer promise as reducing machine time or programming effort without increasing scrap, tool wear, or machine-crash risk.",
-                    "Make the acceptance condition: the optimized file passes simulation and a CAM programmer accepts the recommendation.",
-                    "State the edge cases V1 will refuse: unknown controller, missing tool data, tight tolerance risk, or unsafe geometry assumptions.",
-                ],
-            ],
-        }
-        options = by_kind.get(panel_kind, by_kind["action"])
-        start = refresh_round % len(options)
-        return options[start:] + options[:start]
+    brief = domain_brief_from_mapping(domain_brief, goal or focus_title)
+    users = brief.users
+    workflow = brief.workflow
+    value = brief.value_hypothesis
+    constraints = brief.constraints
+    metrics = brief.proof_metrics or ["decision confidence delta", "evidence gathered per week", "time to next concrete action"]
 
     by_kind = {
         "evidence": [
             [
-                f"Find one direct observation that supports or weakens: {reference}.",
-                "Ask for examples rather than opinions from the most relevant people.",
-                "Separate firsthand evidence from assumptions, hopes, or inherited advice.",
+                f"Find one direct observation from {users} that supports or weakens: {reference}.",
+                f"Inspect the real workflow before judging this panel: {workflow}.",
+                f"Separate firsthand evidence from assumptions about {brief.subject}.",
             ],
             [
-                "Name the evidence that would make you reverse this belief.",
+                f"Name the evidence that would make you reverse this belief about {brief.subject}.",
                 "Look for one counterexample before treating the claim as settled.",
-                "Compare the claim against a past pattern, logged behavior, or external data point.",
+                f"Compare the claim against one outside reference point and one firsthand signal from {users}.",
             ],
             [
                 f"Create an evidence log for '{subject}' with source, date, confidence, and what it changes.",
-                "Use one outside reference point and one firsthand signal before accepting the option.",
+                f"Ask what proof would show the value hypothesis is real: {value}.",
                 "Mark each signal as confirming, weakening, or irrelevant to the current decision.",
-            ],
-            [
-                f"Ask what would make this panel's claim false for: {reference}.",
-                "Collect a behavioral example from the last 30 days instead of relying on a summary judgment.",
-                "Distinguish preference evidence from compatibility, demand, risk, or execution evidence.",
             ],
         ],
         "action": [
             [
-                f"Turn '{subject}' into one reversible next move.",
+                f"Turn '{subject}' into one reversible next move for {brief.subject}.",
                 "Set a clear owner, deadline, and smallest visible output.",
-                "Choose the step that creates new information without overcommitting.",
+                f"Choose the step that creates evidence about: {value}.",
             ],
             [
-                "Convert the insight into a short conversation, prototype, or decision memo.",
+                f"Convert the insight into a short conversation, prototype, outreach, or decision memo for {users}.",
                 "Decide what should stop while this move is tested.",
                 "Write the trigger that tells you to continue, revise, or abandon the move.",
             ],
             [
                 f"Choose one next action for '{reference}' that can be done without locking in the final decision.",
                 "Write the decision rule before taking the action so the result cannot be rationalized later.",
-                "Make the move small enough to complete before the next review window.",
-            ],
-            [
-                f"Convert this panel into a concrete ask, prototype, outreach, or conversation tied to '{subject}'.",
-                "Pair the action with one constraint: time box, budget cap, or emotional safety boundary.",
-                "Define who must respond, what must be observed, and what happens immediately after.",
+                f"Make the move small enough to test inside this workflow: {workflow}.",
             ],
         ],
         "metric": [
             [
-                f"Observable change connected to: {subject}.",
-                "Decision confidence before versus after the next action.",
-                "Number of concrete signals collected, reviewed, and acted on.",
+                metrics[0],
+                metrics[1] if len(metrics) > 1 else f"Observable change connected to: {subject}.",
+                metrics[2] if len(metrics) > 2 else "Decision confidence before versus after the next action.",
             ],
             [
-                "A pass/fail threshold written before the next experiment starts.",
-                "Frequency of the desired behavior or outcome over the next review window.",
-                "Time from insight to decision-ready evidence.",
+                f"Evidence threshold for the value hypothesis: {value}.",
+                "Decision confidence before versus after the next action.",
+                "Number of concrete signals collected, reviewed, and acted on.",
             ],
             [
                 f"Count of high-quality signals gathered for '{reference}' before the next decision checkpoint.",
                 "Percentage of selected options that produce clear evidence instead of more ambiguity.",
                 "A written confidence score with one sentence explaining why it moved.",
             ],
-            [
-                f"Review-window trend for the behavior, demand, constraint, or outcome behind '{subject}'.",
-                "Number of assumptions converted into pass, fail, or still-unknown status.",
-                "Time spent debating versus time spent collecting useful signals.",
-            ],
         ],
         "risk": [
             [
                 f"The plan fails if the main assumption behind '{subject}' is false.",
-                "The next action produces noise instead of decision-grade evidence.",
+                f"The next action ignores this constraint set: {constraints}.",
                 "The move reduces one risk while quietly increasing another.",
             ],
             [
                 "A short-term improvement hides a deeper constraint.",
                 "The process becomes performative because no decision threshold exists.",
-                "The wrong stakeholder or signal dominates the conclusion.",
+                f"The wrong stakeholder or signal dominates instead of {users}.",
             ],
             [
-                f"The new option may optimize '{reference}' while ignoring the larger decision context.",
+                f"The new option may optimize '{reference}' while ignoring the larger context around {brief.subject}.",
                 "Repeated regeneration can become avoidance if no option is selected and tested.",
                 "The safest-looking option may preserve the current problem rather than resolve it.",
-            ],
-            [
-                f"The panel can drift away from '{subject}' if the next step is not tied to observable evidence.",
-                "A strong emotional reaction or stakeholder preference can be mistaken for proof.",
-                "A single positive signal can hide unresolved constraints or incompatibilities.",
             ],
         ],
         "experiment": [
             [
                 f"Run a small test that isolates the assumption inside: {subject}.",
                 "Define baseline, test variant, review date, and stop condition.",
-                "Use a manual version first if automation or commitment would be premature.",
+                f"Use the actual workflow as the test path: {workflow}.",
             ],
             [
                 "Choose a 7-day version that creates evidence without locking in the final path.",
                 "Record what counts as a pass, partial pass, and clear fail.",
-                "Keep the experiment narrow enough that one result actually means something.",
+                f"Keep the experiment narrow enough to prove or weaken: {value}.",
             ],
             [
-                f"Design a two-option test for '{reference}' so the result can compare alternatives, not just feelings.",
+                f"Design a two-option test for '{reference}' so the result can compare alternatives, not just impressions.",
                 "Keep the test reversible and write down what would make you stop early.",
                 "Capture the result in the report as baseline, intervention, signal, and decision.",
-            ],
-            [
-                f"Run the smallest real-world version of '{subject}' with one measurable outcome.",
-                "Avoid testing multiple changes at once unless the goal is exploration rather than proof.",
-                "Schedule the review before starting so the experiment cannot expand indefinitely.",
             ],
         ],
         "contradiction": [
             [
-                f"I want to improve '{subject}' without worsening the most important constraint.",
-                "Name the property that must improve and the property that cannot be sacrificed.",
+                f"I want to improve '{brief.subject}' without worsening: {constraints}.",
+                f"Name what gets better in the workflow and what must not get worse: {workflow}.",
                 "Rewrite the conflict as a single sentence with both sides visible.",
             ],
             [
@@ -717,32 +638,22 @@ def _fallback_option_sets(
                 "Rewrite the tradeoff as improve X while preserving Y.",
                 "Name what would prove the contradiction has been uncoupled.",
             ],
-            [
-                f"Identify whether '{subject}' is a real contradiction, a missing constraint, or a vague preference conflict.",
-                "State the hidden assumption that makes both sides feel mutually exclusive.",
-                "Choose one principle that can separate the two sides into different times, places, parts, or rules.",
-            ],
         ],
         "definition": [
             [
                 f"Rewrite '{subject}' as a concrete requirement with user, trigger, behavior, and outcome.",
                 "Cut wording that does not change the build, decision, or test.",
-                "Name the smallest version that still proves the core value.",
+                f"Name the smallest version that still tests: {value}.",
             ],
             [
-                "Describe who uses it, what they do, and how success is visible.",
+                f"Describe who uses it from {users}, what they do, and how success is visible.",
                 "Separate required behavior from polish, automation, or nice-to-have scope.",
                 "Add one explicit non-goal so scope does not expand silently.",
             ],
             [
                 f"Define '{reference}' as a job, actor, input, output, and acceptance condition.",
                 "Write the smallest version that a real user or stakeholder could react to.",
-                "Name what this definition deliberately excludes for now.",
-            ],
-            [
-                f"Turn '{subject}' into one sentence that can be scored, tested, or assigned.",
-                "Replace adjectives with observable behavior or measurable thresholds.",
-                "State the edge case that would break this definition.",
+                f"Name what this definition deliberately excludes for {brief.subject} right now.",
             ],
         ],
     }
@@ -755,7 +666,9 @@ def _fallback_option_sets(
 
 async def refresh_panel_options(request, provider: str | None = None, model_id: str | None = None) -> dict:
     panel_kind = request.panel_kind or "action"
+    domain_brief = await langchain_domain_brief(request.goal, provider, model_id)
     prompt = (
+        f"{framework_skill_pack(request.framework_id)}\n\n"
         "You are OmniFrame's focused option generator. Return only valid JSON in this exact shape: "
         '{"option_sets":[["option one","option two","option three"],["option one","option two","option three"]]}.\n'
         "Generate fresh, non-duplicative options for the specified panel only. "
@@ -764,6 +677,7 @@ async def refresh_panel_options(request, provider: str | None = None, model_id: 
         "Do not reuse the existing options. Do not include generic placeholders.\n\n"
         f"Framework: {request.framework_id}\n"
         f"Goal: {request.goal}\n"
+        f"Domain brief JSON: {json.dumps(domain_brief or {}, ensure_ascii=False)}\n"
         f"Focus title: {request.focus_title}\n"
         f"Focus description: {request.focus_description or ''}\n"
         f"Panel title: {request.panel_title}\n"
@@ -788,20 +702,31 @@ async def refresh_panel_options(request, provider: str | None = None, model_id: 
                 cleaned_sets.append(cleaned[:4])
         if cleaned_sets:
             return {"option_sets": cleaned_sets[:4]}
-    return {"option_sets": _fallback_option_sets(panel_kind, request.focus_title, request.panel_title, request.panel_value, request.refresh_round, request.goal)}
+    return {
+        "option_sets": _fallback_option_sets(
+            panel_kind,
+            request.focus_title,
+            request.panel_title,
+            request.panel_value,
+            request.refresh_round,
+            request.goal,
+            domain_brief,
+        )
+    }
 
 
 async def route_goal(goal: str, framework_id: str | None = None, model_provider: str | None = None, model_id: str | None = None) -> dict:
-    smart_decision = deterministic_route(goal)
-    llm_decision = await langchain_route(goal, model_provider, model_id)
+    domain_brief = await langchain_domain_brief(goal, model_provider, model_id)
+    smart_decision = deterministic_route(goal, domain_brief)
+    llm_decision = await langchain_route(goal, model_provider, model_id, domain_brief)
 
     if framework_id:
         framework = get_framework(framework_id)
         if not framework or framework_id not in ACTIVE_FRAMEWORK_IDS:
             decision = smart_decision
         else:
-            canvas = build_canvas(framework_id, goal)
-            enriched = await langchain_enrich_canvas(framework_id, goal, canvas, model_provider, model_id)
+            canvas = build_canvas(framework_id, goal, domain_brief_from_mapping(domain_brief, goal))
+            enriched = await langchain_enrich_canvas(framework_id, goal, canvas, model_provider, model_id, domain_brief)
             selection_process = {
                 **smart_decision["selection_process"],
                 "summary": f"Smart criteria recommended {FRAMEWORK_NAMES.get(smart_decision['framework_id'], smart_decision['framework_id'])}; user overrode to {framework['name']}.",
@@ -851,8 +776,8 @@ async def route_goal(goal: str, framework_id: str | None = None, model_provider:
         framework = get_framework(decision["framework_id"])
         selection_process = dict(decision["selection_process"])
 
-    canvas = build_canvas(decision["framework_id"], goal)
-    enriched = await langchain_enrich_canvas(decision["framework_id"], goal, canvas, model_provider, model_id)
+    canvas = build_canvas(decision["framework_id"], goal, domain_brief_from_mapping(domain_brief, goal))
+    enriched = await langchain_enrich_canvas(decision["framework_id"], goal, canvas, model_provider, model_id, domain_brief)
     return {
         "framework_id": decision["framework_id"],
         "framework_name": framework["name"],

@@ -1,14 +1,28 @@
 # OmniFrame
 
-OmniFrame is an agentic "CAD for Thought" prototype. A user enters a business or engineering goal, the backend routes it to one of three V1 frameworks, and the frontend generates an editable visual canvas.
+OmniFrame is an agentic "CAD for Thought" prototype. A user enters a business, engineering, product, personal, or strategy goal; the backend builds a domain brief, routes it to a live framework, and the frontend generates an editable visual canvas.
 
-## V1 Routes
+## Live Routes
 
 - SWOT: strategic baseline audit
+- Lean Startup: Build-Measure-Learn validation loops
+- OKRs: measurable alignment and operating cadence
+- Porter's Five Forces: industry pressure analysis
+- PESTLE: macro-environment analysis
 - RICE: product and roadmap prioritization
 - TRIZ: engineering contradiction solving
 
 The full 50-framework reference catalog lives at `backend/app/data/framework_catalog.json` and is exposed through the Framework Library UI. Future frameworks are visible but locked.
+
+## Analysis Skills
+
+Framework and domain reasoning is configured through markdown skills in `backend/app/skills/`.
+
+- `domain_analyst.md` extracts the subject model for any prompt.
+- `context_accumulator.md` keeps regeneration tied to the original prompt plus the user's current layer edits.
+- `frameworks/*.md` defines professional expectations for each live framework.
+
+These files are loaded into inference prompts so examples do not have to be hardcoded in Python.
 
 ## Local Development
 
@@ -35,18 +49,18 @@ Open:
 - Frontend: http://localhost:5173
 - Backend health: http://localhost:8000/api/health
 
-## Optional LLM Routing
+## LLM Analysis
 
-The deterministic router works without credentials. To enable LangChain-backed routing:
+The deterministic fallback works without credentials, but production-quality domain analysis expects OpenAI or Gemini credentials. If keys are present, LLM analysis is enabled by default unless `OMNIFRAME_USE_LLM=false`.
 
 ```bash
 export OPENAI_API_KEY="..."
+export GEMINI_API_KEY="..."
 export OMNIFRAME_USE_LLM=true
-export OMNIFRAME_ROUTER_MODEL="gpt-4.1-mini"
 npm run dev
 ```
 
-If LangChain routing fails or credentials are absent, OmniFrame falls back to deterministic routing.
+If inference fails or credentials are absent, OmniFrame falls back to deterministic routing and schema-preserving canvases.
 
 ## Docker
 
