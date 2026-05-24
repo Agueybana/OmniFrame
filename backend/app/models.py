@@ -55,6 +55,7 @@ class OptionRefreshRequest(BaseModel):
     panel_kind: str | None = Field(default=None, max_length=80)
     panel_value: str | None = Field(default=None, max_length=4000)
     existing_options: list[str] = Field(default_factory=list, max_length=60)
+    refresh_round: int = Field(default=0, ge=0, le=1000)
     model_provider: Literal["openai", "google"] | None = None
     model_id: str | None = Field(default=None, max_length=120)
 

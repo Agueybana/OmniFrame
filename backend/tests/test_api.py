@@ -47,3 +47,21 @@ def test_option_refresh_keeps_metric_domain(monkeypatch):
     options = " ".join(response.json()["option_sets"][0]).lower()
     assert "observable change" in options
     assert "sarcasm" not in options
+
+
+def test_option_refresh_round_rotates_fallback_sets(monkeypatch):
+    monkeypatch.setenv("OMNIFRAME_USE_LLM", "false")
+    client = TestClient(app)
+    payload = {
+        "goal": "Rank features for a local events app.",
+        "framework_id": "rice",
+        "focus_title": "Reach evidence for daily event ingestion",
+        "panel_title": "Reach evidence",
+        "panel_kind": "evidence",
+        "panel_prompt": "Choose what should justify the reach estimate.",
+    }
+
+    first = client.post("/api/options/refresh", json={**payload, "refresh_round": 0}).json()["option_sets"][0][0]
+    second = client.post("/api/options/refresh", json={**payload, "refresh_round": 1}).json()["option_sets"][0][0]
+
+    assert first != second

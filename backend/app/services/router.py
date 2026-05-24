@@ -326,7 +326,7 @@ async def langchain_enrich_canvas(framework_id: str, goal: str, canvas: dict, pr
     return None
 
 
-def _fallback_option_sets(panel_kind: str, focus_title: str, panel_title: str, panel_value: str | None = None) -> list[list[str]]:
+def _fallback_option_sets(panel_kind: str, focus_title: str, panel_title: str, panel_value: str | None = None, refresh_round: int = 0) -> list[list[str]]:
     subject = re.sub(r"\s+", " ", focus_title.strip())[:160]
     value_hint = re.sub(r"\s+", " ", (panel_value or "").strip())[:120]
     reference = value_hint or subject
@@ -342,6 +342,16 @@ def _fallback_option_sets(panel_kind: str, focus_title: str, panel_title: str, p
                 "Look for one counterexample before treating the claim as settled.",
                 "Compare the claim against a past pattern, logged behavior, or external data point.",
             ],
+            [
+                f"Create an evidence log for '{subject}' with source, date, confidence, and what it changes.",
+                "Use one outside reference point and one firsthand signal before accepting the option.",
+                "Mark each signal as confirming, weakening, or irrelevant to the current decision.",
+            ],
+            [
+                f"Ask what would make this panel's claim false for: {reference}.",
+                "Collect a behavioral example from the last 30 days instead of relying on a summary judgment.",
+                "Distinguish preference evidence from compatibility, demand, risk, or execution evidence.",
+            ],
         ],
         "action": [
             [
@@ -353,6 +363,16 @@ def _fallback_option_sets(panel_kind: str, focus_title: str, panel_title: str, p
                 "Convert the insight into a short conversation, prototype, or decision memo.",
                 "Decide what should stop while this move is tested.",
                 "Write the trigger that tells you to continue, revise, or abandon the move.",
+            ],
+            [
+                f"Choose one next action for '{reference}' that can be done without locking in the final decision.",
+                "Write the decision rule before taking the action so the result cannot be rationalized later.",
+                "Make the move small enough to complete before the next review window.",
+            ],
+            [
+                f"Convert this panel into a concrete ask, prototype, outreach, or conversation tied to '{subject}'.",
+                "Pair the action with one constraint: time box, budget cap, or emotional safety boundary.",
+                "Define who must respond, what must be observed, and what happens immediately after.",
             ],
         ],
         "metric": [
@@ -366,6 +386,16 @@ def _fallback_option_sets(panel_kind: str, focus_title: str, panel_title: str, p
                 "Frequency of the desired behavior or outcome over the next review window.",
                 "Time from insight to decision-ready evidence.",
             ],
+            [
+                f"Count of high-quality signals gathered for '{reference}' before the next decision checkpoint.",
+                "Percentage of selected options that produce clear evidence instead of more ambiguity.",
+                "A written confidence score with one sentence explaining why it moved.",
+            ],
+            [
+                f"Review-window trend for the behavior, demand, constraint, or outcome behind '{subject}'.",
+                "Number of assumptions converted into pass, fail, or still-unknown status.",
+                "Time spent debating versus time spent collecting useful signals.",
+            ],
         ],
         "risk": [
             [
@@ -377,6 +407,16 @@ def _fallback_option_sets(panel_kind: str, focus_title: str, panel_title: str, p
                 "A short-term improvement hides a deeper constraint.",
                 "The process becomes performative because no decision threshold exists.",
                 "The wrong stakeholder or signal dominates the conclusion.",
+            ],
+            [
+                f"The new option may optimize '{reference}' while ignoring the larger decision context.",
+                "Repeated regeneration can become avoidance if no option is selected and tested.",
+                "The safest-looking option may preserve the current problem rather than resolve it.",
+            ],
+            [
+                f"The panel can drift away from '{subject}' if the next step is not tied to observable evidence.",
+                "A strong emotional reaction or stakeholder preference can be mistaken for proof.",
+                "A single positive signal can hide unresolved constraints or incompatibilities.",
             ],
         ],
         "experiment": [
@@ -390,6 +430,16 @@ def _fallback_option_sets(panel_kind: str, focus_title: str, panel_title: str, p
                 "Record what counts as a pass, partial pass, and clear fail.",
                 "Keep the experiment narrow enough that one result actually means something.",
             ],
+            [
+                f"Design a two-option test for '{reference}' so the result can compare alternatives, not just feelings.",
+                "Keep the test reversible and write down what would make you stop early.",
+                "Capture the result in the report as baseline, intervention, signal, and decision.",
+            ],
+            [
+                f"Run the smallest real-world version of '{subject}' with one measurable outcome.",
+                "Avoid testing multiple changes at once unless the goal is exploration rather than proof.",
+                "Schedule the review before starting so the experiment cannot expand indefinitely.",
+            ],
         ],
         "contradiction": [
             [
@@ -401,6 +451,16 @@ def _fallback_option_sets(panel_kind: str, focus_title: str, panel_title: str, p
                 "Separate the visible symptom from the underlying tradeoff.",
                 "State what gets better, what gets worse, and why the current approach couples them.",
                 "Define the contradiction so a prototype can test it rather than debate it.",
+            ],
+            [
+                f"The current approach links '{reference}' to an unwanted cost, delay, risk, or loss of clarity.",
+                "Rewrite the tradeoff as improve X while preserving Y.",
+                "Name what would prove the contradiction has been uncoupled.",
+            ],
+            [
+                f"Identify whether '{subject}' is a real contradiction, a missing constraint, or a vague preference conflict.",
+                "State the hidden assumption that makes both sides feel mutually exclusive.",
+                "Choose one principle that can separate the two sides into different times, places, parts, or rules.",
             ],
         ],
         "definition": [
@@ -414,9 +474,23 @@ def _fallback_option_sets(panel_kind: str, focus_title: str, panel_title: str, p
                 "Separate required behavior from polish, automation, or nice-to-have scope.",
                 "Add one explicit non-goal so scope does not expand silently.",
             ],
+            [
+                f"Define '{reference}' as a job, actor, input, output, and acceptance condition.",
+                "Write the smallest version that a real user or stakeholder could react to.",
+                "Name what this definition deliberately excludes for now.",
+            ],
+            [
+                f"Turn '{subject}' into one sentence that can be scored, tested, or assigned.",
+                "Replace adjectives with observable behavior or measurable thresholds.",
+                "State the edge case that would break this definition.",
+            ],
         ],
     }
-    return by_kind.get(panel_kind, by_kind["action"])
+    options = by_kind.get(panel_kind, by_kind["action"])
+    if not options:
+        return []
+    start = refresh_round % len(options)
+    return options[start:] + options[:start]
 
 
 async def refresh_panel_options(request, provider: str | None = None, model_id: str | None = None) -> dict:
@@ -436,6 +510,7 @@ async def refresh_panel_options(request, provider: str | None = None, model_id: 
         f"Panel kind: {panel_kind}\n"
         f"Panel prompt: {request.panel_prompt or ''}\n"
         f"Current note: {request.panel_value or ''}\n"
+        f"Refresh round: {request.refresh_round}\n"
         f"Existing options to avoid: {json.dumps(request.existing_options[:50])}"
     )
     parsed = await _llm_json(prompt, provider, model_id)
@@ -453,7 +528,7 @@ async def refresh_panel_options(request, provider: str | None = None, model_id: 
                 cleaned_sets.append(cleaned[:4])
         if cleaned_sets:
             return {"option_sets": cleaned_sets[:4]}
-    return {"option_sets": _fallback_option_sets(panel_kind, request.focus_title, request.panel_title, request.panel_value)}
+    return {"option_sets": _fallback_option_sets(panel_kind, request.focus_title, request.panel_title, request.panel_value, request.refresh_round)}
 
 
 async def route_goal(goal: str, framework_id: str | None = None, model_provider: str | None = None, model_id: str | None = None) -> dict:

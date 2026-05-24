@@ -332,7 +332,10 @@ function HoverHint({ text, children, placement = "card" }) {
       }}
     >
       {children}
-      <div className="hint-bubble pointer-events-none absolute z-20 rounded-lg border border-moss/25 bg-[#07100d] px-3 py-2 text-xs leading-5 text-white/78 opacity-0 shadow-glow transition group-hover:opacity-100">
+      <div
+        className="hint-bubble absolute z-20 rounded-lg border border-moss/25 bg-[#07100d] px-3 py-2 text-xs leading-5 text-white/78 opacity-0 shadow-glow transition group-hover:opacity-100"
+        onPointerEnter={() => setDismissed(true)}
+      >
         {text}
       </div>
     </div>
@@ -625,6 +628,7 @@ function FocusCanvasView({ focusCanvas, onChange, onExport, route }) {
     const currentIndex = panel.regenIndex ?? 0;
     const optionSets = getRegenerationOptionSets(focusCanvas, panel);
     const currentSignature = optionSignature(panel.options ?? []);
+    const refreshRound = panel.refreshRound ?? 0;
     const isExhausted = currentIndex >= optionSets.length;
     let nextIndex = currentIndex % optionSets.length;
 
@@ -639,10 +643,14 @@ function FocusCanvasView({ focusCanvas, onChange, onExport, route }) {
           panel_prompt: panel.prompt,
           panel_kind: panel.kind || getPanelKind(panel),
           panel_value: panel.value,
+          refresh_round: refreshRound,
           existing_options: flattenOptionSets([...(panel.option_sets ?? []), panel.options ?? []])
         });
-        const mergedOptionSets = mergeOptionSets(panel.option_sets ?? [], refreshed.option_sets ?? []);
-        const nextSet = mergedOptionSets[optionSets.length] ?? refreshed.option_sets?.[0] ?? optionSets[0];
+        let mergedOptionSets = mergeOptionSets(panel.option_sets ?? [], refreshed.option_sets ?? []);
+        const syntheticSet = buildSyntheticOptionSet(focusCanvas, panel, refreshRound);
+        mergedOptionSets = mergeOptionSets(mergedOptionSets, [syntheticSet]);
+        const nextSet = findFirstFreshSet(mergedOptionSets, currentSignature, optionSets.length) ?? syntheticSet;
+        const nextSetIndex = Math.max(0, mergedOptionSets.findIndex((set) => optionSignature(set) === optionSignature(nextSet)));
         onChange({
           ...focusCanvas,
           panels: focusCanvas.panels.map((item, index) =>
@@ -651,7 +659,8 @@ function FocusCanvasView({ focusCanvas, onChange, onExport, route }) {
                   ...item,
                   options: nextSet,
                   option_sets: mergedOptionSets,
-                  regenIndex: optionSets.length + 1
+                  regenIndex: nextSetIndex + 1,
+                  refreshRound: refreshRound + 1
                 }
               : item
           )
@@ -754,6 +763,7 @@ function normalizeFocusCanvas(focusCanvas) {
       options: panel.options ?? [],
       option_sets: panel.option_sets ?? [],
       kind: panel.kind ?? getPanelKind(panel),
+      refreshRound: panel.refreshRound ?? 0,
       value: panel.value ?? ""
     }))
   };
@@ -968,6 +978,63 @@ function mergeOptionSets(...groups) {
     }
   }
   return uniqueSets.length > 0 ? uniqueSets : [["Add a more specific option.", "Add an evidence requirement.", "Add a failure mode."]];
+}
+
+function findFirstFreshSet(optionSets, currentSignature, preferredStart = 0) {
+  if (!optionSets.length) {
+    return null;
+  }
+  for (let offset = 0; offset < optionSets.length; offset += 1) {
+    const candidate = optionSets[(preferredStart + offset) % optionSets.length];
+    if (optionSignature(candidate) !== currentSignature) {
+      return candidate;
+    }
+  }
+  return optionSets[0];
+}
+
+function buildSyntheticOptionSet(focusCanvas, panel, round = 0) {
+  const subject = compactText([focusCanvas.title, panel.value, focusCanvas.description].filter(Boolean).join(" "), 130);
+  const kind = panel.kind ?? getPanelKind(panel);
+  const suffix = round > 0 ? ` Refresh ${round + 1}.` : "";
+  const variants = {
+    evidence: [
+      `Collect a fresh proof point for '${subject}' and label it confirm, weaken, or unknown.${suffix}`,
+      "Ask one new source for a concrete example, then compare it with the strongest existing signal.",
+      "Write the evidence that would make this option no longer worth selecting."
+    ],
+    action: [
+      `Select one new reversible action for '${subject}' with a deadline before the next review.${suffix}`,
+      "Convert the option into a concrete ask, prototype, outreach, or conversation.",
+      "Define the immediate follow-up if the action produces a clear yes, no, or mixed signal."
+    ],
+    metric: [
+      `Track one observable movement for '${subject}' over the next review window.${suffix}`,
+      "Record confidence before and after the next selected option is tested.",
+      "Count how many assumptions move into pass, fail, or still-unknown status."
+    ],
+    risk: [
+      `Name the newest failure mode that could make '${subject}' misleading.${suffix}`,
+      "Identify the cost of choosing this option too early.",
+      "State which signal would show the option is creating false confidence."
+    ],
+    experiment: [
+      `Run a small, reversible test for '${subject}' with a baseline and stop condition.${suffix}`,
+      "Use one test variant only so the result explains the next decision.",
+      "Write the pass, partial-pass, and fail rule before the test starts."
+    ],
+    contradiction: [
+      `Rewrite '${subject}' as improve X without sacrificing Y.${suffix}`,
+      "Name the hidden coupling that makes the tradeoff feel unavoidable.",
+      "Choose a small test that separates the two sides by timing, structure, rule, or context."
+    ],
+    definition: [
+      `Define '${subject}' as actor, trigger, behavior, and outcome.${suffix}`,
+      "Replace broad adjectives with observable behavior or measurable thresholds.",
+      "Add one non-goal to keep the option from expanding into adjacent work."
+    ]
+  };
+  return variants[kind] ?? variants.action;
 }
 
 function optionSignature(options) {
