@@ -76,3 +76,15 @@ def test_relationship_triz_keeps_partner_name_when_travel_list_is_present():
 
     assert "Hollie" in rendered
     assert "Egypt, Jordan, Greece, Italy, Japan and I" not in rendered
+
+
+def test_swot_drilldown_panels_keep_distinct_option_domains():
+    canvas = generate_swot("Find a girlfriend in North Carolina around ages 33-39 who wants to have a child.")
+    item = canvas["sections"][1]["items"][0]
+    panels = {panel["title"]: panel for panel in item["drilldown"]["panels"]}
+
+    assert panels["Evidence to verify"]["kind"] == "evidence"
+    assert panels["Strategic action"]["kind"] == "action"
+    assert panels["Watch metric"]["kind"] == "metric"
+    assert "metric" not in " ".join(panels["Strategic action"]["option_sets"][0]).lower()
+    assert "next move" not in " ".join(panels["Watch metric"]["option_sets"][0]).lower()

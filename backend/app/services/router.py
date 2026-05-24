@@ -326,6 +326,136 @@ async def langchain_enrich_canvas(framework_id: str, goal: str, canvas: dict, pr
     return None
 
 
+def _fallback_option_sets(panel_kind: str, focus_title: str, panel_title: str, panel_value: str | None = None) -> list[list[str]]:
+    subject = re.sub(r"\s+", " ", focus_title.strip())[:160]
+    value_hint = re.sub(r"\s+", " ", (panel_value or "").strip())[:120]
+    reference = value_hint or subject
+    by_kind = {
+        "evidence": [
+            [
+                f"Find one direct observation that supports or weakens: {reference}.",
+                "Ask for examples rather than opinions from the most relevant people.",
+                "Separate firsthand evidence from assumptions, hopes, or inherited advice.",
+            ],
+            [
+                "Name the evidence that would make you reverse this belief.",
+                "Look for one counterexample before treating the claim as settled.",
+                "Compare the claim against a past pattern, logged behavior, or external data point.",
+            ],
+        ],
+        "action": [
+            [
+                f"Turn '{subject}' into one reversible next move.",
+                "Set a clear owner, deadline, and smallest visible output.",
+                "Choose the step that creates new information without overcommitting.",
+            ],
+            [
+                "Convert the insight into a short conversation, prototype, or decision memo.",
+                "Decide what should stop while this move is tested.",
+                "Write the trigger that tells you to continue, revise, or abandon the move.",
+            ],
+        ],
+        "metric": [
+            [
+                f"Observable change connected to: {subject}.",
+                "Decision confidence before versus after the next action.",
+                "Number of concrete signals collected, reviewed, and acted on.",
+            ],
+            [
+                "A pass/fail threshold written before the next experiment starts.",
+                "Frequency of the desired behavior or outcome over the next review window.",
+                "Time from insight to decision-ready evidence.",
+            ],
+        ],
+        "risk": [
+            [
+                f"The plan fails if the main assumption behind '{subject}' is false.",
+                "The next action produces noise instead of decision-grade evidence.",
+                "The move reduces one risk while quietly increasing another.",
+            ],
+            [
+                "A short-term improvement hides a deeper constraint.",
+                "The process becomes performative because no decision threshold exists.",
+                "The wrong stakeholder or signal dominates the conclusion.",
+            ],
+        ],
+        "experiment": [
+            [
+                f"Run a small test that isolates the assumption inside: {subject}.",
+                "Define baseline, test variant, review date, and stop condition.",
+                "Use a manual version first if automation or commitment would be premature.",
+            ],
+            [
+                "Choose a 7-day version that creates evidence without locking in the final path.",
+                "Record what counts as a pass, partial pass, and clear fail.",
+                "Keep the experiment narrow enough that one result actually means something.",
+            ],
+        ],
+        "contradiction": [
+            [
+                f"I want to improve '{subject}' without worsening the most important constraint.",
+                "Name the property that must improve and the property that cannot be sacrificed.",
+                "Rewrite the conflict as a single sentence with both sides visible.",
+            ],
+            [
+                "Separate the visible symptom from the underlying tradeoff.",
+                "State what gets better, what gets worse, and why the current approach couples them.",
+                "Define the contradiction so a prototype can test it rather than debate it.",
+            ],
+        ],
+        "definition": [
+            [
+                f"Rewrite '{subject}' as a concrete requirement with user, trigger, behavior, and outcome.",
+                "Cut wording that does not change the build, decision, or test.",
+                "Name the smallest version that still proves the core value.",
+            ],
+            [
+                "Describe who uses it, what they do, and how success is visible.",
+                "Separate required behavior from polish, automation, or nice-to-have scope.",
+                "Add one explicit non-goal so scope does not expand silently.",
+            ],
+        ],
+    }
+    return by_kind.get(panel_kind, by_kind["action"])
+
+
+async def refresh_panel_options(request, provider: str | None = None, model_id: str | None = None) -> dict:
+    panel_kind = request.panel_kind or "action"
+    prompt = (
+        "You are OmniFrame's focused option generator. Return only valid JSON in this exact shape: "
+        '{"option_sets":[["option one","option two","option three"],["option one","option two","option three"]]}.\n'
+        "Generate fresh, non-duplicative options for the specified panel only. "
+        "Every option must match the panel purpose. Evidence panels need proof/validation options; action panels need concrete moves; "
+        "metric panels need observable measurements; risk panels need failure modes; experiment panels need tests; definition panels need requirements. "
+        "Do not reuse the existing options. Do not include generic placeholders.\n\n"
+        f"Framework: {request.framework_id}\n"
+        f"Goal: {request.goal}\n"
+        f"Focus title: {request.focus_title}\n"
+        f"Focus description: {request.focus_description or ''}\n"
+        f"Panel title: {request.panel_title}\n"
+        f"Panel kind: {panel_kind}\n"
+        f"Panel prompt: {request.panel_prompt or ''}\n"
+        f"Current note: {request.panel_value or ''}\n"
+        f"Existing options to avoid: {json.dumps(request.existing_options[:50])}"
+    )
+    parsed = await _llm_json(prompt, provider, model_id)
+    option_sets = parsed.get("option_sets") if isinstance(parsed, dict) else None
+    if isinstance(option_sets, list):
+        cleaned_sets: list[list[str]] = []
+        seen: set[str] = set()
+        for option_set in option_sets:
+            if not isinstance(option_set, list):
+                continue
+            cleaned = [str(option).strip()[:240] for option in option_set if str(option).strip()]
+            cleaned = [option for option in cleaned if option.lower() not in seen]
+            seen.update(option.lower() for option in cleaned)
+            if len(cleaned) >= 2:
+                cleaned_sets.append(cleaned[:4])
+        if cleaned_sets:
+            return {"option_sets": cleaned_sets[:4]}
+    return {"option_sets": _fallback_option_sets(panel_kind, request.focus_title, request.panel_title, request.panel_value)}
+
+
 async def route_goal(goal: str, framework_id: str | None = None, model_provider: str | None = None, model_id: str | None = None) -> dict:
     if framework_id:
         framework = get_framework(framework_id)

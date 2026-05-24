@@ -84,14 +84,134 @@ def _extract_projects(goal: str) -> list[ParsedProject]:
     return []
 
 
-def _panel(title: str, prompt: str, options: list[str], value: str = "", option_sets: list[list[str]] | None = None) -> dict[str, Any]:
+def _panel(
+    title: str,
+    prompt: str,
+    options: list[str],
+    value: str = "",
+    option_sets: list[list[str]] | None = None,
+    kind: str | None = None,
+) -> dict[str, Any]:
     return {
         "title": title,
         "prompt": prompt,
         "options": options,
         "value": value,
         "option_sets": option_sets or [],
+        "kind": kind or _panel_kind(title, prompt),
     }
+
+
+def _panel_kind(title: str, prompt: str = "") -> str:
+    text = f"{title} {prompt}".lower()
+    if any(word in text for word in ["evidence", "proof", "verify", "validate", "reach"]):
+        return "evidence"
+    if any(word in text for word in ["metric", "signal", "measure", "acceptance", "score"]):
+        return "metric"
+    if any(word in text for word in ["risk", "failure", "threat", "obstacle"]):
+        return "risk"
+    if any(word in text for word in ["prototype", "experiment", "mvp", "test"]):
+        return "experiment"
+    if any(word in text for word in ["contradiction"]):
+        return "contradiction"
+    if any(word in text for word in ["feature", "definition", "requirement"]):
+        return "definition"
+    return "action"
+
+
+def _panel_option_sets(kind: str, subject: str, seed_options: list[str] | None = None, metric: str = "") -> list[list[str]]:
+    subject = _compact(subject, 150)
+    seeds = [_compact(option, 180) for option in (seed_options or []) if option]
+    templates = {
+        "evidence": [
+            [
+                f"Collect one direct observation that confirms or weakens: {subject}.",
+                "Ask three relevant people for examples, not opinions.",
+                "Compare the claim against one past pattern or existing data point.",
+            ],
+            [
+                "Name what evidence would change your mind.",
+                "Look for one disconfirming case before treating the insight as true.",
+                "Separate firsthand evidence from assumptions, preferences, or hearsay.",
+            ],
+        ],
+        "action": [
+            [
+                f"Turn this into one reversible next move tied to: {subject}.",
+                "Set a clear owner, date, and smallest visible output.",
+                "Choose the lowest-drama step that creates new information quickly.",
+            ],
+            [
+                "Convert the insight into a short conversation, prototype, or decision memo.",
+                "Decide what to stop doing while this action is tested.",
+                "Write the trigger that tells you to continue, revise, or abandon the move.",
+            ],
+        ],
+        "metric": [
+            [
+                metric or f"Observable change connected to: {subject}.",
+                "Decision confidence before versus after the next action.",
+                "Number of concrete signals collected, reviewed, and acted on.",
+            ],
+            [
+                "A pass/fail threshold written before the next experiment starts.",
+                "Frequency of the desired behavior or outcome over the next review window.",
+                "Time from insight to decision-ready evidence.",
+            ],
+        ],
+        "risk": [
+            [
+                f"The plan may fail if the core assumption behind '{subject}' is false.",
+                "The next action could produce noise instead of decision-grade evidence.",
+                "The work may reduce one risk while quietly increasing another.",
+            ],
+            [
+                "A short-term improvement could hide a deeper incompatibility or constraint.",
+                "The process may become performative if no decision threshold is set.",
+                "The wrong stakeholder or signal could dominate the conclusion.",
+            ],
+        ],
+        "experiment": [
+            [
+                f"Run a small test that isolates the assumption inside: {subject}.",
+                "Define baseline, test variant, review date, and stop condition.",
+                "Use a manual version first if automation or commitment would be premature.",
+            ],
+            [
+                "Choose a 7-day version that creates evidence without locking in the final path.",
+                "Record what would count as a pass, a partial pass, and a clear fail.",
+                "Keep the experiment narrow enough that one result actually means something.",
+            ],
+        ],
+        "contradiction": [
+            [
+                f"I want to improve the desired outcome in '{subject}' without worsening the most important constraint.",
+                "Name the property that must improve and the property that cannot be sacrificed.",
+                "Rewrite the conflict as a single sentence with both sides visible.",
+            ],
+            [
+                "Separate the visible symptom from the underlying tradeoff.",
+                "State what gets better, what gets worse, and why the current approach couples them.",
+                "Define the contradiction so a prototype can test it rather than debate it.",
+            ],
+        ],
+        "definition": [
+            [
+                f"Rewrite '{subject}' as a concrete requirement with user, trigger, behavior, and outcome.",
+                "Cut any wording that does not change the build, decision, or test.",
+                "Name the smallest version that still proves the core value.",
+            ],
+            [
+                "Describe who uses it, what they do, and how success is visible.",
+                "Separate the required behavior from polish, automation, or nice-to-have surface area.",
+                "Add one explicit non-goal so scope does not expand silently.",
+            ],
+        ],
+    }
+    option_sets = templates.get(kind, templates["action"])
+    if len(seeds) >= 3:
+        option_sets = [seeds[:3], *option_sets]
+    return option_sets
 
 
 def _swot_item(text: str, rationale: str, options: list[str], metric: str) -> dict[str, Any]:
@@ -108,6 +228,8 @@ def _swot_item(text: str, rationale: str, options: list[str], metric: str) -> di
                     "Pick or edit the strongest proof that should support this claim.",
                     options[:2] + [f"Interview 5 target users about: {text}"],
                     value=options[0] if options else "",
+                    option_sets=_panel_option_sets("evidence", text, options),
+                    kind="evidence",
                 ),
                 _panel(
                     "Strategic action",
@@ -117,6 +239,8 @@ def _swot_item(text: str, rationale: str, options: list[str], metric: str) -> di
                         "Assign one owner, one decision deadline, and one measurable output.",
                         "Defer this until the highest-risk assumption has evidence.",
                     ],
+                    option_sets=_panel_option_sets("action", text),
+                    kind="action",
                 ),
                 _panel(
                     "Watch metric",
@@ -126,6 +250,8 @@ def _swot_item(text: str, rationale: str, options: list[str], metric: str) -> di
                         "Evidence collected per week",
                         "Decision confidence delta after validation",
                     ],
+                    option_sets=_panel_option_sets("metric", text, metric=metric),
+                    kind="metric",
                 ),
             ],
         },
@@ -697,12 +823,16 @@ def _rice_row(
                 "Use a generated feature slice or edit it into a tighter requirement.",
                 options,
                 value=options[0] if options else initiative,
+                option_sets=_panel_option_sets("definition", initiative, options),
+                kind="definition",
             ),
             _panel(
                 "Reach evidence",
                 "Choose what should justify the reach estimate.",
                 evidence,
                 value=evidence[0] if evidence else "",
+                option_sets=_panel_option_sets("evidence", initiative, evidence),
+                kind="evidence",
             ),
             _panel(
                 "Risk reducer",
@@ -712,6 +842,8 @@ def _rice_row(
                     "Instrument the first user action that proves demand.",
                     "Cut nonessential UI until the scoring assumption is validated.",
                 ],
+                option_sets=_panel_option_sets("risk", initiative),
+                kind="risk",
             ),
             _panel(
                 "Acceptance signal",
@@ -721,6 +853,8 @@ def _rice_row(
                     "Users complete the core task without a support prompt.",
                     "The exported report explains the decision well enough for stakeholders.",
                 ],
+                option_sets=_panel_option_sets("metric", initiative, metric=f"Score improves because confidence rises above {min(confidence + 10, 95)}%"),
+                kind="metric",
             ),
         ],
     }
@@ -1601,7 +1735,14 @@ def _board_item(title: str, body: str, options: list[str], metric: str = "") -> 
         "drilldown": {
             "description": "Use the generated options, then edit the notes into a decision-grade output.",
             "panels": [
-                _panel("Best next move", "Choose or edit the next concrete move.", options, value=options[0] if options else ""),
+                _panel(
+                    "Best next move",
+                    "Choose or edit the next concrete move.",
+                    options,
+                    value=options[0] if options else "",
+                    option_sets=_panel_option_sets("action", title, options),
+                    kind="action",
+                ),
                 _panel(
                     "Evidence needed",
                     "Select the evidence that would make this recommendation credible.",
@@ -1610,11 +1751,15 @@ def _board_item(title: str, body: str, options: list[str], metric: str = "") -> 
                         "Gather one concrete data point that could invalidate this assumption.",
                         "Create a before/after metric that can be exported in the report.",
                     ],
+                    option_sets=_panel_option_sets("evidence", title),
+                    kind="evidence",
                 ),
                 _panel(
                     "Decision metric",
                     "Pick the measurement that determines whether this stays in the plan.",
                     [item for item in [metric, "Decision confidence improvement", "Time-to-evidence"] if item],
+                    option_sets=_panel_option_sets("metric", title, metric=metric),
+                    kind="metric",
                 ),
             ],
         },

@@ -124,22 +124,34 @@ select {
 }
 
 .hint-bubble {
-  top: 0.75rem;
   right: 0.75rem;
+  bottom: 0.75rem;
   width: max-content;
   max-width: min(20rem, calc(100% - 1.5rem), calc(100vw - 2rem));
-  transform: translateY(-0.35rem) scale(0.98);
+  transform: translateY(0.45rem) scale(0.98);
 }
 
 .hint-target:hover .hint-bubble {
   transform: translateY(0) scale(1);
 }
 
+.hint-target-dismissed:hover .hint-bubble,
+.hint-target:focus-within .hint-bubble {
+  opacity: 0;
+  transform: translateY(0.45rem) scale(0.98);
+}
+
 .hint-target-control .hint-bubble {
   top: calc(100% + 0.5rem);
+  bottom: auto;
   right: auto;
   left: 0;
   max-width: min(18rem, calc(100vw - 2rem));
+  transform: translateY(-0.2rem) scale(0.98);
+}
+
+.hint-target-control:hover .hint-bubble {
+  transform: translateY(0) scale(1);
 }
 
 @media (max-width: 1100px) {

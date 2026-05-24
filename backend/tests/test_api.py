@@ -25,3 +25,25 @@ def test_model_options_endpoint():
     payload = response.json()
     assert payload["default"]["provider"] == "openai"
     assert any(provider["id"] == "google" for provider in payload["providers"])
+
+
+def test_option_refresh_keeps_metric_domain(monkeypatch):
+    monkeypatch.setenv("OMNIFRAME_USE_LLM", "false")
+    client = TestClient(app)
+    response = client.post(
+        "/api/options/refresh",
+        json={
+            "goal": "Find a girlfriend in North Carolina around ages 33-39 who wants to have a child.",
+            "framework_id": "swot",
+            "focus_title": "Weaknesses: A vague desire to find a girlfriend can create mismatched dating choices.",
+            "panel_title": "Watch metric",
+            "panel_kind": "metric",
+            "panel_prompt": "Select the metric that should prove this insight mattered.",
+            "existing_options": ["Use specific examples without sarcasm."],
+        },
+    )
+
+    assert response.status_code == 200
+    options = " ".join(response.json()["option_sets"][0]).lower()
+    assert "observable change" in options
+    assert "sarcasm" not in options

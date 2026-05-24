@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { refreshOptions } from "../lib/api";
+
 const FRAMEWORK_ICONS = {
   swot: LayoutGrid,
   lean_startup: Sparkles,
@@ -87,7 +89,7 @@ export default function CanvasWorkspace({ route }) {
   }
 
   function exportPdf() {
-    openReportWindow(route, canvas, focusCanvases);
+    openReportWindow(route, getReportCanvas(canvas), focusCanvases);
   }
 
   return (
@@ -130,7 +132,7 @@ export default function CanvasWorkspace({ route }) {
         />
 
         {activeFocus ? (
-          <FocusCanvasView focusCanvas={activeFocus} onChange={updateActiveFocus} onExport={exportPdf} />
+          <FocusCanvasView focusCanvas={activeFocus} onChange={updateActiveFocus} onExport={exportPdf} route={route} />
         ) : (
           <>
             <AnalysisBrief canvas={canvas} />
@@ -165,12 +167,14 @@ function AnalysisBrief({ canvas }) {
 }
 
 function DecisionOverview({ route, canvas }) {
+  const isRelationship = /relationship|dating|breakup|partner|girlfriend|boyfriend|wife|husband|family/i.test(`${canvas.title ?? ""} ${route.rationale ?? ""}`);
   const copy = {
     swot: {
-      trigger: "Strategic audit signal",
-      method:
-        "OmniFrame detected a business assessment with internal capabilities, market conditions, competitors, adoption risks, or opportunity language. SWOT was selected because it separates controllable assets from external forces before choosing a build path.",
-      signals: ["internal capability cues", "external opportunity cues", "competitive and adoption risk"]
+      trigger: isRelationship ? "Personal decision signal" : "Strategic audit signal",
+      method: isRelationship
+        ? "OmniFrame detected a relationship or dating decision, then selected SWOT to separate personal strengths, unclear patterns, opportunities for healthier action, and risks without forcing a premature yes/no answer."
+        : "OmniFrame detected a business assessment with internal capabilities, market conditions, competitors, adoption risks, or opportunity language. SWOT was selected because it separates controllable assets from external forces before choosing a build path.",
+      signals: isRelationship ? ["personal values and needs", "behavior patterns", "decision risks"] : ["internal capability cues", "external opportunity cues", "competitive and adoption risk"]
     },
     lean_startup: {
       trigger: "Validation signal",
@@ -306,8 +310,27 @@ function CanvasNavigator({ activeFocus, canGoBack, canGoForward, goBack, goForwa
 }
 
 function HoverHint({ text, children, placement = "card" }) {
+  const [dismissed, setDismissed] = useState(false);
+  const className = [
+    "hint-target",
+    "group",
+    "relative",
+    placement === "control" ? "hint-target-control" : "hint-target-card",
+    dismissed ? "hint-target-dismissed" : ""
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div className={`hint-target group relative ${placement === "control" ? "hint-target-control" : ""}`}>
+    <div
+      className={className}
+      onFocusCapture={() => setDismissed(true)}
+      onPointerDownCapture={(event) => {
+        if (!event.target.closest(".hint-bubble")) {
+          setDismissed(true);
+        }
+      }}
+    >
       {children}
       <div className="hint-bubble pointer-events-none absolute z-20 rounded-lg border border-moss/25 bg-[#07100d] px-3 py-2 text-xs leading-5 text-white/78 opacity-0 shadow-glow transition group-hover:opacity-100">
         {text}
@@ -583,7 +606,7 @@ function ForceMapCanvas({ canvas, onOpenFocus }) {
   );
 }
 
-function FocusCanvasView({ focusCanvas, onChange, onExport }) {
+function FocusCanvasView({ focusCanvas, onChange, onExport, route }) {
   function setPanelValue(panelIndex, value) {
     onChange({
       ...focusCanvas,
@@ -597,12 +620,47 @@ function FocusCanvasView({ focusCanvas, onChange, onExport }) {
     setPanelValue(panelIndex, next);
   }
 
-  function regeneratePanelOptions(panelIndex) {
+  async function regeneratePanelOptions(panelIndex) {
     const panel = focusCanvas.panels[panelIndex];
     const currentIndex = panel.regenIndex ?? 0;
     const optionSets = getRegenerationOptionSets(focusCanvas, panel);
     const currentSignature = optionSignature(panel.options ?? []);
+    const isExhausted = currentIndex >= optionSets.length;
     let nextIndex = currentIndex % optionSets.length;
+
+    if (isExhausted) {
+      try {
+        const refreshed = await refreshOptions({
+          goal: route.goal || focusCanvas.description || focusCanvas.title,
+          framework_id: route.framework_id,
+          focus_title: focusCanvas.title,
+          focus_description: focusCanvas.description,
+          panel_title: panel.title,
+          panel_prompt: panel.prompt,
+          panel_kind: panel.kind || getPanelKind(panel),
+          panel_value: panel.value,
+          existing_options: flattenOptionSets([...(panel.option_sets ?? []), panel.options ?? []])
+        });
+        const mergedOptionSets = mergeOptionSets(panel.option_sets ?? [], refreshed.option_sets ?? []);
+        const nextSet = mergedOptionSets[optionSets.length] ?? refreshed.option_sets?.[0] ?? optionSets[0];
+        onChange({
+          ...focusCanvas,
+          panels: focusCanvas.panels.map((item, index) =>
+            index === panelIndex
+              ? {
+                  ...item,
+                  options: nextSet,
+                  option_sets: mergedOptionSets,
+                  regenIndex: optionSets.length + 1
+                }
+              : item
+          )
+        });
+        return;
+      } catch {
+        // Use the local reserve sets when the provider is unavailable.
+      }
+    }
 
     for (let attempts = 0; attempts < optionSets.length; attempts += 1) {
       const candidateIndex = (currentIndex + attempts) % optionSets.length;
@@ -695,6 +753,7 @@ function normalizeFocusCanvas(focusCanvas) {
       ...panel,
       options: panel.options ?? [],
       option_sets: panel.option_sets ?? [],
+      kind: panel.kind ?? getPanelKind(panel),
       value: panel.value ?? ""
     }))
   };
@@ -798,129 +857,105 @@ function buildTrizFocus(principle) {
 }
 
 function buildFallbackOptionSets(focusCanvas, panel) {
-  const context = [focusCanvas.title, focusCanvas.description, panel.value].filter(Boolean).join(" ");
-  const isRelationship = /relationship|Hollie|breakup|partner|girlfriend|boyfriend|wife|husband|dating/i.test(context);
-  const isTriz = /TRIZ|Principle/i.test(focusCanvas.eyebrow) || /Principle/i.test(focusCanvas.title);
-  const panelName = panel.title.toLowerCase();
-
-  if (isRelationship) {
-    if (panelName.includes("contradiction")) {
-      return [
-        [
-          "I want a clear stay-or-leave decision while keeping the conversation respectful, specific, and not driven by one flooded moment.",
-          "I need to know whether this is a core incompatibility or a repairable pattern of disconnection, shutdown, and mismatched priorities.",
-          "I want honesty about family, travel, home life, money expectations, and daily connection without turning the talk into blame."
-        ],
-        [
-          "I want to protect my need for learning, creating, travel, and family while also checking whether Hollie feels loved, heard, and safe.",
-          "I need a decision process that respects both people even if the conclusion is separation.",
-          "I want to stop the loop of resentment without pretending the relationship is healthier than it feels."
-        ],
-        [
-          "I need to distinguish grief, exhaustion, and loneliness from durable evidence that the relationship cannot work.",
-          "I want to make a decision from calm clarity, not sarcasm, contempt, or fear of being alone.",
-          "I need a humane way to test repair without making staying the default."
-        ]
-      ];
-    }
-    if (panelName.includes("prototype")) {
-      return [
-        [
-          "Run a 30-day repair test only if both people agree to specific behaviors: one weekly check-in, one shared activity, and one conflict de-escalation rule.",
-          "Hold one agenda-based talk on family, travel, money/salary expectations, home boundaries, and what each person needs to feel loved.",
-          "After the talk, write a private decision memo: what changed, what stayed the same, and whether you felt more connected or more alone."
-        ],
-        [
-          "Try one low-pressure connection experiment that is neither only TV nor only your interests: a walk, music, food, travel planning, or time with Antuan.",
-          "Use a no-ridicule rule: pause and restart later if either person mocks, shuts down, or escalates.",
-          "Ask Hollie what kind of shared time would actually feel good to her this week, then compare it with what feels meaningful to you."
-        ],
-        [
-          "Book a couples therapist or neutral mediator if both people want repair but the two of you cannot discuss hard topics safely alone.",
-          "Prepare a respectful separation outline in parallel so staying is a choice rather than inertia.",
-          "Set a decision review date so the experiment does not become endless limbo."
-        ]
-      ];
-    }
-    if (panelName.includes("failure")) {
-      return [
-        [
-          "The framework can become a weapon if it is used to prosecute Hollie instead of preparing calmer questions and boundaries.",
-          "A single good day can temporarily hide chronic incompatibility if the core patterns do not change.",
-          "A repair sprint is not meaningful if only one person participates."
-        ],
-        [
-          "Waiting for certainty can become avoidance if the same painful loop keeps repeating.",
-          "Leaving while flooded can create regret if you never tested whether both people would engage in repair.",
-          "Therapy or mediation cannot create mutual desire if one person is already done."
-        ],
-        [
-          "Over-focusing on logistics like TV, wine trips, or cat structures can hide the deeper question of respect, shared future, and emotional safety.",
-          "A planned conversation can still become harmful if sarcasm, contempt, or parent-child framing returns.",
-          "If there is abuse, coercion, or safety risk, framework analysis should stop and outside support should come first."
-        ]
-      ];
-    }
-    return [
+  const subject = compactText([focusCanvas.title, focusCanvas.description, panel.value].filter(Boolean).join(" "), 150);
+  const kind = panel.kind ?? getPanelKind(panel);
+  const templates = {
+    evidence: [
       [
-        "Separate core values from negotiable preferences before deciding what the relationship can realistically become.",
-        "Ask what behavior would prove mutual repair effort within 30 days.",
-        "Name two stay conditions and two leave conditions before the next serious conversation."
+        `Collect one direct observation that supports or weakens: ${subject}.`,
+        "Ask relevant people for examples rather than opinions.",
+        "Separate firsthand evidence from assumptions, hopes, or inherited advice."
       ],
       [
-        "Turn the next talk into questions, not a verdict: what do we each need, what can we each change, and what is no longer workable?",
-        "Discuss family, travel, home standards, money expectations, and connection routines as separate topics.",
-        "Use specific examples without sarcasm, ridicule, or global character judgments."
-      ],
-      [
-        "Prepare both paths: what repair would require, and what a respectful breakup would require.",
-        "Ask whether the relationship feels lonely because of a solvable habit or because the future visions no longer match.",
-        "Use an outside sounding board if you cannot tell grief, anger, and clarity apart."
+        "Name what evidence would make you reverse this belief.",
+        "Look for one counterexample before treating the claim as settled.",
+        "Compare the claim against a past pattern, logged behavior, or external data point."
       ]
-    ];
-  }
-
-  if (isTriz) {
-    return [
+    ],
+    action: [
       [
-        `Apply ${focusCanvas.title} by changing structure, timing, or location instead of forcing the same tradeoff harder.`,
-        "Name the property that improves, the property that worsens, and the smallest test that can separate them.",
-        "Add one failure mode that would prove this principle is the wrong lens."
+        `Turn this into one reversible next move tied to: ${subject}.`,
+        "Set a clear owner, date, and smallest visible output.",
+        "Choose the lowest-drama step that creates new information quickly."
       ],
       [
-        "Create a low-cost prototype that exaggerates the principle so the effect is visible quickly.",
-        "Define the measurement that decides whether the contradiction improved or merely moved elsewhere.",
-        "List one conservative version and one aggressive version of the inventive move."
-      ],
-      [
-        "Turn the idea into a before/after comparison with a baseline, an experimental variant, and a stop condition.",
-        "Ask what hidden cost this principle introduces in operations, usability, trust, durability, or emotional safety.",
-        "Convert the best option into a report-ready sentence with owner, evidence, and deadline."
+        "Convert the insight into a short conversation, prototype, or decision memo.",
+        "Decide what should stop while this move is tested.",
+        "Write the trigger that tells you to continue, revise, or abandon the move."
       ]
-    ];
-  }
-
-  return [
-    [
-      `Make this more specific to: ${focusCanvas.title}.`,
-      `Add one evidence requirement before accepting this ${panel.title.toLowerCase()} note.`,
-      `Convert the current note into a testable decision with owner, metric, and deadline.`
     ],
-    [
-      `Challenge the strongest assumption in: ${context.slice(0, 120)}.`,
-      "Generate a more conservative option that reduces cost, risk, or implementation effort.",
-      "Generate a more ambitious option that tests the biggest upside quickly."
+    metric: [
+      [
+        `Observable change connected to: ${subject}.`,
+        "Decision confidence before versus after the next action.",
+        "Number of concrete signals collected, reviewed, and acted on."
+      ],
+      [
+        "A pass/fail threshold written before the next experiment starts.",
+        "Frequency of the desired behavior or outcome over the next review window.",
+        "Time from insight to decision-ready evidence."
+      ]
     ],
-    [
-      "Rewrite this as a concrete experiment that can be completed in 7 days.",
-      "Add a failure mode that would make the team reconsider the direction.",
-      "Add a stakeholder-ready sentence suitable for the exported PDF report."
+    risk: [
+      [
+        `The plan may fail if the core assumption behind '${subject}' is false.`,
+        "The next action could produce noise instead of decision-grade evidence.",
+        "The work may reduce one risk while quietly increasing another."
+      ],
+      [
+        "A short-term improvement could hide a deeper incompatibility or constraint.",
+        "The process may become performative if no decision threshold is set.",
+        "The wrong stakeholder or signal could dominate the conclusion."
+      ]
+    ],
+    experiment: [
+      [
+        `Run a small test that isolates the assumption inside: ${subject}.`,
+        "Define baseline, test variant, review date, and stop condition.",
+        "Use a manual version first if automation or commitment would be premature."
+      ],
+      [
+        "Choose a 7-day version that creates evidence without locking in the final path.",
+        "Record what would count as a pass, a partial pass, and a clear fail.",
+        "Keep the experiment narrow enough that one result actually means something."
+      ]
+    ],
+    contradiction: [
+      [
+        `I want to improve '${subject}' without worsening the most important constraint.`,
+        "Name the property that must improve and the property that cannot be sacrificed.",
+        "Rewrite the conflict as a single sentence with both sides visible."
+      ],
+      [
+        "Separate the visible symptom from the underlying tradeoff.",
+        "State what gets better, what gets worse, and why the current approach couples them.",
+        "Define the contradiction so a prototype can test it rather than debate it."
+      ]
+    ],
+    definition: [
+      [
+        `Rewrite '${subject}' as a concrete requirement with user, trigger, behavior, and outcome.`,
+        "Cut wording that does not change the build, decision, or test.",
+        "Name the smallest version that still proves the core value."
+      ],
+      [
+        "Describe who uses it, what they do, and how success is visible.",
+        "Separate required behavior from polish, automation, or nice-to-have scope.",
+        "Add one explicit non-goal so scope does not expand silently."
+      ]
     ]
-  ];
+  };
+
+  return templates[kind] ?? templates.action;
 }
 
 function getRegenerationOptionSets(focusCanvas, panel) {
-  const allSets = [...(panel.option_sets ?? []), ...buildFallbackOptionSets(focusCanvas, panel)]
+  return mergeOptionSets(panel.option_sets ?? [], buildFallbackOptionSets(focusCanvas, panel));
+}
+
+function mergeOptionSets(...groups) {
+  const allSets = groups
+    .flat()
     .map((set) => (Array.isArray(set) ? set.filter(Boolean) : []))
     .filter((set) => set.length > 0);
   const seen = new Set();
@@ -937,6 +972,41 @@ function getRegenerationOptionSets(focusCanvas, panel) {
 
 function optionSignature(options) {
   return options.map((option) => String(option).trim().toLowerCase()).join("||");
+}
+
+function flattenOptionSets(optionSets) {
+  return optionSets.flatMap((set) => (Array.isArray(set) ? set : [set])).filter(Boolean);
+}
+
+function getPanelKind(panel) {
+  const text = `${panel.title ?? ""} ${panel.prompt ?? ""}`.toLowerCase();
+  if (/evidence|proof|verify|validate|reach/.test(text)) return "evidence";
+  if (/metric|signal|measure|acceptance|score/.test(text)) return "metric";
+  if (/risk|failure|threat|obstacle|reducer/.test(text)) return "risk";
+  if (/prototype|experiment|mvp|test/.test(text)) return "experiment";
+  if (/contradiction/.test(text)) return "contradiction";
+  if (/feature|definition|requirement/.test(text)) return "definition";
+  return "action";
+}
+
+function compactText(value, limit = 160) {
+  const cleaned = String(value ?? "").replace(/\s+/g, " ").trim();
+  return cleaned.length > limit ? `${cleaned.slice(0, limit - 1).trim()}...` : cleaned;
+}
+
+function riceScore(row) {
+  const effort = Math.max(Number(row.effort) || 1, 1);
+  return Math.round(((Number(row.reach) || 0) * (Number(row.impact) || 0) * ((Number(row.confidence) || 0) / 100) / effort) * 10) / 10;
+}
+
+function getReportCanvas(canvas) {
+  if (canvas.type !== "score_table") {
+    return canvas;
+  }
+  return {
+    ...canvas,
+    rows: canvas.rows.map((row) => ({ ...row, score: riceScore(row) }))
+  };
 }
 
 function openReportWindow(route, canvas, focusCanvases) {

@@ -28,6 +28,20 @@ export async function routeGoal(goal, frameworkId = null) {
   return response.json();
 }
 
+export async function refreshOptions(payload) {
+  const modelProvider = localStorage.getItem("omniframe_model_provider") || "openai";
+  const modelId = localStorage.getItem("omniframe_model_id") || "gpt-5.1";
+  const response = await fetch("/api/options/refresh", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...payload, model_provider: modelProvider, model_id: modelId })
+  });
+  if (!response.ok) {
+    throw new Error("Unable to refresh options");
+  }
+  return response.json();
+}
+
 export async function sendFeedback(payload) {
   const response = await fetch("/api/feedback", {
     method: "POST",

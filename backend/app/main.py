@@ -8,9 +8,9 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
-from .models import FeedbackRequest, FeedbackResponse, GoalRequest, RouteResponse
+from .models import FeedbackRequest, FeedbackResponse, GoalRequest, OptionRefreshRequest, OptionRefreshResponse, RouteResponse
 from .services.frameworks import load_framework_catalog
-from .services.router import route_goal
+from .services.router import refresh_panel_options, route_goal
 from .services.wisdom_graph import store_feedback
 
 
@@ -68,6 +68,11 @@ def model_options() -> dict:
 @app.post("/api/route", response_model=RouteResponse)
 async def route(request: GoalRequest) -> dict:
     return await route_goal(request.goal, request.framework_id, request.model_provider, request.model_id)
+
+
+@app.post("/api/options/refresh", response_model=OptionRefreshResponse)
+async def refresh_options(request: OptionRefreshRequest) -> dict:
+    return await refresh_panel_options(request, request.model_provider, request.model_id)
 
 
 @app.post("/api/feedback", response_model=FeedbackResponse)

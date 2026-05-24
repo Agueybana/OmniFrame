@@ -43,3 +43,21 @@ class FeedbackRequest(BaseModel):
 class FeedbackResponse(BaseModel):
     event_id: str
     stored: bool
+
+
+class OptionRefreshRequest(BaseModel):
+    goal: str = Field(..., min_length=1, max_length=20000)
+    framework_id: Literal["swot", "lean_startup", "okrs", "porters_five_forces", "pestle", "rice", "triz"]
+    focus_title: str = Field(..., min_length=1, max_length=500)
+    focus_description: str | None = Field(default=None, max_length=1200)
+    panel_title: str = Field(..., min_length=1, max_length=160)
+    panel_prompt: str | None = Field(default=None, max_length=800)
+    panel_kind: str | None = Field(default=None, max_length=80)
+    panel_value: str | None = Field(default=None, max_length=4000)
+    existing_options: list[str] = Field(default_factory=list, max_length=60)
+    model_provider: Literal["openai", "google"] | None = None
+    model_id: str | None = Field(default=None, max_length=120)
+
+
+class OptionRefreshResponse(BaseModel):
+    option_sets: list[list[str]]

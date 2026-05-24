@@ -71,6 +71,7 @@ export default function App() {
     setError("");
     try {
       const result = await routeGoal(currentGoal);
+      result.goal = currentGoal;
       setPendingRoute(result);
       setShowFrameworkChooser(false);
       setStatus("reviewing");
@@ -101,6 +102,7 @@ export default function App() {
     setError("");
     try {
       const result = await routeGoal(currentGoal, frameworkId);
+      result.goal = currentGoal;
       setRoute(result);
       setPendingRoute(null);
       setShowFrameworkChooser(false);
