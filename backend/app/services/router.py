@@ -7,7 +7,7 @@ from typing import TypedDict
 
 import httpx
 
-from .canvas_generators import build_canvas
+from .canvas_generators import build_canvas, extract_domain_brief
 from .frameworks import ACTIVE_FRAMEWORK_IDS, get_framework
 
 
@@ -29,6 +29,11 @@ SWOT_TERMS = {
     "positioning",
     "opportunity",
     "threat",
+    "commercialize",
+    "commercialization",
+    "monetize",
+    "buyer",
+    "customer",
 }
 RICE_TERMS = {
     "prioritize",
@@ -68,6 +73,12 @@ LEAN_TERMS = {
     "traction",
     "startup",
     "prototype",
+    "commercialize",
+    "commercialization",
+    "pilot",
+    "buyer",
+    "customer discovery",
+    "proof",
 }
 OKR_TERMS = {
     "okr",
@@ -145,6 +156,7 @@ def _tokenize(goal: str) -> set[str]:
 def _score_pass(goal: str, mode: str) -> dict:
     text = goal.lower()
     tokens = _tokenize(goal)
+    brief = extract_domain_brief(goal)
     scores = {framework_id: 0 for framework_id in ACTIVE_FRAMEWORK_IDS}
     signals: dict[str, list[str]] = {framework_id: [] for framework_id in ACTIVE_FRAMEWORK_IDS}
 
@@ -155,10 +167,10 @@ def _score_pass(goal: str, mode: str) -> dict:
 
     if mode == "intent":
         term_groups = {
-            "swot": (SWOT_TERMS, ["new market", "go to market", "business strategy", "personal decision", "should i"]),
+            "swot": (SWOT_TERMS, ["new market", "go to market", "business strategy", "personal decision", "should i", "commercialize an algorithm"]),
             "rice": (RICE_TERMS, ["what to build", "which feature", "next sprint", "rank features"]),
             "triz": (TRIZ_TERMS, ["but it", "trade off", "tradeoff", "without increasing", "lighter but"]),
-            "lean_startup": (LEAN_TERMS, ["product market fit", "test demand", "landing page", "validate mvp"]),
+            "lean_startup": (LEAN_TERMS, ["product market fit", "test demand", "landing page", "validate mvp", "commercialize an algorithm", "pilot buyer", "proof of value"]),
             "okrs": (OKR_TERMS, ["align teams", "quarterly targets", "company goals"]),
             "porters_five_forces": (PORTER_TERMS, ["five forces", "market attractiveness", "industry structure"]),
             "pestle": (PESTLE_TERMS, ["global expansion", "macro environment", "regulatory risk"]),
@@ -172,6 +184,9 @@ def _score_pass(goal: str, mode: str) -> dict:
                 add(framework_id, 2, f"phrase signal: {phrase}")
         if tokens & RELATIONSHIP_TERMS:
             add("swot", 5, "relationship or personal decision language")
+        if "cnc" in tokens or "g-code" in text or "toolpath" in tokens or "machining" in tokens:
+            add("lean_startup", 2, "CNC/CAM algorithm commercialization needs buyer proof")
+            add("swot", 2, "CNC/CAM market, trust, and integration audit")
     else:
         if any(word in tokens for word in ["rank", "prioritize", "priority", "backlog", "features", "score"]):
             add("rice", 5, "requested output is ranking or prioritization")
@@ -179,6 +194,9 @@ def _score_pass(goal: str, mode: str) -> dict:
             add("rice", 4, "requested artifact is a scored build list")
         if any(word in tokens for word in ["validate", "mvp", "prototype", "experiment", "traction", "hypothesis"]):
             add("lean_startup", 5, "requested output is validation or experiment design")
+        if any(word in tokens for word in ["commercialize", "commercialization", "monetize", "pilot", "buyer"]):
+            add("lean_startup", 5, "requested output is commercialization validation")
+            add("swot", 3, "commercialization also needs strategic audit")
         if any(word in tokens for word in ["objective", "objectives", "okr", "goals", "quarterly", "alignment"]):
             add("okrs", 5, "requested output is measurable alignment")
         if any(word in tokens for word in ["industry", "supplier", "buyer", "substitute", "entrant", "rivalry", "competition"]):
@@ -203,13 +221,14 @@ def _score_pass(goal: str, mode: str) -> dict:
         "winner_name": FRAMEWORK_NAMES.get(winner, winner),
         "scores": scores,
         "confidence": round(confidence, 2),
-        "signals": signals[winner][:4] or ["broad fit signal"],
+        "signals": signals[winner][:4] or [f"broad fit signal for {brief.subject}"],
     }
 
 
 def _adjudicate_smart_passes(goal: str, intent_pass: dict, output_pass: dict) -> dict:
     text = goal.lower()
     tokens = _tokenize(goal)
+    brief = extract_domain_brief(goal)
     scores = {framework_id: intent_pass["scores"].get(framework_id, 0) + output_pass["scores"].get(framework_id, 0) for framework_id in ACTIVE_FRAMEWORK_IDS}
     criteria = []
 
@@ -222,6 +241,9 @@ def _adjudicate_smart_passes(goal: str, intent_pass: dict, output_pass: dict) ->
     if any(word in tokens for word in ["validate", "mvp", "experiment", "traction"]):
         scores["lean_startup"] += 3
         criteria.append("Validation language gets extra weight for Lean Startup.")
+    if any(word in tokens for word in ["commercialize", "commercialization", "monetize", "pilot", "buyer"]):
+        scores["lean_startup"] += 4
+        criteria.append(f"{brief.subject[:1].upper()}{brief.subject[1:]} requires pilot evidence before scaling.")
     if any(word in tokens for word in ["industry", "supplier", "buyer", "substitute", "entrant", "rivalry"]):
         scores["porters_five_forces"] += 3
         criteria.append("Industry-structure language gets extra weight for Porter's Five Forces.")
@@ -258,6 +280,7 @@ def _adjudicate_smart_passes(goal: str, intent_pass: dict, output_pass: dict) ->
 
 
 def smart_criteria_route(goal: str) -> RouteDecision:
+    brief = extract_domain_brief(goal)
     intent_pass = _score_pass(goal, "intent")
     output_pass = _score_pass(goal, "output")
     mismatch = intent_pass["winner"] != output_pass["winner"]
@@ -270,13 +293,13 @@ def smart_criteria_route(goal: str) -> RouteDecision:
         else f"Intent selected {intent_pass['winner_name']} while output-fit selected {output_pass['winner_name']}; adjudicator selected {selected_pass['winner_name']}."
     )
     rationale = {
-        "swot": "SWOT was selected to create a panoramic audit of controllable strengths/weaknesses and external opportunities/threats before committing to action.",
-        "rice": "RICE was selected because the request needs ranked initiatives with reach, impact, confidence, and effort tradeoffs.",
-        "triz": "TRIZ was selected because the request contains a design contradiction where improving one property may worsen another.",
-        "lean_startup": "Lean Startup was selected because the request needs a falsifiable MVP or experiment before investing heavily.",
-        "okrs": "OKRs were selected because the request needs measurable objectives, key results, and operating cadence.",
-        "porters_five_forces": "Porter's Five Forces was selected because the request centers on industry structure and competitive pressure.",
-        "pestle": "PESTLE was selected because the request depends on macro political, economic, social, technological, legal, or environmental forces.",
+        "swot": f"SWOT was selected to audit the controllable strengths, gaps, market openings, and threats around {brief.subject}, especially for {brief.users}.",
+        "rice": f"RICE was selected to rank the next initiatives for {brief.subject} by reach, impact, confidence, and effort.",
+        "triz": f"TRIZ was selected because {brief.subject} contains a design contradiction where improving one property may worsen another.",
+        "lean_startup": f"Lean Startup was selected because {brief.subject} needs a falsifiable pilot, buyer proof, and measurable evidence before heavy commercialization investment.",
+        "okrs": f"OKRs were selected because {brief.subject} needs measurable objectives, key results, and operating cadence.",
+        "porters_five_forces": f"Porter's Five Forces was selected because {brief.subject} depends on industry structure, substitutes, buyer power, supplier power, and competitive pressure.",
+        "pestle": f"PESTLE was selected because {brief.subject} depends on macro political, economic, social, technological, legal, or environmental forces.",
     }[framework_id]
     return {
         "framework_id": framework_id,
@@ -287,6 +310,15 @@ def smart_criteria_route(goal: str) -> RouteDecision:
             "passes": [intent_pass, output_pass] + ([adjudicator] if adjudicator else []),
             "mismatch_resolved": mismatch,
             "selected_framework": framework_id,
+            "domain_brief": {
+                "subject": brief.subject,
+                "domain": brief.domain,
+                "users": brief.users,
+                "workflow": brief.workflow,
+                "value_hypothesis": brief.value_hypothesis,
+                "constraints": brief.constraints,
+                "proof_metrics": brief.proof_metrics,
+            },
         },
     }
 
@@ -456,10 +488,108 @@ async def langchain_enrich_canvas(framework_id: str, goal: str, canvas: dict, pr
     return None
 
 
-def _fallback_option_sets(panel_kind: str, focus_title: str, panel_title: str, panel_value: str | None = None, refresh_round: int = 0) -> list[list[str]]:
+def _fallback_option_sets(
+    panel_kind: str,
+    focus_title: str,
+    panel_title: str,
+    panel_value: str | None = None,
+    refresh_round: int = 0,
+    goal: str = "",
+) -> list[list[str]]:
     subject = re.sub(r"\s+", " ", focus_title.strip())[:160]
     value_hint = re.sub(r"\s+", " ", (panel_value or "").strip())[:120]
     reference = value_hint or subject
+    brief = extract_domain_brief(goal or focus_title)
+
+    if "CNC" in brief.domain or "CNC" in brief.subject:
+        by_kind = {
+            "evidence": [
+                [
+                    "Benchmark the optimized CNC/CAM file against the original for cycle time, air cuts, tool changes, and machine-hour cost.",
+                    "Run the output through simulation/backplotting before any live machining trial.",
+                    "Ask 5 CAM programmers which toolpath changes they would trust without manual rewrite.",
+                ],
+                [
+                    "Compare the algorithm against one manual machinist edit and one CAM-system optimization feature.",
+                    "Collect before/after evidence for surface finish, scrap risk, and tool-wear cost.",
+                    "Log every unsafe, incompatible, or low-confidence toolpath recommendation.",
+                ],
+                [
+                    "Use anonymized G-code/CAM examples from at least three materials or part families.",
+                    "Measure whether the optimized file preserves tolerances, fixtures, and controller/post-processor assumptions.",
+                    "Document the evidence a job shop owner would need before paying for a pilot.",
+                ],
+            ],
+            "action": [
+                [
+                    "Create a 7-day pilot offer: submit one CNC file, receive an optimized version, simulation report, ROI estimate, and risk notes.",
+                    "Package the algorithm as a reviewed recommendation engine before letting it rewrite production files automatically.",
+                    "Choose one buyer wedge: job shops with high spindle-hour costs, CAM programmers with repetitive files, or quoting teams needing faster estimates.",
+                ],
+                [
+                    "Build a before/after demo using a representative CNC file and show cycle-time savings with the exact toolpath changes highlighted.",
+                    "Add a confidence gate: auto-suggest low-risk improvements, require human review for risky feed/speed or geometry changes.",
+                    "Interview manufacturing engineers about integration requirements for Fusion, Mastercam, Siemens NX, Haas, Fanuc, or their current controller stack.",
+                ],
+            ],
+            "metric": [
+                [
+                    "Cycle-time reduction versus the baseline CNC/CAM file.",
+                    "Successful simulation or dry-run pass rate.",
+                    "Machine-hour ROI per optimized job.",
+                ],
+                [
+                    "Tool-wear cost reduction after optimization.",
+                    "Scrap or rework rate after optimized file use.",
+                    "Pilot buyer willingness-to-pay after reviewing the before/after report.",
+                ],
+                [
+                    "Percentage of recommendations accepted by a CAM programmer without manual correction.",
+                    "Number of controller/post-processor incompatibilities found before live machining.",
+                    "Time from file upload to trusted optimization report.",
+                ],
+            ],
+            "risk": [
+                [
+                    "A single unsafe toolpath could damage a machine, scrap a part, or destroy buyer trust.",
+                    "Controller/post-processor differences can make a good optimization unsafe on another machine.",
+                    "Customers may refuse to upload proprietary part files without on-prem, deletion, or anonymization controls.",
+                ],
+                [
+                    "The algorithm may optimize cycle time while worsening surface finish, tolerances, or tool life.",
+                    "CAM vendors may already own the integration surface and can copy obvious optimization features.",
+                    "The buyer may see the result as consulting, not repeatable software, unless the workflow is packaged clearly.",
+                ],
+            ],
+            "experiment": [
+                [
+                    "Run a concierge pilot on 10 anonymized CNC files: baseline, optimized output, simulation result, machinist review, ROI estimate.",
+                    "Test one material and one machine/controller class before claiming broad CNC compatibility.",
+                    "Use a human review gate for every optimized file until unsafe recommendation rate is below a written threshold.",
+                ],
+                [
+                    "Offer three job shops a no-risk benchmark: pay only if cycle time or tooling-cost savings exceed a pre-agreed threshold.",
+                    "Run A/B quoting: current manual estimate versus algorithm-assisted estimate for time and accuracy.",
+                    "Measure whether CAM programmers request a second file optimization after the first report.",
+                ],
+            ],
+            "definition": [
+                [
+                    "Define the V1 as: upload CNC/CAM file, detect safe optimization opportunities, generate a simulation-ready report, and require human approval before production use.",
+                    "Exclude full autonomous machine control from V1; focus on trusted recommendations and validated file changes.",
+                    "Specify supported inputs first: G-code, CAM export, controller type, material, tool library, and machine constraints.",
+                ],
+                [
+                    "Define the buyer promise as reducing machine time or programming effort without increasing scrap, tool wear, or machine-crash risk.",
+                    "Make the acceptance condition: the optimized file passes simulation and a CAM programmer accepts the recommendation.",
+                    "State the edge cases V1 will refuse: unknown controller, missing tool data, tight tolerance risk, or unsafe geometry assumptions.",
+                ],
+            ],
+        }
+        options = by_kind.get(panel_kind, by_kind["action"])
+        start = refresh_round % len(options)
+        return options[start:] + options[:start]
+
     by_kind = {
         "evidence": [
             [
@@ -658,7 +788,7 @@ async def refresh_panel_options(request, provider: str | None = None, model_id: 
                 cleaned_sets.append(cleaned[:4])
         if cleaned_sets:
             return {"option_sets": cleaned_sets[:4]}
-    return {"option_sets": _fallback_option_sets(panel_kind, request.focus_title, request.panel_title, request.panel_value, request.refresh_round)}
+    return {"option_sets": _fallback_option_sets(panel_kind, request.focus_title, request.panel_title, request.panel_value, request.refresh_round, request.goal)}
 
 
 async def route_goal(goal: str, framework_id: str | None = None, model_provider: str | None = None, model_id: str | None = None) -> dict:

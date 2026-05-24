@@ -119,6 +119,21 @@ select {
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
+.typed-reveal {
+  min-height: 1.35em;
+}
+
+.typed-caret {
+  color: #22c55e;
+  animation: caretBlink 850ms step-end infinite;
+}
+
+@keyframes caretBlink {
+  50% {
+    opacity: 0;
+  }
+}
+
 .hint-target {
   min-width: 0;
 }
@@ -131,11 +146,12 @@ select {
   pointer-events: auto;
   transform: translateY(0.7rem) scale(0.975);
   filter: blur(7px);
+  will-change: opacity, transform, filter;
   transition:
-    opacity 640ms ease,
-    transform 640ms cubic-bezier(0.16, 1, 0.3, 1),
-    filter 640ms ease;
-  transition-delay: 120ms;
+    opacity 760ms ease,
+    transform 760ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter 760ms ease;
+  transition-delay: 180ms;
 }
 
 .hint-target:hover .hint-bubble {
@@ -147,6 +163,7 @@ select {
   opacity: 0 !important;
   transform: translateY(0.75rem) scale(0.975);
   filter: blur(8px);
+  transition-duration: 520ms;
   transition-delay: 0ms;
 }
 

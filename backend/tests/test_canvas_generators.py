@@ -1,4 +1,4 @@
-from backend.app.services.canvas_generators import generate_rice, generate_swot, generate_triz
+from backend.app.services.canvas_generators import build_canvas, generate_rice, generate_swot, generate_triz
 
 
 def test_rice_infers_triangle_event_features():
@@ -88,3 +88,25 @@ def test_swot_drilldown_panels_keep_distinct_option_domains():
     assert panels["Watch metric"]["kind"] == "metric"
     assert "metric" not in " ".join(panels["Strategic action"]["option_sets"][0]).lower()
     assert "next move" not in " ".join(panels["Watch metric"]["option_sets"][0]).lower()
+
+
+def test_cnc_algorithm_goal_creates_domain_specific_swot():
+    canvas = generate_swot("commercialize an algorithm for optimizing a CNC file.")
+    rendered = " ".join(canvas["analysis_brief"]) + " " + " ".join(
+        item["text"] + " " + item["rationale"] + " " + " ".join(item["options"])
+        for section in canvas["sections"]
+        for item in section["items"]
+    )
+
+    assert "CNC" in rendered or "G-code" in rendered
+    assert "CAM" in rendered
+    assert "cycle-time" in rendered or "cycle time" in rendered
+    assert "job shops" in rendered or "machinists" in rendered
+
+
+def test_cnc_algorithm_goal_is_specific_across_live_frameworks():
+    goal = "commercialize an algorithm for optimizing a CNC file."
+    for framework_id in ["swot", "lean_startup", "okrs", "porters_five_forces", "pestle", "rice", "triz"]:
+        canvas = build_canvas(framework_id, goal)
+        rendered = str(canvas)
+        assert "CNC" in rendered or "CAM" in rendered or "toolpath" in rendered

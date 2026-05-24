@@ -153,6 +153,7 @@ export default function CanvasWorkspace({ route }) {
 function PromptPanorama({ route, canvas }) {
   const variables = getCanvasPanorama(canvas);
   const context = canvas.analysis_brief?.[0] || canvas.subtitle || route.rationale;
+  const domainBrief = route.selection_process?.domain_brief;
 
   return (
     <section className="mb-6 rounded-lg border border-moss/20 bg-[#07100d] p-5 shadow-[0_24px_80px_rgba(34,197,94,0.08)]">
@@ -160,11 +161,17 @@ function PromptPanorama({ route, canvas }) {
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-moss">Input panorama</p>
           <h3 className="mt-2 text-2xl font-semibold text-white">Prompt focus and derived context</h3>
-          <p className="mt-3 text-sm leading-6 text-white/66">{compactText(route.goal || "No prompt captured.", 420)}</p>
+          <TypedRevealText className="mt-3 text-sm leading-6 text-white/66" text={compactText(route.goal || "No prompt captured.", 420)} />
           <div className="mt-4 rounded-lg border border-white/10 bg-white/[0.04] p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/36">Derived read</p>
-            <p className="mt-2 text-sm leading-6 text-white/70">{context}</p>
+            <TypedRevealText className="mt-2 text-sm leading-6 text-white/70" text={context} />
           </div>
+          {domainBrief && (
+            <div className="mt-4 rounded-lg border border-signal/20 bg-signal/10 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal">Agent subject model</p>
+              <TypedRevealText className="mt-2 text-sm leading-6 text-white/72" text={`${domainBrief.users}. Workflow: ${domainBrief.workflow}`} />
+            </div>
+          )}
         </div>
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-signal">Framework variables</p>
@@ -172,8 +179,8 @@ function PromptPanorama({ route, canvas }) {
             {variables.map((variable) => (
               <div key={`${variable.label}-${variable.value}`} className="depth-card rounded-lg border border-white/10 bg-white/[0.04] p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/36">{variable.label}</p>
-                <p className="mt-2 text-sm font-semibold leading-5 text-white">{variable.value}</p>
-                {variable.detail && <p className="mt-2 text-xs leading-5 text-white/52">{variable.detail}</p>}
+                <TypedRevealText className="mt-2 text-sm font-semibold leading-5 text-white" text={variable.value} />
+                {variable.detail && <TypedRevealText className="mt-2 text-xs leading-5 text-white/52" text={variable.detail} />}
               </div>
             ))}
           </div>
@@ -193,10 +200,59 @@ function AnalysisBrief({ canvas }) {
       {canvas.analysis_brief.map((brief, index) => (
         <div key={`${brief}-${index}`} className="depth-card rounded-lg border border-white/10 bg-[#07100d] p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-moss">System read {index + 1}</p>
-          <p className="mt-2 text-sm leading-6 text-white/70">{brief}</p>
+          <TypedRevealText className="mt-2 text-sm leading-6 text-white/70" text={brief} />
         </div>
       ))}
     </div>
+  );
+}
+
+function TypedRevealText({ text, className = "" }) {
+  const ref = useRef(null);
+  const fullText = String(text ?? "");
+  const [visible, setVisible] = useState(false);
+  const [displayed, setDisplayed] = useState("");
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return undefined;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setVisible(entry.isIntersecting);
+        if (!entry.isIntersecting) {
+          setDisplayed("");
+        }
+      },
+      { threshold: 0.35, rootMargin: "0px 0px -8% 0px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!visible) return undefined;
+    const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    if (prefersReducedMotion) {
+      setDisplayed(fullText);
+      return undefined;
+    }
+    setDisplayed("");
+    let index = 0;
+    const interval = window.setInterval(() => {
+      index += Math.max(1, Math.ceil(fullText.length / 120));
+      setDisplayed(fullText.slice(0, index));
+      if (index >= fullText.length) {
+        window.clearInterval(interval);
+      }
+    }, 14);
+    return () => window.clearInterval(interval);
+  }, [fullText, visible]);
+
+  return (
+    <p ref={ref} className={`typed-reveal ${className}`}>
+      {displayed || (visible ? "" : fullText)}
+      {visible && displayed.length < fullText.length && <span className="typed-caret">|</span>}
+    </p>
   );
 }
 
@@ -252,8 +308,13 @@ function DecisionOverview({ route, canvas }) {
     signals: ["goal language", "framework fit", "execution guidance"]
   };
   const selectionProcess = route.selection_process;
+  const domainBrief = selectionProcess?.domain_brief;
   const passes = selectionProcess?.passes ?? [];
   const reinforcer = selectionProcess?.reinforcer;
+  const subjectMethod = domainBrief
+    ? `${route.rationale || copy.method} OmniFrame is treating the work as ${domainBrief.workflow}. The proof burden is: ${domainBrief.value_hypothesis}`
+    : copy.method;
+  const subjectSignals = domainBrief?.proof_metrics?.length ? domainBrief.proof_metrics.slice(0, 3) : copy.signals;
 
   return (
     <aside className="mb-6 rounded-lg border border-white/10 bg-white/[0.045] p-5">
@@ -261,13 +322,13 @@ function DecisionOverview({ route, canvas }) {
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal">Decision Overview</p>
         <h3 className="mt-2 text-xl font-semibold text-white">{copy.trigger}</h3>
-        <p className="mt-3 text-sm leading-6 text-white/68">{copy.method}</p>
+        <p className="mt-3 text-sm leading-6 text-white/68">{subjectMethod}</p>
         <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-white/36">{canvas.title}</p>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
-        {copy.signals.map((signal) => (
+        {subjectSignals.map((signal) => (
           <div key={signal} className="depth-card rounded-lg border border-white/10 bg-[#07100d] p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/36">Signal</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/36">{domainBrief ? "Proof signal" : "Signal"}</p>
             <p className="mt-2 text-sm font-medium leading-5 text-white">{signal}</p>
           </div>
         ))}
@@ -728,7 +789,7 @@ function FocusCanvasView({ focusCanvas, onChange, onExport, route }) {
   async function regeneratePanelOptions(panelIndex) {
     const panel = focusCanvas.panels[panelIndex];
     const currentIndex = panel.regenIndex ?? 0;
-    const optionSets = getRegenerationOptionSets(focusCanvas, panel);
+    const optionSets = getRegenerationOptionSets(focusCanvas, panel, route);
     const currentSignature = optionSignature(panel.options ?? []);
     const refreshRound = panel.refreshRound ?? 0;
     const isExhausted = currentIndex >= optionSets.length;
@@ -749,7 +810,7 @@ function FocusCanvasView({ focusCanvas, onChange, onExport, route }) {
           existing_options: flattenOptionSets([...(panel.option_sets ?? []), panel.options ?? []])
         });
         let mergedOptionSets = mergeOptionSets(panel.option_sets ?? [], refreshed.option_sets ?? []);
-        const syntheticSet = buildSyntheticOptionSet(focusCanvas, panel, refreshRound);
+        const syntheticSet = buildSyntheticOptionSet(focusCanvas, panel, refreshRound, route);
         mergedOptionSets = mergeOptionSets(mergedOptionSets, [syntheticSet]);
         const nextSet = findFirstFreshSet(mergedOptionSets, currentSignature, optionSets.length) ?? syntheticSet;
         const nextSetIndex = Math.max(0, mergedOptionSets.findIndex((set) => optionSignature(set) === optionSignature(nextSet)));
@@ -769,7 +830,23 @@ function FocusCanvasView({ focusCanvas, onChange, onExport, route }) {
         });
         return;
       } catch {
-        // Use the local reserve sets when the provider is unavailable.
+        const syntheticSet = buildSyntheticOptionSet(focusCanvas, panel, refreshRound, route);
+        const mergedOptionSets = mergeOptionSets(panel.option_sets ?? [], optionSets, [syntheticSet]);
+        onChange({
+          ...focusCanvas,
+          panels: focusCanvas.panels.map((item, index) =>
+            index === panelIndex
+              ? {
+                  ...item,
+                  options: syntheticSet,
+                  option_sets: mergedOptionSets,
+                  regenIndex: mergedOptionSets.length,
+                  refreshRound: refreshRound + 1
+                }
+              : item
+          )
+        });
+        return;
       }
     }
 
@@ -968,9 +1045,18 @@ function buildTrizFocus(principle) {
   };
 }
 
-function buildFallbackOptionSets(focusCanvas, panel) {
+function buildFallbackOptionSets(focusCanvas, panel, route) {
   const subject = compactText([focusCanvas.title, focusCanvas.description, panel.value].filter(Boolean).join(" "), 150);
   const kind = panel.kind ?? getPanelKind(panel);
+  const domainBrief = route?.selection_process?.domain_brief;
+  const domainSubject = compactText(domainBrief?.subject || subject, 150);
+  const domainUsers = compactText(domainBrief?.users || "the most relevant stakeholders", 180);
+  const domainWorkflow = compactText(domainBrief?.workflow || subject, 220);
+  const domainValue = compactText(domainBrief?.value_hypothesis || "the next action creates decision-grade evidence", 220);
+  const domainConstraints = compactText(domainBrief?.constraints || "unclear evidence, weak ownership, and premature scope expansion", 220);
+  const domainMetrics = domainBrief?.proof_metrics?.length
+    ? domainBrief.proof_metrics.slice(0, 5)
+    : ["Decision confidence delta", "Evidence gathered per week", "Time to next concrete action"];
   const templates = {
     evidence: [
       [
@@ -1058,11 +1144,97 @@ function buildFallbackOptionSets(focusCanvas, panel) {
     ]
   };
 
+  if (domainBrief) {
+    const domainTemplates = {
+      evidence: [
+        [
+          `Verify '${domainSubject}' with direct evidence from ${domainUsers}.`,
+          `Inspect the real workflow: ${domainWorkflow}.`,
+          `Ask what proof would make users trust or reject this claim: ${subject}.`
+        ],
+        [
+          `Collect a before/after example tied to '${domainValue}'.`,
+          `Find one counterexample where '${domainSubject}' would fail despite sounding useful.`,
+          `Log source, date, confidence, and decision impact for every signal about ${domainSubject}.`
+        ]
+      ],
+      action: [
+        [
+          `Turn this panel into one reversible move for '${domainSubject}'.`,
+          `Design the move around the actual workflow: ${domainWorkflow}.`,
+          `Set the next action so it tests the value hypothesis: ${domainValue}.`
+        ],
+        [
+          `Pick one user group from ${domainUsers} and create a narrow outreach, pilot, or conversation for them.`,
+          `Write the decision rule before taking action so the result cannot be rationalized later.`,
+          `Stop or defer anything that does not reduce uncertainty about: ${subject}.`
+        ]
+      ],
+      metric: [
+        domainMetrics.slice(0, 3),
+        [
+          `Confidence change for '${domainSubject}' after this panel is tested.`,
+          `Number of assumptions converted into pass, fail, or still-unknown status.`,
+          `Time from selected option to decision-ready evidence for ${domainSubject}.`
+        ]
+      ],
+      risk: [
+        [
+          `This may fail if the constraint is underestimated: ${domainConstraints}.`,
+          `The option may optimize the wrong part of the workflow: ${domainWorkflow}.`,
+          `A good-looking signal may not prove the value hypothesis: ${domainValue}.`
+        ],
+        [
+          `The wrong stakeholder group may dominate the conclusion instead of ${domainUsers}.`,
+          `The team may overgeneralize from one case before testing the hardest constraint.`,
+          `The action may create activity without changing a real decision.`
+        ]
+      ],
+      experiment: [
+        [
+          `Run a small test of '${domainSubject}' with baseline, variant, review date, and stop condition.`,
+          `Use the real workflow as the test path: ${domainWorkflow}.`,
+          `Record whether the result supports the value hypothesis: ${domainValue}.`
+        ],
+        [
+          `Test the hardest constraint first: ${domainConstraints}.`,
+          `Use one user segment from ${domainUsers} so the signal is interpretable.`,
+          `Define pass, partial-pass, and fail before the test starts.`
+        ]
+      ],
+      contradiction: [
+        [
+          `Improve '${domainSubject}' without worsening the main constraint: ${domainConstraints}.`,
+          `Name what gets better in the workflow and what must not get worse: ${domainWorkflow}.`,
+          `Rewrite the conflict as a testable tradeoff rather than a broad aspiration.`
+        ],
+        [
+          `Separate the visible symptom from the underlying coupling in ${domainSubject}.`,
+          `Choose a principle that changes timing, structure, mediation, or parameters in the workflow.`,
+          `State what proof would show the contradiction has been reduced.`
+        ]
+      ],
+      definition: [
+        [
+          `Define '${domainSubject}' as user, input, transformation, output, and proof metric.`,
+          `Keep the definition anchored to this workflow: ${domainWorkflow}.`,
+          `Add one non-goal that protects against scope creep.`
+        ],
+        [
+          `Describe who uses it from ${domainUsers}, what they do, and how success becomes visible.`,
+          `Separate must-have behavior from polish, automation, or adjacent features.`,
+          `Make the acceptance condition measurable with: ${domainMetrics[0]}.`
+        ]
+      ]
+    };
+    return mergeOptionSets(domainTemplates[kind] ?? domainTemplates.action, templates[kind] ?? templates.action);
+  }
+
   return templates[kind] ?? templates.action;
 }
 
-function getRegenerationOptionSets(focusCanvas, panel) {
-  return mergeOptionSets(panel.option_sets ?? [], buildFallbackOptionSets(focusCanvas, panel));
+function getRegenerationOptionSets(focusCanvas, panel, route) {
+  return mergeOptionSets(panel.option_sets ?? [], buildFallbackOptionSets(focusCanvas, panel, route));
 }
 
 function mergeOptionSets(...groups) {
@@ -1095,10 +1267,57 @@ function findFirstFreshSet(optionSets, currentSignature, preferredStart = 0) {
   return optionSets[0];
 }
 
-function buildSyntheticOptionSet(focusCanvas, panel, round = 0) {
+function buildSyntheticOptionSet(focusCanvas, panel, round = 0, route) {
   const subject = compactText([focusCanvas.title, panel.value, focusCanvas.description].filter(Boolean).join(" "), 130);
   const kind = panel.kind ?? getPanelKind(panel);
   const suffix = round > 0 ? ` Refresh ${round + 1}.` : "";
+  const domainBrief = route?.selection_process?.domain_brief;
+  if (domainBrief) {
+    const domainSubject = compactText(domainBrief.subject, 130);
+    const domainWorkflow = compactText(domainBrief.workflow, 190);
+    const domainUsers = compactText(domainBrief.users, 170);
+    const domainValue = compactText(domainBrief.value_hypothesis, 190);
+    const domainConstraints = compactText(domainBrief.constraints, 190);
+    const metrics = domainBrief.proof_metrics?.length ? domainBrief.proof_metrics : ["decision confidence delta", "evidence gathered per week", "time to next concrete action"];
+    const domainVariants = {
+      evidence: [
+        `Collect a new proof point for '${domainSubject}' from ${domainUsers}.${suffix}`,
+        `Compare the claim against the real workflow: ${domainWorkflow}.`,
+        `Write the evidence that would weaken this panel's claim about '${subject}'.`
+      ],
+      action: [
+        `Choose one new reversible move for '${domainSubject}' that tests: ${domainValue}.${suffix}`,
+        `Make the move visible inside the real workflow: ${domainWorkflow}.`,
+        `Define the immediate follow-up if the action produces a clear yes, no, or mixed signal.`
+      ],
+      metric: [
+        `${metrics[round % metrics.length]}.${suffix}`.replace("..", "."),
+        `Confidence change after testing '${domainSubject}'.`,
+        `Time from selected option to usable evidence in the workflow.`
+      ],
+      risk: [
+        `Name a fresh failure mode from this constraint set: ${domainConstraints}.${suffix}`,
+        `Identify the cost of choosing this option too early for '${domainSubject}'.`,
+        `State which signal would show the option is creating false confidence.`
+      ],
+      experiment: [
+        `Run a narrow test of '${domainSubject}' using the workflow: ${domainWorkflow}.${suffix}`,
+        `Use one user segment from ${domainUsers} so the result explains the next decision.`,
+        `Write the pass, partial-pass, and fail rule before the test starts.`
+      ],
+      contradiction: [
+        `Improve '${domainSubject}' without worsening: ${domainConstraints}.${suffix}`,
+        `Name the hidden coupling that makes the tradeoff feel unavoidable.`,
+        `Choose a small test that separates the two sides by timing, structure, rule, or context.`
+      ],
+      definition: [
+        `Define '${domainSubject}' as actor, trigger, input, transformation, and outcome.${suffix}`,
+        `Keep the definition anchored to the workflow: ${domainWorkflow}.`,
+        `Add one non-goal to keep the option from expanding into adjacent work.`
+      ]
+    };
+    return domainVariants[kind] ?? domainVariants.action;
+  }
   const variants = {
     evidence: [
       `Collect a fresh proof point for '${subject}' and label it confirm, weaken, or unknown.${suffix}`,

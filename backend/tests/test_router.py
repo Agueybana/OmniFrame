@@ -15,6 +15,7 @@ from backend.app.services.router import deterministic_route
         ("Assess legal regulatory and economic risks before global expansion", "pestle"),
         ("Help me decide whether leaving my partner Hollie is the best choice", "swot"),
         ("Find a girlfriend", "swot"),
+        ("commercialize an algorithm for optimizing a CNC file.", "lean_startup"),
     ],
 )
 def test_deterministic_router(goal, expected):
@@ -27,3 +28,13 @@ def test_deterministic_router_exposes_smart_criteria_process():
     assert decision["selection_process"]["passes"][0]["name"] == "Intent criteria"
     assert decision["selection_process"]["passes"][1]["name"] == "Output-fit criteria"
     assert decision["selection_process"]["selected_framework"] in {"rice", "lean_startup"}
+
+
+def test_router_selection_process_is_prompt_specific_for_cnc():
+    decision = deterministic_route("commercialize an algorithm for optimizing a CNC file.")
+    brief = decision["selection_process"]["domain_brief"]
+
+    assert "CNC" in brief["subject"]
+    assert "CAM" in brief["domain"]
+    assert "cycle-time" in " ".join(brief["proof_metrics"]) or "cycle time" in " ".join(brief["proof_metrics"])
+    assert "CNC/CAM" in decision["rationale"]

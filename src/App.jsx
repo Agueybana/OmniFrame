@@ -336,6 +336,16 @@ function FrameworkDecisionModal({ pendingRoute, activeFrameworks, showChooser, s
           <div className="mt-4 rounded-lg border border-moss/20 bg-moss/5 p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-moss">Smart-criteria route audit</p>
             <p className="mt-2 text-sm leading-6 text-white/68">{pendingRoute.selection_process.summary}</p>
+            {pendingRoute.selection_process.domain_brief && (
+              <div className="mt-4 rounded-lg border border-white/10 bg-[#07100d] p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal">Subject understanding</p>
+                <p className="mt-2 text-base font-semibold text-white">{pendingRoute.selection_process.domain_brief.subject}</p>
+                <p className="mt-2 text-sm leading-6 text-white/64">{pendingRoute.selection_process.domain_brief.domain}</p>
+                <p className="mt-2 text-sm leading-6 text-white/64">
+                  Likely users: {pendingRoute.selection_process.domain_brief.users}. Value test: {pendingRoute.selection_process.domain_brief.value_hypothesis}
+                </p>
+              </div>
+            )}
             <div className="mt-4 grid gap-3 lg:grid-cols-3">
               {(pendingRoute.selection_process.passes ?? []).map((pass) => (
                 <div key={`${pass.name}-${pass.winner}`} className="rounded-lg border border-white/10 bg-[#07100d] p-3">

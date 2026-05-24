@@ -14,7 +14,10 @@ def _compact(value: str, limit: int = 230) -> str:
     cleaned = re.sub(r"\s+", " ", value.strip(" -|"))
     if len(cleaned) <= limit:
         return cleaned
-    return cleaned[: limit - 1].rstrip(" ,.;") + "."
+    truncated = cleaned[: limit - 1].rstrip()
+    if " " in truncated:
+        truncated = truncated.rsplit(" ", 1)[0]
+    return truncated.rstrip(" ,.;") + "."
 
 
 def _split_sentences(value: str, limit: int = 2) -> str:
@@ -36,6 +39,105 @@ class ParsedProject:
     @property
     def context(self) -> str:
         return _compact(" ".join([self.purpose, self.details, self.challenges, self.benefit]), 420)
+
+
+@dataclass(frozen=True)
+class DomainBrief:
+    subject: str
+    domain: str
+    users: str
+    workflow: str
+    value_hypothesis: str
+    constraints: str
+    proof_metrics: list[str]
+    evidence_prompts: list[str]
+    adoption_risks: list[str]
+
+
+def extract_domain_brief(goal: str) -> DomainBrief:
+    topic = _topic(goal)
+    text = goal.lower()
+
+    if any(term in text for term in ["cnc", "g-code", "gcode", "cam ", "cam/", "toolpath", "machining", "machine shop"]):
+        return DomainBrief(
+            subject="commercializing a CNC/CAM file optimization algorithm",
+            domain="CNC machining, CAM programming, G-code/toolpath optimization, and manufacturing software commercialization",
+            users="CNC job shops, machinists, CAM programmers, manufacturing engineers, quoting teams, and factory owners who pay for spindle utilization",
+            workflow="analyze an existing CAM/G-code/CNC file, detect inefficient feeds, speeds, tool changes, air cuts, path order, and machine-specific constraints, then produce a safer optimized file or recommendations that can be simulated before machining",
+            value_hypothesis="customers will pay if the algorithm reliably reduces cycle time, scrap risk, tool wear, quoting uncertainty, or programming time without causing machine crashes or surface-finish defects",
+            constraints="trust in modified toolpaths, controller/post-processor compatibility, liability for crashes or scrapped parts, IP security for customer files, machinist skepticism, and proof that optimization works across materials, machines, and part geometries",
+            proof_metrics=[
+                "cycle-time reduction versus baseline CAM/G-code",
+                "successful simulation or dry-run pass rate",
+                "tool-wear or tooling-cost reduction",
+                "scrap/rework rate after optimized file use",
+                "machine-hour ROI per job",
+            ],
+            evidence_prompts=[
+                "Benchmark 20 anonymized CNC jobs across aluminum, steel, plastics, and complex 3-axis/5-axis geometries.",
+                "Ask CAM programmers which optimizations they trust enough to run on a real machine.",
+                "Compare output against Fusion, Mastercam, Siemens NX, and manual machinist edits where available.",
+                "Run optimized files through simulation/backplotting before any live cut.",
+            ],
+            adoption_risks=[
+                "A single bad toolpath can break trust faster than many small cycle-time wins can build it.",
+                "CAM vendors and controller ecosystems may already own distribution and integration points.",
+                "Customers may refuse to upload proprietary part files without strong security and on-prem options.",
+            ],
+        )
+
+    if any(term in text for term in ["algorithm", "ai", "model", "software", "saas", "commercialize", "monetize"]):
+        return DomainBrief(
+            subject=topic,
+            domain="software commercialization and algorithm-to-product translation",
+            users="technical buyers, operators, product teams, and early adopters with a painful workflow the algorithm can improve",
+            workflow=f"turn the algorithm behind '{topic}' into a repeatable product workflow with input data, user-visible output, validation evidence, and a credible sales motion",
+            value_hypothesis="customers will pay if the algorithm creates a measurable advantage over their current manual, spreadsheet, vendor, or internal workflow",
+            constraints="proof quality, integration effort, data access, user trust, switching costs, privacy/IP concerns, and the gap between technical performance and buyer willingness to pay",
+            proof_metrics=[
+                "measured improvement over the current workflow",
+                "pilot conversion from qualified users",
+                "time saved per completed job",
+                "willingness-to-pay from target buyers",
+                "repeat usage after first result",
+            ],
+            evidence_prompts=[
+                "Find the current workaround users tolerate today.",
+                "Run a concierge pilot where the algorithm result is manually reviewed before delivery.",
+                "Ask target buyers what evidence they need before using the output in production.",
+                "Compare performance against the most credible incumbent or manual process.",
+            ],
+            adoption_risks=[
+                "The algorithm may be technically impressive but not packaged around a painful enough buying moment.",
+                "Users may not trust recommendations unless they can inspect inputs, assumptions, and failure modes.",
+                "Integration and change-management cost may exceed the perceived gain.",
+            ],
+        )
+
+    return DomainBrief(
+        subject=topic,
+        domain="strategy and execution planning",
+        users="the stakeholders most affected by the requested decision or initiative",
+        workflow=f"convert '{topic}' into a concrete decision, experiment, metric, or execution path",
+        value_hypothesis="the work is valuable if it changes a real decision, reduces uncertainty, or makes the next action clearer",
+        constraints="unclear ownership, missing evidence, stakeholder disagreement, weak metrics, and premature scope expansion",
+        proof_metrics=[
+            "decision confidence delta",
+            "evidence gathered per week",
+            "assumptions resolved",
+            "time to next concrete action",
+        ],
+        evidence_prompts=[
+            "Name the strongest evidence that would confirm the direction.",
+            "Name the strongest evidence that would make the team reverse course.",
+            "Identify the stakeholder whose behavior matters most.",
+        ],
+        adoption_risks=[
+            "The analysis may stay too abstract unless converted into evidence and action.",
+            "The wrong stakeholder signal may dominate the decision.",
+            "The team may optimize for a comfortable plan rather than a true constraint.",
+        ],
+    )
 
 
 def _extract_projects(goal: str) -> list[ParsedProject]:
@@ -120,8 +222,8 @@ def _panel_kind(title: str, prompt: str = "") -> str:
 
 
 def _panel_option_sets(kind: str, subject: str, seed_options: list[str] | None = None, metric: str = "") -> list[list[str]]:
-    subject = _compact(subject, 150)
-    seeds = [_compact(option, 180) for option in (seed_options or []) if option]
+    subject = _compact(subject, 220)
+    seeds = [_compact(option, 340) for option in (seed_options or []) if option]
     templates = {
         "evidence": [
             [
@@ -219,14 +321,14 @@ def _swot_item(text: str, rationale: str, options: list[str], metric: str) -> di
         "text": _compact(text, 260),
         "rationale": _compact(rationale, 320),
         "metric": _compact(metric, 180),
-        "options": [_compact(option, 220) for option in options],
+        "options": [_compact(option, 340) for option in options],
         "drilldown": {
             "description": "Convert this strategic observation into evidence, decisions, and execution checks.",
             "panels": [
                 _panel(
                     "Evidence to verify",
                     "Pick or edit the strongest proof that should support this claim.",
-                    options[:2] + [f"Interview 5 target users about: {text}"],
+                    options[:2] + [f"Interview 5 relevant users or stakeholders about: {text}"],
                     value=options[0] if options else "",
                     option_sets=_panel_option_sets("evidence", text, options),
                     kind="evidence",
@@ -622,20 +724,23 @@ def _project_specific_swot(projects: list[ParsedProject], topic: str) -> dict[st
 
 
 def generate_swot(goal: str) -> dict[str, Any]:
-    topic = _topic(goal)
+    brief = extract_domain_brief(goal)
+    topic = brief.subject
     if _is_relationship_goal(goal):
-        return _relationship_swot(goal, topic)
+        return _relationship_swot(goal, _topic(goal))
     projects = _extract_projects(goal)
     if projects:
-        return _project_specific_swot(projects, topic)
+        return _project_specific_swot(projects, _topic(goal))
 
     return {
         "type": "quadrant",
-        "title": "SWOT Strategy Canvas",
-        "subtitle": f"Baseline audit for: {topic}",
+        "title": f"{_compact(topic.title(), 70)} SWOT",
+        "subtitle": f"Domain-specific audit for: {_topic(goal)}",
         "analysis_brief": [
-            "No full project table was detected, so OmniFrame built a strategic baseline from the goal language.",
-            "Use the focused workspaces to convert each observation into evidence, actions, and metrics before exporting.",
+            f"OmniFrame read the request as {brief.domain}. The likely users are {brief.users}.",
+            f"The core workflow is to {brief.workflow}.",
+            f"The value hypothesis: {brief.value_hypothesis}.",
+            f"Critical constraints: {brief.constraints}.",
         ],
         "sections": [
             {
@@ -644,34 +749,34 @@ def generate_swot(goal: str) -> dict[str, Any]:
                 "prompt": "Internal advantages to preserve or amplify.",
                 "items": [
                     _swot_item(
-                        f"Existing capability could accelerate {topic.lower()} if it is made explicit and reusable.",
-                        "The goal implies there is already enough strategic intent to start mapping assets.",
+                        f"The central asset is the algorithmic know-how behind {topic}, not just a generic product idea.",
+                        f"If the algorithm can produce a measurable outcome in the target workflow, it can become a credible wedge for {brief.users}.",
                         [
-                            "List the proprietary data, relationships, audience access, or execution speed already available.",
-                            "Separate true advantages from ordinary table stakes.",
-                            "Turn the strongest advantage into a proof point for the first demo.",
+                            f"Show one before/after example using a real or realistic input from the workflow: {brief.workflow}.",
+                            f"Translate the algorithm output into buyer language: {brief.value_hypothesis}.",
+                            "Identify what is proprietary: optimization logic, benchmark data, integration layer, or workflow UX.",
                         ],
-                        "Time saved or conversion lift from the advantage",
+                        brief.proof_metrics[0],
                     ),
                     _swot_item(
-                        "Differentiated expertise, relationships, or brand trust can reduce launch friction.",
-                        "Early adoption often depends on credibility before the product has full maturity.",
+                        f"A focused pilot with {brief.users} can turn technical performance into market credibility.",
+                        "Early commercialization depends on proof that the result is safe, explainable, and worth switching behavior for.",
                         [
-                            "Identify who already trusts the team and why.",
-                            "Convert existing trust into a pilot, testimonial, or distribution channel.",
-                            "Document the promise users should believe on first contact.",
+                            brief.evidence_prompts[0],
+                            brief.evidence_prompts[1],
+                            "Convert the first pilot into a report with baseline, optimized result, risk check, and ROI.",
                         ],
-                        "Pilot conversion from warm channels",
+                        "qualified pilot conversion rate",
                     ),
                     _swot_item(
-                        "An operational asset that competitors would struggle to copy can become the strategic center.",
-                        "The most useful SWOT strength is one that changes what the team should build first.",
+                        "The product can be positioned around decision-grade evidence rather than broad claims.",
+                        "A narrow, well-instrumented proof is more persuasive than a vague promise that the algorithm is better.",
                         [
-                            "Name the asset a competitor cannot easily buy, scrape, or hire.",
-                            "Tie that asset to one workflow the prototype should make visible.",
-                            "Protect the asset by turning it into data, process, or user habit.",
+                            brief.evidence_prompts[2],
+                            "Document false positives, unsafe cases, and situations where the algorithm should refuse to optimize.",
+                            "Make the first demo show the original input, the optimized output, and why the change is safe.",
                         ],
-                        "Defensible workflow usage",
+                        "credible benchmark examples completed",
                     ),
                 ],
             },
@@ -681,34 +786,34 @@ def generate_swot(goal: str) -> dict[str, Any]:
                 "prompt": "Internal limitations that could slow execution.",
                 "items": [
                     _swot_item(
-                        "Skill, budget, data, or process gaps can make the first version feel less credible than the idea.",
-                        "The first release has to prove the core job, not the whole vision.",
+                        f"Commercializing {topic} requires trust, integration, and validation, not only algorithm performance.",
+                        brief.constraints,
                         [
-                            "Cut the first demo to one promise that can be verified in a week.",
-                            "List missing data and assign a temporary manual workaround.",
-                            "Treat unclear ownership as a launch blocker.",
+                            "List the cases where the algorithm is allowed to act automatically versus cases requiring human review.",
+                            "Name the integration or data format that must work first for a credible pilot.",
+                            "Define what evidence is required before users rely on the output in production.",
                         ],
-                        "Blocked assumptions resolved per week",
+                        "blocked production assumptions resolved",
                     ),
                     _swot_item(
-                        "A hidden assumption may need validation before scaling.",
-                        "Strategic risk is highest when the team treats an unproven belief as settled.",
+                        "The buyer may not pay for optimization unless the result maps directly to money, time, or risk reduction.",
+                        "A technical win is not enough if users cannot see ROI, trust the recommendation, or fit it into their existing workflow.",
                         [
-                            "Write the assumption that would kill the project if false.",
-                            "Choose one cheap test that can disprove it quickly.",
-                            "Document what result would change the roadmap.",
+                            f"Ask {brief.users} what they would need to see before paying.",
+                            f"Measure {brief.proof_metrics[0]} and {brief.proof_metrics[1]} on the same pilot artifact.",
+                            "Price the first offer around verified savings or avoided cost, not feature count.",
                         ],
-                        "Assumption kill/pass decision rate",
+                        "willingness-to-pay after proof",
                     ),
                     _swot_item(
-                        "A dependency could become the bottleneck once users arrive.",
-                        "Bottlenecks often appear in data freshness, review quality, integrations, or support.",
+                        "The first release could fail if the product cannot handle edge cases safely.",
+                        brief.adoption_risks[0],
                         [
-                            "Name the dependency that cannot be allowed to fail silently.",
-                            "Add a fallback path before launch.",
-                            "Instrument dependency health in the first build.",
+                            "Create a failure taxonomy before pilots: unsafe output, incompatible input, weak ROI, and unclear recommendation.",
+                            "Add a manual review fallback so early users never receive an untrusted result as final.",
+                            "Log every rejected or low-confidence case as product learning.",
                         ],
-                        "Dependency failure recovery time",
+                        "unsafe or low-confidence case rate",
                     ),
                 ],
             },
@@ -718,34 +823,34 @@ def generate_swot(goal: str) -> dict[str, Any]:
                 "prompt": "External openings worth exploiting.",
                 "items": [
                     _swot_item(
-                        "A market shift, customer pain, or regulatory change may create urgency.",
-                        "External urgency changes how aggressively the prototype should be positioned.",
+                        f"{brief.users} may have urgent cost pressure if the workflow consumes expensive labor, machine time, or expert review.",
+                        f"The opportunity is strongest where {brief.value_hypothesis}.",
                         [
-                            "Identify the customer pain that is getting worse right now.",
-                            "Convert that pain into a headline promise and one measurable outcome.",
-                            "Find the niche where urgency is strongest and alternatives are weakest.",
+                            "Find the buyer segment with the clearest money leak, delay, or quality risk.",
+                            f"Use this proof metric as the headline claim: {brief.proof_metrics[0]}.",
+                            "Build the first case study around one painful recurring job, not a universal platform story.",
                         ],
-                        "Urgent problem interviews completed",
+                        "urgent workflow pain interviews completed",
                     ),
                     _swot_item(
-                        "A partnership or distribution channel could compound reach faster than paid acquisition.",
-                        "Strategy improves when distribution is designed with the product, not added after.",
+                        "Distribution can start through trusted workflow surfaces and expert communities instead of generic SaaS ads.",
+                        "Commercialization is easier when the product enters where users already inspect, edit, quote, or validate work.",
                         [
-                            "List channels with existing trust in the target user group.",
-                            "Offer a partner-visible artifact they can share.",
-                            "Measure referred usage quality instead of raw clicks.",
+                            "Identify software, consultants, equipment vendors, forums, or service bureaus already trusted by the target users.",
+                            "Offer a partner-visible benchmark report they can share with prospects.",
+                            "Turn pilot outcomes into a reusable ROI calculator.",
                         ],
-                        "Qualified referred activation",
+                        "partner-referred pilot starts",
                     ),
                     _swot_item(
-                        "An underserved segment may reward speed and relevance over completeness.",
-                        "The first wedge should be narrow enough that specificity beats incumbents.",
+                        "A narrow wedge can beat broad incumbents if it solves one high-value workflow deeply.",
+                        "The first offer should be specific enough that users recognize their exact problem in the demo.",
                         [
-                            "Choose one underserved segment and remove everything not needed for them.",
-                            "Use direct user language in the first canvas/report.",
-                            "Make one workflow feel finished even if the platform is early.",
+                            f"Choose one user segment from: {brief.users}.",
+                            "Remove anything not needed for one repeatable paid pilot.",
+                            f"Frame the first demo around {brief.workflow}.",
                         ],
-                        "Segment-specific task success",
+                        "segment-specific pilot success",
                     ),
                 ],
             },
@@ -755,32 +860,32 @@ def generate_swot(goal: str) -> dict[str, Any]:
                 "prompt": "External forces that could reduce odds of success.",
                 "items": [
                     _swot_item(
-                        "A competitive response, substitute, or switching-cost issue could lower adoption.",
-                        "Threats matter when they change the wedge, pricing, or proof required.",
+                        "Existing tools, manual expert review, and incumbent software may be 'good enough' substitutes.",
+                        brief.adoption_risks[1] if len(brief.adoption_risks) > 1 else "Substitutes matter when they already own trust, workflow access, or procurement.",
                         [
-                            "Name the substitute users already tolerate.",
-                            "Explain why the new workflow is 10x clearer, fresher, faster, or safer.",
-                            "Test whether users switch behavior, not just whether they like the concept.",
+                            "Name the current substitute and what users trust about it.",
+                            f"Prove the algorithm wins on at least one metric: {', '.join(brief.proof_metrics[:3])}.",
+                            "Test whether users switch behavior, not just whether they compliment the concept.",
                         ],
-                        "Substitute-to-product switch rate",
+                        "substitute-to-product switch rate",
                     ),
                     _swot_item(
-                        "Technical, legal, or adoption risk outside direct control could slow the project.",
-                        "External dependencies should have fallback paths in the prototype plan.",
+                        "Security, IP, liability, and integration concerns can block adoption even when the math works.",
+                        brief.adoption_risks[2] if len(brief.adoption_risks) > 2 else brief.constraints,
                         [
-                            "Identify the risk the team cannot directly control.",
-                            "Create a fallback that still proves the product promise.",
-                            "Add a visible confidence score where uncertainty remains.",
+                            "Decide whether the first pilot must support anonymized files, on-prem processing, or strict data deletion.",
+                            "Add an explainability layer that shows what changed and why.",
+                            "Create a fallback path where the product recommends changes without rewriting production files.",
                         ],
-                        "Fallback path readiness",
+                        "security and integration blockers resolved",
                     ),
                     _swot_item(
-                        "Timing risk can close the market window before launch.",
-                        "The first version should prove momentum before the opportunity cools.",
+                        "The market window can close if pilots do not quickly prove value in the real workflow.",
+                        "The first version should create a credible evidence package before competitors, incumbents, or internal tools absorb the opportunity.",
                         [
-                            "Define what must be learned in 30 days.",
-                            "Cut any feature that does not create evidence.",
-                            "Use the report export as a decision artifact for stakeholders.",
+                            f"Define what must be learned in 30 days about {brief.workflow}.",
+                            "Cut any feature that does not create proof for buying, trusting, or integrating the output.",
+                            "Use the report export as a decision artifact for pilot buyers and stakeholders.",
                         ],
                         "30-day evidence package completeness",
                     ),
@@ -811,8 +916,8 @@ def _rice_row(
         "confidence": confidence,
         "effort": effort,
         "rationale": _compact(rationale, 340),
-        "options": [_compact(option, 220) for option in options],
-        "evidence": [_compact(item, 220) for item in evidence],
+        "options": [_compact(option, 340) for option in options],
+        "evidence": [_compact(item, 340) for item in evidence],
     }
     row["score"] = _rice_score(row)
     row["drilldown"] = {
@@ -1070,7 +1175,8 @@ def _feature_rows_from_projects(projects: list[ParsedProject]) -> list[dict[str,
 
 
 def generate_rice(goal: str) -> dict[str, Any]:
-    topic = _topic(goal)
+    brief = extract_domain_brief(goal)
+    topic = brief.subject
     projects = _extract_projects(goal)
     rows = _feature_rows_from_projects(projects) if projects else []
 
@@ -1082,57 +1188,57 @@ def generate_rice(goal: str) -> dict[str, Any]:
     if not rows:
         rows = [
             _rice_row(
-                "Validate highest-risk assumption",
+                f"Benchmark the core {topic} result against the current workflow",
                 800,
+                5,
+                76,
                 3,
-                80,
-                2,
-                "The fastest path is to identify the belief most likely to invalidate the roadmap.",
+                f"The fastest route to credibility is proving that {brief.value_hypothesis}.",
                 [
-                    "Write one falsifiable assumption and run a 5-user evidence sprint.",
-                    "Create a landing-page or concierge workflow before building the full product.",
-                    "Define the result that would stop, pivot, or accelerate the project.",
+                    brief.evidence_prompts[0],
+                    f"Produce a before/after result using the workflow: {brief.workflow}.",
+                    "Package the result as a pilot report with baseline, optimized output, confidence, and caveats.",
                 ],
                 [
-                    "Reach is broad because every roadmap option depends on assumption clarity.",
-                    "Impact is moderate to high because invalid assumptions waste engineering time.",
-                    "Effort is low if the test is scoped to one week.",
+                    f"Reach is high because every commercialization path depends on proof for {brief.users}.",
+                    f"Impact is high if the benchmark moves {brief.proof_metrics[0]}.",
+                    "Confidence is moderate until real-world examples and edge cases are tested.",
                 ],
             ),
             _rice_row(
-                "Ship narrow prototype for the strongest user segment",
+                "Create a narrow pilot workflow for the best early buyer segment",
                 500,
                 4,
                 70,
                 4,
-                "A focused prototype creates better evidence than a broad feature set.",
+                f"A focused prototype creates better evidence than a broad platform because the users are specific: {brief.users}.",
                 [
-                    "Choose one user segment, one urgent job, and one workflow that feels complete.",
-                    "Use generated copy and sample data to make the demo decision-grade.",
-                    "Instrument completion, confusion, and willingness-to-pay signals.",
+                    f"Choose one segment from {brief.users} and one painful job from the workflow.",
+                    "Run the pilot with human review before automation makes production-impacting changes.",
+                    "Capture objection, trust, integration, and willingness-to-pay signals.",
                 ],
                 [
                     "Reach is narrower because the first segment is intentionally focused.",
-                    "Impact is high because it creates tangible adoption evidence.",
+                    "Impact is high because it creates adoption evidence instead of only technical proof.",
                     "Confidence is moderate until user testing starts.",
                 ],
             ),
             _rice_row(
-                "Instrument decision and adoption metrics",
+                "Instrument safety, ROI, and adoption metrics from the first run",
                 1000,
+                4,
+                84,
                 2,
-                90,
-                2,
-                "Measurement should ship with the prototype so every test feeds the Wisdom Graph.",
+                "Measurement should ship with the prototype so the team can prove business value and avoid unsafe recommendations.",
                 [
-                    "Capture route selected, confidence, edits, focus-workspace opens, export actions, and efficacy ratings.",
-                    "Add a post-execution rating that stores whether the framework clarified, decided, acted, or stalled.",
-                    "Use metrics to improve future routing and framework suggestions.",
+                    f"Track {', '.join(brief.proof_metrics[:3])}.",
+                    "Log every rejected, low-confidence, or manually corrected output.",
+                    "Capture whether the pilot buyer would use, pay, or refer after seeing the result.",
                 ],
                 [
-                    "Reach touches every user session.",
-                    "Impact is lower than core product features but compounds learning.",
-                    "Confidence is high because instrumentation is straightforward.",
+                    "Reach touches every pilot and later every production run.",
+                    "Impact is high because it decides whether commercialization is credible.",
+                    "Confidence is high because instrumentation can be added before scaling.",
                 ],
             ),
         ]
@@ -1142,11 +1248,11 @@ def generate_rice(goal: str) -> dict[str, Any]:
     return {
         "type": "score_table",
         "title": "RICE Prioritization Canvas",
-        "subtitle": f"Inferred feature ranking for: {topic}",
+        "subtitle": f"Inferred feature ranking for: {_topic(goal)}",
         "formula": "Reach x Impact x Confidence / Effort",
         "analysis_brief": [
-            f"OmniFrame inferred {len(rows)} buildable initiatives from the supplied idea instead of requiring a pre-written feature list.",
-            "Scores favor first-month usefulness, evidence creation, cold-start risk reduction, and implementation effort.",
+            f"OmniFrame inferred {len(rows)} buildable initiatives for {brief.domain}.",
+            f"Scores favor proof for {brief.users}, especially {', '.join(brief.proof_metrics[:3])}.",
             "Click any initiative to open a focused workspace with generated options you can accept, combine, or edit. Export a PDF when the analysis is ready to share.",
         ],
         "rows": rows,
@@ -1414,6 +1520,161 @@ def _hockey_stick_principles() -> list[TrizPrinciple]:
     ]
 
 
+def _cnc_triz_principles() -> list[TrizPrinciple]:
+    return [
+        TrizPrinciple(
+            10,
+            "Preliminary action",
+            "Move expensive validation before live machining: simulate, backplot, dry-run, and risk-score optimized CNC/G-code before a spindle ever cuts material.",
+            "The contradiction is speed versus safety. A CNC optimization algorithm must reduce cycle time without causing crashes, scrap, tool wear, or tolerance failures.",
+            [
+                _panel(
+                    "Contradiction rewrite",
+                    "Frame the CNC commercialization contradiction in production terms.",
+                    [
+                        "Improve CNC cycle time and programming efficiency without increasing crash risk, scrap, tool wear, or machinist mistrust.",
+                        "Let the algorithm suggest feed/speed, toolpath order, and air-cut reductions while preserving controller/post-processor safety.",
+                        "Increase automation without removing human review from high-risk machining decisions.",
+                    ],
+                    value="Improve CNC cycle time and programming efficiency without increasing crash risk, scrap, tool wear, or machinist mistrust.",
+                ),
+                _panel(
+                    "Inventive move",
+                    "Move proof and safety checks before production use.",
+                    [
+                        "Generate an optimization report first, then require simulation and CAM programmer approval before rewriting production files.",
+                        "Run every optimized file through a controller-aware backplot/simulation gate.",
+                        "Score changes by risk: low-risk air-cut and tool-order improvements can be automated before feed/speed changes.",
+                    ],
+                ),
+                _panel(
+                    "Prototype",
+                    "Build the smallest safe test.",
+                    [
+                        "Use 10 anonymized CNC files and compare baseline cycle time, optimized estimate, simulation pass, and machinist acceptance.",
+                        "Pilot on one machine/controller family before claiming general CNC compatibility.",
+                        "Offer an ROI report instead of a production-ready rewritten file in the first customer test.",
+                    ],
+                ),
+                _panel(
+                    "Failure mode",
+                    "Name what can break trust.",
+                    [
+                        "An optimization that passes math but fails controller-specific behavior can scrap a part or damage a tool.",
+                        "Customers may reject cloud upload if part files are proprietary or defense/aerospace sensitive.",
+                        "A cycle-time win can be meaningless if it worsens surface finish, tolerance, or tool life.",
+                    ],
+                ),
+            ],
+        ),
+        TrizPrinciple(
+            24,
+            "Intermediary",
+            "Introduce a machinist/CAM programmer review layer between the algorithm and production CNC files.",
+            "The product can commercialize faster if it begins as trusted decision support rather than full autonomous file rewriting.",
+            [
+                _panel(
+                    "Intermediary design",
+                    "Choose the trust layer.",
+                    [
+                        "Use a review queue showing original G-code/CAM intent, proposed change, expected savings, and risk reason.",
+                        "Add explainability: why the toolpath order, feed, speed, or retract move changed.",
+                        "Let users approve categories of low-risk changes while locking high-risk changes behind review.",
+                    ],
+                ),
+                _panel(
+                    "Metric",
+                    "Measure whether the intermediary is earning trust.",
+                    [
+                        "Percentage of recommendations accepted by CAM programmers without correction.",
+                        "Number of unsafe recommendations caught before simulation or live machining.",
+                        "Time from CNC file upload to approved optimization report.",
+                    ],
+                ),
+                _panel(
+                    "Failure mode",
+                    "Avoid becoming a slow consulting workflow.",
+                    [
+                        "If every change needs deep expert review, the product may not scale beyond services.",
+                        "If explanations are too technical for owners but too shallow for machinists, neither buyer trusts the product.",
+                        "If approval UX is painful, users may return to existing CAM workflows.",
+                    ],
+                ),
+            ],
+        ),
+        TrizPrinciple(
+            3,
+            "Local quality",
+            "Optimize different CNC file regions differently: air cuts, roughing, finishing, tool changes, retracts, and tolerance-critical moves should not share one risk rule.",
+            "A global optimization may be unsafe. CNC value comes from local improvements that respect machining context.",
+            [
+                _panel(
+                    "Segmentation map",
+                    "Split the CNC file into risk zones.",
+                    [
+                        "Separate air-cut removal, rapid moves, tool change order, roughing feeds, finishing feeds, and tolerance-critical surfaces.",
+                        "Automate low-risk cycle-time wins first; only recommend high-risk geometry/feed changes.",
+                        "Expose which zones were untouched because risk or missing metadata was too high.",
+                    ],
+                ),
+                _panel(
+                    "Prototype",
+                    "Test one local optimization class first.",
+                    [
+                        "Start with air-cut and retract-path reduction because it can reduce time without changing cutting conditions.",
+                        "Benchmark roughing-only optimization separately from finishing passes.",
+                        "Report savings by zone so buyers understand where ROI comes from.",
+                    ],
+                ),
+                _panel(
+                    "Failure mode",
+                    "Watch local optimization side effects.",
+                    [
+                        "Changing tool order can affect setup assumptions or fixture access.",
+                        "Reducing retracts can introduce collision risk if fixtures are not modeled.",
+                        "Optimizing roughing may shift heat, chip evacuation, or tool load in ways the file alone does not reveal.",
+                    ],
+                ),
+            ],
+        ),
+        TrizPrinciple(
+            25,
+            "Self-service",
+            "Let the CNC file, machine profile, material, tool library, and simulation result drive the recommendation rather than forcing the user to describe everything manually.",
+            "Commercialization improves when the product can infer enough context to be useful while clearly asking for missing data.",
+            [
+                _panel(
+                    "Required context",
+                    "Define what the algorithm must know.",
+                    [
+                        "Require machine/controller, material, tool library, tolerance criticality, fixture assumptions, and post-processor where possible.",
+                        "Ask for missing fields only when they change safety or ROI.",
+                        "Show confidence by recommendation, not just one global score.",
+                    ],
+                ),
+                _panel(
+                    "Metric",
+                    "Measure self-service usefulness.",
+                    [
+                        "Percentage of uploaded files that reach a recommendation without support.",
+                        "Number of missing-context prompts per file.",
+                        "Pilot user confidence after reviewing the output.",
+                    ],
+                ),
+                _panel(
+                    "Failure mode",
+                    "Avoid false confidence.",
+                    [
+                        "Inferring missing machine context can create unsafe recommendations.",
+                        "Too many required fields can kill adoption before users see value.",
+                        "A black-box confidence score will not satisfy expert CAM programmers.",
+                    ],
+                ),
+            ],
+        ),
+    ]
+
+
 def _relationship_triz_principles(goal: str) -> list[TrizPrinciple]:
     person = _relationship_name(goal)
     return [
@@ -1641,34 +1902,47 @@ def _relationship_triz_principles(goal: str) -> list[TrizPrinciple]:
 def generate_triz(goal: str) -> dict[str, Any]:
     topic = _topic(goal)
     hockey = "hockey" in goal.lower() and "stick" in goal.lower()
+    cnc = any(term in goal.lower() for term in ["cnc", "g-code", "gcode", "toolpath", "machining"])
     relationship = _is_relationship_goal(goal)
-    principles = _hockey_stick_principles() if hockey else (_relationship_triz_principles(goal) if relationship else TRIZ_STARTERS)
+    principles = _hockey_stick_principles() if hockey else (_cnc_triz_principles() if cnc else (_relationship_triz_principles(goal) if relationship else TRIZ_STARTERS))
     contradiction = {
         "improving": (
             "Reduce hockey-stick mass and swing weight for faster handling and release"
             if hockey
             else (
+                "Reduce CNC cycle time, programming effort, and machine-hour cost with algorithmic optimization"
+                if cnc
+            else (
                 "Make a clear stay-or-breakup decision while preserving dignity, safety, and honest understanding"
                 if relationship
                 else "The desired improvement the user wants to maximize"
+            )
             )
         ),
         "worsening": (
             "Less material can reduce impact durability, torsional stiffness, shot energy transfer, and puck feel"
             if hockey
             else (
+                "Unsafe toolpath changes can increase crash risk, scrap, tool wear, tolerance failures, or machinist mistrust"
+                if cnc
+            else (
                 "Acting too fast can cause regret or harm; delaying too long can deepen resentment and loneliness"
                 if relationship
                 else "The system property that appears to get worse when improving it"
+            )
             )
         ),
         "prompt": (
             "Rewrite these two fields into a crisp material/design contradiction before selecting a principle."
             if hockey
             else (
+                "Rewrite these two fields into a crisp CNC production contradiction before selecting a principle."
+                if cnc
+            else (
                 "Rewrite these two fields into a humane relationship contradiction before selecting a principle."
                 if relationship
                 else "Rewrite these two fields into a crisp contradiction before selecting a principle."
+            )
             )
         ),
     }
@@ -1679,6 +1953,12 @@ def generate_triz(goal: str) -> dict[str, Any]:
             "The TRIZ contradiction is mass versus durability/feel. A good answer should change layup, load-zone reinforcement, balance point, and blade core architecture, then validate with cold impact, torsion, flex, and player-feel tests.",
         ]
         if hockey
+        else [
+            "Research brief: CNC/CAM optimization is valuable only when it safely improves cycle time, tool changes, air cuts, feed/speed strategy, or programming effort without breaking controller-specific assumptions.",
+            "Commercialization constraint: job shops and manufacturing engineers will demand simulation, explainability, file security, controller/post-processor compatibility, and clear ROI before trusting optimized CNC output.",
+            "The TRIZ contradiction is automation versus safety. The best first product may be a reviewed optimization report and simulation-ready recommendation, not fully autonomous production file rewriting.",
+        ]
+        if cnc
         else [
             "OmniFrame detected a relationship decision and adapted TRIZ away from engineering language into structured conflict-resolution moves.",
             "The core contradiction is clarity versus care: you want a true decision about Hollie without making it from contempt, exhaustion, or a single escalated moment.",
@@ -1699,27 +1979,39 @@ def generate_triz(goal: str) -> dict[str, Any]:
         "principles": [_triz_principle_dict(principle) for principle in principles],
         "solution_cards": [
             {
-                "title": "Load-zone composite layup" if hockey else "Separate in time",
+                "title": "Load-zone composite layup" if hockey else ("Simulation-first optimization" if cnc else "Separate in time"),
                 "body": (
                     "Use high stiffness-to-weight carbon where bending loads dominate, but add toughening plies only in heel, lower-shaft, and blade-edge impact zones."
                     if hockey
-                    else "Make the system behave one way during exploration and another way during execution."
+                    else (
+                        "Generate a reviewed optimization report and simulation-ready CNC output before any live machine run."
+                        if cnc
+                        else "Make the system behave one way during exploration and another way during execution."
+                    )
                 ),
             },
             {
-                "title": "Blade core redesign" if hockey else "Separate in structure",
+                "title": "Blade core redesign" if hockey else ("Risk-zoned toolpath changes" if cnc else "Separate in structure"),
                 "body": (
                     "Reduce blade inertia with a tuned foam or ribbed core while preserving perimeter stiffness, puck feel, and water/damage resistance."
                     if hockey
-                    else "Split the fragile or expensive part away from the part that must move quickly."
+                    else (
+                        "Automate low-risk air-cut and ordering improvements before recommending high-risk feed, speed, or geometry changes."
+                        if cnc
+                        else "Split the fragile or expensive part away from the part that must move quickly."
+                    )
                 ),
             },
             {
-                "title": "Test before exotic materials" if hockey else "Introduce a mediation layer",
+                "title": "Test before exotic materials" if hockey else ("Machinist review layer" if cnc else "Introduce a mediation layer"),
                 "body": (
                     "Run coupon and full-stick tests for flex, torsion, cold impact, cyclic shot loading, balance point, and player feel before choosing boron, graphene, or other premium additives."
                     if hockey
-                    else "Use an adapter, queue, policy engine, or human review gate to absorb the conflict."
+                    else (
+                        "Use a CAM programmer approval queue to convert a black-box algorithm into trusted decision support."
+                        if cnc
+                        else "Use an adapter, queue, policy engine, or human review gate to absorb the conflict."
+                    )
                 ),
             },
         ],
@@ -1731,7 +2023,7 @@ def _board_item(title: str, body: str, options: list[str], metric: str = "") -> 
         "title": _compact(title, 120),
         "body": _compact(body, 380),
         "metric": _compact(metric, 160),
-        "options": [_compact(option, 220) for option in options],
+        "options": [_compact(option, 340) for option in options],
         "drilldown": {
             "description": "Use the generated options, then edit the notes into a decision-grade output.",
             "panels": [
@@ -1767,14 +2059,16 @@ def _board_item(title: str, body: str, options: list[str], metric: str = "") -> 
 
 
 def generate_lean_startup(goal: str) -> dict[str, Any]:
-    topic = _topic(goal)
+    brief = extract_domain_brief(goal)
+    topic = brief.subject
     return {
         "type": "framework_board",
         "title": "Lean Startup Experiment Canvas",
-        "subtitle": f"Build-Measure-Learn plan for: {topic}",
+        "subtitle": f"Build-Measure-Learn plan for: {_topic(goal)}",
         "analysis_brief": [
-            "OmniFrame selected Lean Startup because the prompt benefits from fast evidence before full buildout.",
-            "The canvas forces a falsifiable hypothesis, a small MVP, actionable metrics, and explicit pivot/persevere criteria.",
+            f"OmniFrame read the request as {brief.domain}.",
+            f"The key customer hypothesis is whether {brief.users} will pay because {brief.value_hypothesis}.",
+            f"The experiment must prove value inside this workflow: {brief.workflow}.",
             "Hover over each card for guidance, open focused workspaces for deeper notes, and export the experiment plan as PDF.",
         ],
         "lanes": [
@@ -1785,21 +2079,21 @@ def generate_lean_startup(goal: str) -> dict[str, Any]:
                 "items": [
                     _board_item(
                         "Riskiest assumption",
-                        f"The target user has a painful enough job around '{topic}' to change behavior now.",
+                        f"{brief.users} have a painful enough job to try {topic} now.",
                         [
-                            "Write the assumption as a yes/no statement that could fail within 7 days.",
-                            "Cut the MVP until it tests only that assumption.",
-                            "Recruit 5 users who already tried a workaround.",
+                            f"Write the assumption as: '{brief.value_hypothesis}'.",
+                            f"Recruit 5 users who already work through: {brief.workflow}.",
+                            brief.evidence_prompts[1],
                         ],
                         "Assumption pass/fail evidence",
                     ),
                     _board_item(
                         "MVP artifact",
-                        "Use a concierge demo, landing page, clickable prototype, or manually operated workflow before automating.",
+                        f"Use a concierge demo or manually reviewed workflow before automating production use of {topic}.",
                         [
-                            "Build a one-screen promise plus one human-powered fulfillment path.",
-                            "Use sample data or manual analysis if automation is not the riskiest part.",
-                            "Instrument intent, completion, and objection capture from day one.",
+                            f"Build a one-screen promise around {brief.proof_metrics[0]}.",
+                            "Use sample or anonymized customer inputs if production data is sensitive.",
+                            "Instrument trust objections, integration blockers, and willingness to pay from day one.",
                         ],
                         "Time from contact to validated signal",
                     ),
@@ -1812,11 +2106,11 @@ def generate_lean_startup(goal: str) -> dict[str, Any]:
                 "items": [
                     _board_item(
                         "Actionable metric",
-                        "Favor conversion, repeat use, willingness to pay, referral, or time saved over vanity traffic.",
+                        f"Favor concrete proof such as {', '.join(brief.proof_metrics[:3])} over vanity interest.",
                         [
-                            "Define one primary conversion and one disqualifying signal.",
-                            "Log qualitative objections beside every numeric metric.",
-                            "Separate curiosity clicks from actual workflow completion.",
+                            f"Define one primary metric: {brief.proof_metrics[0]}.",
+                            "Log qualitative objections beside every numeric result.",
+                            "Separate curiosity from actual workflow adoption.",
                         ],
                         "Validated conversion rate",
                     ),
@@ -1824,7 +2118,7 @@ def generate_lean_startup(goal: str) -> dict[str, Any]:
                         "Cohort learning",
                         "Compare user segments so the team learns where the product has a wedge.",
                         [
-                            "Tag results by segment, pain intensity, existing workaround, and buying authority.",
+                            f"Tag results by segment within {brief.users}, pain intensity, existing workaround, and buying authority.",
                             "Find the segment where urgency is highest and support burden is lowest.",
                             "Export a cohort summary before deciding what to build next.",
                         ],
@@ -1841,9 +2135,9 @@ def generate_lean_startup(goal: str) -> dict[str, Any]:
                         "Pivot/persevere rule",
                         "Decide in advance what evidence earns more investment.",
                         [
-                            "Persevere only if the target segment completes the core workflow and asks for the next run.",
+                            f"Persevere only if target users see measurable movement in {brief.proof_metrics[0]}.",
                             "Pivot if users like the concept but keep using their old workaround.",
-                            "Stop if the strongest segment will not trade time, money, or data for the result.",
+                            "Stop if the strongest segment will not trade time, money, or sensitive data for the result.",
                         ],
                         "Decision made by deadline",
                     )
@@ -1854,44 +2148,45 @@ def generate_lean_startup(goal: str) -> dict[str, Any]:
 
 
 def generate_okrs(goal: str) -> dict[str, Any]:
-    topic = _topic(goal)
+    brief = extract_domain_brief(goal)
+    topic = brief.subject
     return {
         "type": "okr_board",
         "title": "OKR Alignment Canvas",
-        "subtitle": f"Objectives and measurable outcomes for: {topic}",
+        "subtitle": f"Objectives and measurable outcomes for: {_topic(goal)}",
         "analysis_brief": [
-            "OmniFrame selected OKRs because the goal needs clear outcomes, measurable proof, and team alignment.",
-            "The canvas separates inspiring objectives from numeric key results and the initiatives that should move them.",
+            f"OmniFrame read the request as {brief.domain}.",
+            f"These OKRs turn {topic} into measurable proof for {brief.users}.",
         ],
         "objectives": [
             {
-                "objective": f"Create a decision-ready outcome for {topic}",
+                "objective": f"Prove {topic} creates measurable workflow value",
                 "rationale": "The objective is intentionally qualitative; the key results below make it measurable.",
                 "key_results": [
-                    "KR1: reach 80% stakeholder confidence that the chosen direction is correct.",
-                    "KR2: reduce the top unresolved strategic assumptions to three or fewer.",
-                    "KR3: produce one exported report that names owner, deadline, and next experiment.",
+                    f"KR1: prove {brief.proof_metrics[0]} on at least 5 representative cases.",
+                    f"KR2: secure 3 qualified pilot conversations with {brief.users}.",
+                    "KR3: produce one exported report that names buyer segment, owner, deadline, risks, and next experiment.",
                 ],
                 "items": [
                     _board_item(
                         "Owner alignment",
                         "Make one accountable owner visible for every key result.",
                         [
-                            "Assign one KR owner and one decision reviewer.",
+                            "Assign one owner for benchmark evidence and one owner for buyer discovery.",
                             "Add a weekly confidence check to the Wisdom Graph.",
-                            "Convert vague work into a measurable initiative tied to a KR.",
+                            f"Convert vague work into measurable movement in {brief.proof_metrics[0]}.",
                         ],
                         "KR owner coverage",
                     )
                 ],
             },
             {
-                "objective": "Turn analysis into execution behavior",
+                "objective": "Turn commercialization analysis into pilot behavior",
                 "rationale": "OKRs fail when they become static statements rather than a weekly operating system.",
                 "key_results": [
-                    "KR1: every initiative has a leading metric and a stop condition.",
-                    "KR2: weekly review captures progress, confidence, and blocker status.",
-                    "KR3: at least one initiative is cut or changed based on evidence.",
+                    f"KR1: every initiative maps to one of: {', '.join(brief.proof_metrics[:3])}.",
+                    "KR2: weekly review captures progress, confidence, blocker status, and customer evidence.",
+                    "KR3: at least one initiative is cut or changed based on pilot evidence.",
                 ],
                 "items": [
                     _board_item(
@@ -1911,7 +2206,8 @@ def generate_okrs(goal: str) -> dict[str, Any]:
 
 
 def generate_porters_five_forces(goal: str) -> dict[str, Any]:
-    topic = _topic(goal)
+    brief = extract_domain_brief(goal)
+    topic = brief.subject
     forces = [
         (
             "Competitive rivalry",
@@ -1942,10 +2238,10 @@ def generate_porters_five_forces(goal: str) -> dict[str, Any]:
     return {
         "type": "force_map",
         "title": "Porter's Five Forces Canvas",
-        "subtitle": f"Industry structure read for: {topic}",
+        "subtitle": f"Industry structure read for: {_topic(goal)}",
         "analysis_brief": [
-            "OmniFrame selected Porter's Five Forces because the prompt benefits from industry structure and profitability analysis.",
-            "Each force includes a pressure reading, a strategic implication, and a focused workspace for deeper evidence.",
+            f"OmniFrame read the request as {brief.domain}.",
+            f"The force map evaluates whether {brief.users} can be reached profitably despite {brief.constraints}.",
         ],
         "forces": [
             {
@@ -1959,8 +2255,8 @@ def generate_porters_five_forces(goal: str) -> dict[str, Any]:
                         implication,
                         [
                             f"List the top three facts that make {name.lower()} high, medium, or low for {topic}.",
-                            "Name the current alternative customers would choose if this product did not exist.",
-                            "Choose one move that improves structural advantage rather than only feature quality.",
+                            f"Name the current alternative {brief.users} would choose if this product did not exist.",
+                            f"Choose one move that improves structural advantage around {brief.workflow}.",
                         ],
                         "Force confidence rating",
                     )
@@ -1972,7 +2268,8 @@ def generate_porters_five_forces(goal: str) -> dict[str, Any]:
 
 
 def generate_pestle(goal: str) -> dict[str, Any]:
-    topic = _topic(goal)
+    brief = extract_domain_brief(goal)
+    topic = brief.subject
     factors = [
         ("Political", "Policy, government incentives, procurement behavior, geopolitical pressure."),
         ("Economic", "Budget cycles, inflation, purchasing power, capital availability, cost pressure."),
@@ -1984,10 +2281,10 @@ def generate_pestle(goal: str) -> dict[str, Any]:
     return {
         "type": "framework_board",
         "title": "PESTLE Macro Risk Canvas",
-        "subtitle": f"Macro-environment scan for: {topic}",
+        "subtitle": f"Macro-environment scan for: {_topic(goal)}",
         "analysis_brief": [
-            "OmniFrame selected PESTLE because the goal depends on external forces that can help or block execution.",
-            "Use this canvas to separate macro facts from assumptions, then convert the most important factors into monitoring metrics.",
+            f"OmniFrame read the request as {brief.domain}.",
+            f"Use PESTLE to track macro forces that change buyer urgency, trust, security, and integration risk for {brief.users}.",
         ],
         "lanes": [
             {
@@ -1999,9 +2296,9 @@ def generate_pestle(goal: str) -> dict[str, Any]:
                         f"{name} force for {topic}",
                         description,
                         [
-                            f"Name the most important {name.lower()} factor that could change the plan.",
+                            f"Name the most important {name.lower()} factor that could affect {brief.workflow}.",
                             "Classify the factor as tailwind, headwind, or watch item.",
-                            "Define the earliest signal that would tell the team to adapt.",
+                            f"Define the earliest signal that would tell the team to adapt for {brief.users}.",
                         ],
                         f"{name} watch signal",
                     )
