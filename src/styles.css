@@ -79,3 +79,122 @@ select {
   mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
 }
 
+.depth-card {
+  position: relative;
+  transform-style: preserve-3d;
+  box-shadow:
+    0 18px 46px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition:
+    transform 220ms ease,
+    border-color 220ms ease,
+    background 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.depth-card:hover {
+  transform: translateY(-3px) rotateX(0.8deg);
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.insight-card {
+  transform-style: preserve-3d;
+  transition:
+    transform 220ms ease,
+    border-color 220ms ease,
+    background 220ms ease;
+}
+
+.insight-card:hover {
+  border-color: rgba(34, 197, 94, 0.45);
+  background: #0a1611;
+  transform: translateZ(10px);
+}
+
+.floating-suggestion {
+  box-shadow:
+    0 16px 50px rgba(34, 197, 94, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.report-button {
+  background: linear-gradient(135deg, #22c55e, #80d4ff);
+  box-shadow: 0 18px 40px rgba(34, 197, 94, 0.2);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    filter 180ms ease;
+}
+
+.report-button:hover {
+  transform: translateY(-2px);
+  filter: saturate(1.08);
+  box-shadow: 0 24px 56px rgba(34, 197, 94, 0.28);
+}
+
+.option-preview {
+  max-width: min(100%, 30rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.option-chip {
+  max-width: 100%;
+  border: 1px solid rgba(34, 197, 94, 0.24);
+  background: rgba(34, 197, 94, 0.08);
+  color: rgba(236, 255, 244, 0.9);
+  transition:
+    transform 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.option-chip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(34, 197, 94, 0.65);
+  background: #22c55e;
+  color: #07100d;
+}
+
+.score-meter {
+  background: linear-gradient(90deg, #22c55e, #80d4ff);
+  box-shadow: 0 0 24px rgba(34, 197, 94, 0.35);
+}
+
+.rice-row-grid {
+  display: grid;
+  grid-template-columns: minmax(16rem, 1fr) minmax(18rem, 0.78fr) minmax(8rem, 0.26fr);
+  align-items: stretch;
+}
+
+.focus-stage {
+  position: relative;
+  overflow: hidden;
+}
+
+.focus-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 38px 38px;
+  mask-image: linear-gradient(to bottom, black, transparent 78%);
+}
+
+.focus-stage > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 1024px) {
+  .rice-row-grid {
+    grid-template-columns: 1fr;
+  }
+}
