@@ -1,0 +1,9 @@
+{
+  "remote.autoForwardPorts": false,
+  "remote.otherPortsAttributes": { "onAutoForward": "silent" },
+  "remote.portsAttributes": {
+    "5173": { "onAutoForward": "silent", "label": "OmniFrame frontend (Vite)" },
+    "8000": { "onAutoForward": "silent", "label": "OmniFrame backend (FastAPI)" },
+    "5433": { "onAutoForward": "ignore", "label": "OmniFrame Postgres" }
+  }
+}
