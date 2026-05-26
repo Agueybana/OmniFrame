@@ -1,3 +1,9 @@
+# Default (development) stack: Postgres + backend (uvicorn --reload) + frontend
+# (Vite dev server with hot reload). This is the whole project — run it with:
+#   docker compose up
+# For a prod-like combined image (frontend baked into the backend on :8080) see
+# docker-compose.prod.yml. Deployment to Elastic Beanstalk builds the root
+# Dockerfile, not either compose file.
 services:
   db:
     image: postgres:16-alpine
@@ -15,20 +21,48 @@ services:
       timeout: 5s
       retries: 10
 
-  omniframe:
-    build: .
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
     ports:
-      - "8080:8080"
+      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
-      PORT: "8080"
+      # Override the .env value (which targets localhost:5433) so the backend
+      # reaches Postgres via the compose network. `environment` beats `env_file`.
       DATABASE_URL: "postgresql+psycopg://${POSTGRES_USER:-omniframe}:${POSTGRES_PASSWORD:-omniframe}@db:5432/${POSTGRES_DB:-omniframe}"
-      OMNIFRAME_USE_LLM: "${OMNIFRAME_USE_LLM:-true}"
-      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
-      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
-      OMNIFRAME_REASONING_EFFORT: "${OMNIFRAME_REASONING_EFFORT:-medium}"
+      # Force polling so --reload detects edits across the Windows bind mount.
+      WATCHFILES_FORCE_POLLING: "true"
+    volumes:
+      - ./backend:/app/backend
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    environment:
+      # Vite proxies /api to the backend service (relative API paths in the SPA).
+      VITE_API_PROXY: "http://backend:8000"
+      # Force chokidar polling so HMR fires across the Windows bind mount.
+      VITE_USE_POLLING: "true"
+    volumes:
+      # Mount source only (not the repo root) so the image's node_modules survive.
+      - ./src:/app/src
+      - ./index.html:/app/index.html
+      - ./vite.config.js:/app/vite.config.js
+      - ./tailwind.config.js:/app/tailwind.config.js
+      - ./postcss.config.js:/app/postcss.config.js
 
 volumes:
   omniframe_pgdata:

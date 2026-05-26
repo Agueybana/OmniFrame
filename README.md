@@ -26,22 +26,11 @@ These files are loaded into inference prompts so examples do not have to be hard
 
 ## Local Development
 
-```bash
-cd /Users/gabrielsuarez/OmniFrame
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r backend/requirements.txt
-npm install
-npm run dev
-```
-
-If this Codex desktop environment does not expose a global `npm`, use the local bootstrapper:
+The whole project runs in Docker — Postgres, the FastAPI backend (hot-reloaded by uvicorn), and the Vite dev server with hot reload. No host Node/Python toolchain is required.
 
 ```bash
-cd /Users/gabrielsuarez/OmniFrame
-bash scripts/bootstrap-local-npm.sh
-node .local/npm/bin/npm-cli.js install --cache .local/npm-cache
-node .local/npm/bin/npm-cli.js run dev
+cp .env.example .env      # add OPENAI_API_KEY / GEMINI_API_KEY if you have them
+docker compose up
 ```
 
 Open:
@@ -49,15 +38,16 @@ Open:
 - Frontend: http://localhost:5173
 - Backend health: http://localhost:8000/api/health
 
+Source is bind-mounted, so edits under `src/` and `backend/` reload live, and Alembic migrations run automatically on backend startup. Host port `8000` must be free (it conflicts with any other local stack published on `:8000`).
+
 ## LLM Analysis
 
-The deterministic fallback works without credentials, but production-quality domain analysis expects OpenAI or Gemini credentials. If keys are present, LLM analysis is enabled by default unless `OMNIFRAME_USE_LLM=false`.
+The deterministic fallback works without credentials, but production-quality domain analysis expects OpenAI or Gemini credentials. If keys are present, LLM analysis is enabled by default unless `OMNIFRAME_USE_LLM=false`. Set them in `.env` (read automatically by `docker compose up`):
 
 ```bash
-export OPENAI_API_KEY="..."
-export GEMINI_API_KEY="..."
-export OMNIFRAME_USE_LLM=true
-npm run dev
+OPENAI_API_KEY="..."
+GEMINI_API_KEY="..."
+OMNIFRAME_USE_LLM=true
 ```
 
 If inference fails or credentials are absent, OmniFrame falls back to deterministic routing and schema-preserving canvases.
@@ -65,23 +55,12 @@ If inference fails or credentials are absent, OmniFrame falls back to determinis
 ## Docker
 
 ```bash
-cd /Users/gabrielsuarez/OmniFrame
-docker compose up db          # postgres only for local dev
-docker compose up --build     # app + postgres
-alembic upgrade head          # if migrations are not auto-run on startup
+docker compose up                                     # full dev stack: db + backend (:8000) + frontend (:5173), hot reload
+docker compose up db                                  # Postgres only (host :5433)
+docker compose -f docker-compose.prod.yml up --build  # prod-like combined image on :8080
 ```
 
-Open http://localhost:8080 when running the full stack.
-
-For local development with `npm run dev`, start Postgres separately:
-
-```bash
-docker compose up db
-cp .env.example .env
-npm run dev
-```
-
-The backend reads `DATABASE_URL` from `.env`. Postgres is exposed on host port **5433** (to avoid conflicts with other local Postgres instances on 5432). Anonymous profiles are created on first load and sent via the `X-OmniFrame-Profile-Id` header.
+The dev stack overrides `DATABASE_URL` to reach the `db` service over the Compose network; Postgres is also exposed on host port **5433** (to avoid conflicts with other local Postgres instances on 5432) for direct inspection. Anonymous profiles are created on first load and sent via the `X-OmniFrame-Profile-Id` header.
 
 ## AWS Elastic Beanstalk ZIP
 
