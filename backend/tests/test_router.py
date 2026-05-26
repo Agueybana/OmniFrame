@@ -14,8 +14,6 @@ from backend.app.services.router import deterministic_route, route_goal
         ("Set quarterly objectives and key results for the product team", "okrs"),
         ("Analyze supplier power and substitute threats in this industry", "porters_five_forces"),
         ("Assess legal regulatory and economic risks before global expansion", "pestle"),
-        ("Help me decide whether leaving my partner Alex is the best choice", "swot"),
-        ("Find a girlfriend", "swot"),
         ("commercialize an algorithm for optimizing warehouse routing files.", "lean_startup"),
     ],
 )
@@ -65,3 +63,26 @@ def test_route_goal_uses_llm_domain_brief_for_canvas(monkeypatch):
     assert payload["selection_process"]["domain_brief"]["subject"] == "commercializing a reef-safe sunscreen formulation"
     assert "reef-safe" in rendered
     assert "SPF" in rendered
+
+
+def test_generate_component_result_feeds_prompt_and_details_to_llm(monkeypatch):
+    captured = {}
+
+    async def fake_llm_json(prompt, provider=None, model_id=None, **kwargs):
+        captured["prompt"] = prompt
+        return {"text": "GENERATED COMPONENT BODY"}
+
+    monkeypatch.setattr(router, "_llm_json", fake_llm_json)
+    component = {
+        "id": "strengths",
+        "label": "Strengths",
+        "prompt": "DISTINCTIVE_COMPONENT_PROMPT_INSTRUCTION",
+        "description": "short description",
+    }
+    result = __import__("asyncio").run(
+        router.generate_component_result("swot", component, "PROJECT_DETAIL_CONTEXT", "goal text")
+    )
+
+    assert result == "GENERATED COMPONENT BODY"  # response becomes the component field
+    assert "DISTINCTIVE_COMPONENT_PROMPT_INSTRUCTION" in captured["prompt"]  # prompt drives the LLM
+    assert "PROJECT_DETAIL_CONTEXT" in captured["prompt"]

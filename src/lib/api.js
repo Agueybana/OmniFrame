@@ -41,7 +41,15 @@ async function apiFetch(path, options = {}) {
   const headers = profileHeaders(options.headers ?? {});
   const response = await fetch(path, { ...options, headers });
   if (!response.ok) {
-    throw new Error(`Request failed: ${path}`);
+    const error = new Error(`Request failed: ${path}`);
+    error.status = response.status;
+    try {
+      const body = await response.clone().json();
+      error.detail = body?.detail;
+    } catch {
+      // response body was not JSON
+    }
+    throw error;
   }
   if (response.status === 204) {
     return null;
@@ -140,6 +148,10 @@ export async function createProjectForGoal(goal, frameworkId = null) {
   });
 }
 
+export async function fetchProject(projectId) {
+  return apiFetch(`/api/projects/${projectId}`);
+}
+
 export async function updateProject(projectId, payload) {
   return apiFetch(`/api/projects/${projectId}`, {
     method: "PATCH",
@@ -170,5 +182,49 @@ export async function saveElementScore(payload) {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
+  });
+}
+
+export async function saveProjectDetails(details) {
+  const projectId = requireSessionProjectId();
+  return updateProject(projectId, { details });
+}
+
+export async function chatProjectDetails(instruction) {
+  const projectId = requireSessionProjectId();
+  const modelProvider = localStorage.getItem("omniframe_model_provider") || "openai";
+  const modelId = localStorage.getItem("omniframe_model_id") || "gpt-5.1";
+  return apiFetch(`/api/projects/${projectId}/details/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ instruction, model_provider: modelProvider, model_id: modelId })
+  });
+}
+
+export async function importProjectDetails(documentText, filename = null) {
+  const projectId = requireSessionProjectId();
+  const modelProvider = localStorage.getItem("omniframe_model_provider") || "openai";
+  const modelId = localStorage.getItem("omniframe_model_id") || "gpt-5.1";
+  return apiFetch(`/api/projects/${projectId}/details/import`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ document: documentText, filename, model_provider: modelProvider, model_id: modelId })
+  });
+}
+
+export async function fetchComponentResults(frameworkId) {
+  const projectId = requireSessionProjectId();
+  const query = new URLSearchParams({ framework_id: frameworkId }).toString();
+  return apiFetch(`/api/projects/${projectId}/component-results?${query}`);
+}
+
+export async function generateComponentResult(frameworkId, componentId, { regenerate = false } = {}) {
+  const projectId = requireSessionProjectId();
+  const modelProvider = localStorage.getItem("omniframe_model_provider") || "openai";
+  const modelId = localStorage.getItem("omniframe_model_id") || "gpt-5.1";
+  return apiFetch(`/api/projects/${projectId}/components/${encodeURIComponent(componentId)}/result`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ framework_id: frameworkId, regenerate, model_provider: modelProvider, model_id: modelId })
   });
 }

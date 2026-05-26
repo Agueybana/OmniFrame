@@ -10,12 +10,18 @@ def test_health_endpoint():
     assert response.json()["status"] == "ok"
 
 
-def test_framework_catalog_marks_three_live_routes():
+def test_framework_catalog_marks_all_frameworks_selectable():
     client = TestClient(app)
     response = client.get("/api/frameworks")
     assert response.status_code == 200
-    live = [item["id"] for item in response.json() if item["active"]]
-    assert live == ["swot", "lean_startup", "okrs", "porters_five_forces", "pestle", "rice", "triz"]
+    catalog = response.json()
+    # The full library is now user-selectable: the auto-routed set uses bespoke
+    # generators, every other framework falls back to catalog-driven generation.
+    assert catalog and all(item["active"] for item in catalog)
+    ids = {item["id"] for item in catalog}
+    assert {"swot", "lean_startup", "okrs", "porters_five_forces", "pestle", "rice", "triz"} <= ids
+    # Every framework declares a render shape consumed by generate_from_catalog.
+    assert all(item.get("canvas_type") for item in catalog)
 
 
 def test_model_options_endpoint():
@@ -44,20 +50,20 @@ def test_option_refresh_keeps_metric_domain(monkeypatch):
     response = client.post(
         "/api/options/refresh",
         json={
-            "goal": "Find a girlfriend in North Carolina around ages 33-39 who wants to have a child.",
+            "goal": "Decide whether our team should enter the Latin American market this year.",
             "framework_id": "swot",
-            "focus_title": "Weaknesses: A vague desire to find a girlfriend can create mismatched dating choices.",
+            "focus_title": "Weaknesses: We may not pay enough attention to local competitors before entering.",
             "panel_title": "Watch metric",
             "panel_kind": "metric",
             "panel_prompt": "Select the metric that should prove this insight mattered.",
-            "existing_options": ["Use specific examples without sarcasm."],
+            "existing_options": ["Ship the redesigned mascot animation."],
         },
     )
 
     assert response.status_code == 200
     options = " ".join(response.json()["option_sets"][0]).lower()
     assert "evidence" in options or "confidence" in options
-    assert "sarcasm" not in options
+    assert "mascot" not in options
 
 
 def test_option_refresh_round_rotates_fallback_sets(monkeypatch):

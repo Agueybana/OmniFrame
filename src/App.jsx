@@ -5,11 +5,15 @@ import CanvasWorkspace from "./components/CanvasWorkspace";
 import EfficacyLoop from "./components/EfficacyLoop";
 import FrameworkGalaxy from "./components/FrameworkGalaxy";
 import FrameworkLibrary from "./components/FrameworkLibrary";
+import ProjectPanel from "./components/ProjectPanel";
 import {
+  chatProjectDetails,
   clearProjectId,
   fetchFrameworks,
   fetchModelOptions,
+  fetchProject,
   getProjectId,
+  importProjectDetails,
   persistSessionProject,
   routeGoal,
   upsertProfile
@@ -19,13 +23,15 @@ const STARTER_GOAL =
   "Prioritize our next AI product features while balancing user adoption, engineering effort, and demo impact.";
 
 export default function App() {
-  const [goal, setGoal] = useState(STARTER_GOAL);
+  const [goal, setGoal] = useState("");
   const [frameworks, setFrameworks] = useState([]);
   const [modelOptions, setModelOptions] = useState(null);
   const [selectedProvider, setSelectedProvider] = useState(() => localStorage.getItem("omniframe_model_provider") || "openai");
   const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem("omniframe_model_id") || "gpt-5.1");
   const [route, setRoute] = useState(null);
   const [sessionProjectId, setSessionProjectId] = useState(() => getProjectId());
+  const [projectDetails, setProjectDetails] = useState("");
+  const [detailsVersion, setDetailsVersion] = useState(0);
   const [pendingRoute, setPendingRoute] = useState(null);
   const [showFrameworkChooser, setShowFrameworkChooser] = useState(false);
   const [status, setStatus] = useState("idle");
@@ -39,6 +45,19 @@ export default function App() {
     upsertProfile().catch(() => {
       // Profile persistence is optional when the database is unavailable.
     });
+    const projectId = getProjectId();
+    if (projectId) {
+      fetchProject(projectId)
+        .then((project) => {
+          setGoal(project.goal ?? "");
+          setProjectDetails(project.details ?? "");
+          setSessionProjectId(project.id);
+        })
+        .catch(() => {
+          clearProjectId();
+          setSessionProjectId(null);
+        });
+    }
     fetchFrameworks()
       .then(setFrameworks)
       .catch((err) => setError(err.message));
@@ -78,6 +97,11 @@ export default function App() {
     if (routingRef.current) return;
     routingRef.current = true;
     const currentGoal = goalInputRef.current?.value?.trim() || goal.trim();
+    if (!currentGoal) {
+      setError("Enter a goal before generating a canvas.");
+      routingRef.current = false;
+      return;
+    }
     setGoal(currentGoal);
     setStatus("routing");
     setError("");
@@ -104,6 +128,8 @@ export default function App() {
     try {
       const project = await persistSessionProject(currentGoal, result.framework_id);
       setSessionProjectId(project.id);
+      setProjectDetails(project.details ?? "");
+      setDetailsVersion(0);
     } catch {
       // Project persistence is optional when the database is unavailable.
     }
@@ -139,6 +165,20 @@ export default function App() {
   function handleClearSession() {
     clearProjectId();
     window.location.assign("/");
+  }
+
+  async function handleDetailChat(instruction) {
+    const result = await chatProjectDetails(instruction);
+    setProjectDetails(result.details ?? "");
+    setDetailsVersion((version) => version + 1);
+    return result.summary;
+  }
+
+  async function handleDetailImport(documentText, filename) {
+    const result = await importProjectDetails(documentText, filename);
+    setProjectDetails(result.details ?? "");
+    setDetailsVersion((version) => version + 1);
+    return result.summary;
   }
 
   routeActionRef.current = handleRoute;
@@ -189,26 +229,35 @@ export default function App() {
           </header>
 
           <div className="grid flex-1 items-center gap-8 py-16 lg:grid-cols-[1.02fr_0.98fr]">
-            <div className="max-w-3xl">
-              <div className="animate-step inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 py-2 text-sm text-white/72" style={{ animationDelay: "0.3s" }}>
-                <Sparkles size={16} className="text-moss" />
-                7 active routes now, 50-framework library ready
-              </div>
-              <h1 className="animate-step mt-6 max-w-4xl text-5xl font-semibold leading-[1.02] tracking-normal text-white sm:text-6xl lg:text-7xl" style={{ animationDelay: "0.55s" }}>
-                CAD for thought, routed by an agentic strategy engine.
-              </h1>
-              <p className="animate-step mt-6 max-w-2xl text-base leading-7 text-white/68 sm:text-lg" style={{ animationDelay: "0.8s" }}>
-                Enter a business or engineering goal. OmniFrame recommends the best framework first, then lets you accept it or choose any live route yourself.
-              </p>
+            {sessionProjectId ? (
+              <ProjectPanel goal={goal} details={projectDetails} onChat={handleDetailChat} onImport={handleDetailImport} />
+            ) : (
+              <div className="max-w-3xl">
+                <div className="animate-step inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 py-2 text-sm text-white/72" style={{ animationDelay: "0.3s" }}>
+                  <Sparkles size={16} className="text-moss" />
+                  7 smart routes now, full {frameworks.length}-framework library selectable
+                </div>
+                <h1 className="animate-step mt-6 max-w-4xl text-5xl font-semibold leading-[1.02] tracking-normal text-white sm:text-6xl lg:text-7xl" style={{ animationDelay: "0.55s" }}>
+                  CAD for thought, routed by an agentic strategy engine.
+                </h1>
+                <p className="animate-step mt-6 max-w-2xl text-base leading-7 text-white/68 sm:text-lg" style={{ animationDelay: "0.8s" }}>
+                  Enter a business or engineering goal. OmniFrame recommends the best framework first, then lets you accept it or choose any live route yourself.
+                </p>
 
-              <div className="animate-step mt-8 flex flex-wrap gap-3" style={{ animationDelay: "1s" }}>
-                {activeFrameworks.map((framework) => (
-                  <span key={framework.id} className="rounded-lg border border-white/10 bg-white/[0.06] px-3 py-2 text-sm text-white/76">
-                    {framework.name}
-                  </span>
-                ))}
+                <div className="animate-step mt-8 flex flex-wrap gap-3" style={{ animationDelay: "1s" }}>
+                  {activeFrameworks.slice(0, 12).map((framework) => (
+                    <span key={framework.id} className="rounded-lg border border-white/10 bg-white/[0.06] px-3 py-2 text-sm text-white/76">
+                      {framework.name}
+                    </span>
+                  ))}
+                  {activeFrameworks.length > 12 && (
+                    <span className="rounded-lg border border-white/10 bg-white/[0.06] px-3 py-2 text-sm text-white/56">
+                      +{activeFrameworks.length - 12} more
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             <form onSubmit={handleRoute} className="animate-scale glass-panel rounded-lg p-5 shadow-glow" style={{ animationDelay: "0.7s" }}>
               <div className="flex items-center justify-between gap-4">
@@ -234,7 +283,7 @@ export default function App() {
                   }
                 }}
                 className="mt-2 min-h-44 w-full resize-y rounded-lg border border-white/10 bg-[#07100d] px-4 py-3 text-base leading-7 text-white caret-moss outline-none transition placeholder:text-white/32 selection:bg-moss selection:text-ink focus:border-moss focus:ring-2 focus:ring-moss/20"
-                placeholder="Example: Decide which AI feature to build first for our hackathon demo."
+                placeholder={STARTER_GOAL}
               />
 
               {sessionProjectId && (
@@ -306,7 +355,7 @@ export default function App() {
       </section>
 
       <div ref={workspaceRef}>
-        <CanvasWorkspace route={route} projectId={sessionProjectId} />
+        <CanvasWorkspace route={route} projectId={sessionProjectId} detailsVersion={detailsVersion} />
       </div>
       <FrameworkLibrary frameworks={frameworks} />
       <EfficacyLoop goal={goal} route={route} />

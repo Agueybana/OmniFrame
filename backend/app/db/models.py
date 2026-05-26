@@ -38,6 +38,7 @@ class Project(Base):
     )
     title: Mapped[str] = mapped_column(Text, nullable=False)
     goal: Mapped[str] = mapped_column(Text, nullable=False)
+    details: Mapped[str | None] = mapped_column(Text, nullable=True)
     framework_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
     input_fingerprint: Mapped[str | None] = mapped_column(String(128), nullable=True)

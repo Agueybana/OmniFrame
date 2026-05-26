@@ -2,30 +2,31 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from .services.frameworks import selectable_framework_ids
+
+
+def _validate_framework_id(value: str | None) -> str | None:
+    if value is None:
+        return value
+    if value not in selectable_framework_ids():
+        raise ValueError(f"Unknown framework_id: {value}")
+    return value
 
 
 class GoalRequest(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
     goal: str = Field(..., min_length=8, max_length=20000)
-    framework_id: (
-        Literal[
-            "swot",
-            "lean_startup",
-            "okrs",
-            "porters_five_forces",
-            "pestle",
-            "rice",
-            "triz",
-        ]
-        | None
-    ) = None
+    framework_id: str | None = Field(default=None, max_length=64)
     model_provider: Literal["openai", "google"] | None = None
     model_id: str | None = Field(default=None, max_length=120)
 
+    _check_framework_id = field_validator("framework_id")(_validate_framework_id)
+
 
 class RouteResponse(BaseModel):
-    framework_id: Literal["swot", "lean_startup", "okrs", "porters_five_forces", "pestle", "rice", "triz"]
+    framework_id: str
     framework_name: str
     confidence: float = Field(..., ge=0, le=1)
     rationale: str
@@ -50,7 +51,7 @@ class FeedbackResponse(BaseModel):
 class OptionRefreshRequest(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
     goal: str = Field(..., min_length=1, max_length=20000)
-    framework_id: Literal["swot", "lean_startup", "okrs", "porters_five_forces", "pestle", "rice", "triz"]
+    framework_id: str = Field(..., min_length=1, max_length=64)
     focus_title: str = Field(..., min_length=1, max_length=500)
     focus_description: str | None = Field(default=None, max_length=1200)
     panel_title: str = Field(..., min_length=1, max_length=160)
@@ -61,6 +62,8 @@ class OptionRefreshRequest(BaseModel):
     refresh_round: int = Field(default=0, ge=0, le=1000)
     model_provider: Literal["openai", "google"] | None = None
     model_id: str | None = Field(default=None, max_length=120)
+
+    _check_framework_id = field_validator("framework_id")(_validate_framework_id)
 
 
 class OptionRefreshResponse(BaseModel):

@@ -2,6 +2,7 @@
   {
     "rank": 1,
     "id": "swot",
+    "canvas_type": "quadrant",
     "name": "SWOT",
     "core_components": "Strengths, Weaknesses, Opportunities, Threats",
     "selection_lens": "Use when a team needs a fast, high-level audit of internal capabilities versus external market realities before a strategic move.",
@@ -64,6 +65,7 @@
   {
     "rank": 2,
     "id": "lean_startup",
+    "canvas_type": "framework_board",
     "name": "Lean Startup Methodology",
     "core_components": "Build-Measure-Learn, MVP, actionable metrics",
     "selection_lens": "Use when capital is tight, the product is unproven, and rapid hypothesis validation matters more than full-scale buildout.",
@@ -114,6 +116,7 @@
   {
     "rank": 3,
     "id": "okrs",
+    "canvas_type": "okr_board",
     "name": "OKRs",
     "core_components": "Objectives and Key Results",
     "selection_lens": "Use when a large vision needs to be translated into measurable quarterly targets across teams.",
@@ -152,6 +155,7 @@
   {
     "rank": 4,
     "id": "porters_five_forces",
+    "canvas_type": "force_map",
     "name": "Porter's Five Forces",
     "core_components": "Rivalry, new entrants, substitutes, buyer power, supplier power",
     "selection_lens": "Use to evaluate industry structure, profitability, and competitive intensity before entering or investing.",
@@ -226,6 +230,7 @@
   {
     "rank": 5,
     "id": "pestle",
+    "canvas_type": "framework_board",
     "name": "PESTLE",
     "core_components": "Political, Economic, Social, Technological, Legal, Environmental",
     "selection_lens": "Use for global expansion or products exposed to regulation, macroeconomics, or environmental shifts.",
@@ -312,6 +317,7 @@
   {
     "rank": 6,
     "id": "balanced_scorecard",
+    "canvas_type": "quadrant",
     "name": "Balanced Scorecard",
     "core_components": "Financial, Customer, Internal Process, Learning and Growth",
     "selection_lens": "Use when established organizations need to balance financial outcomes with long-term capability and employee development.",
@@ -374,6 +380,7 @@
   {
     "rank": 7,
     "id": "jtbd",
+    "canvas_type": "framework_board",
     "name": "Jobs To Be Done",
     "core_components": "User needs, core tasks, hired/fired products",
     "selection_lens": "Use when product growth has stalled and the team needs to identify the actual job users are hiring a product to do.",
@@ -424,6 +431,7 @@
   {
     "rank": 8,
     "id": "tam_sam_som",
+    "canvas_type": "framework_board",
     "name": "TAM / SAM / SOM",
     "core_components": "Total, Serviceable, Obtainable Addressable Market",
     "selection_lens": "Use when pitching, budgeting, or proving the market ceiling and plausible capture size of a product.",
@@ -474,6 +482,7 @@
   {
     "rank": 9,
     "id": "moscow",
+    "canvas_type": "framework_board",
     "name": "MoSCoW Method",
     "core_components": "Must-have, Should-have, Could-have, Won't-have",
     "selection_lens": "Use when scope creep is threatening delivery and hard prioritization is required before launch.",
@@ -536,6 +545,7 @@
   {
     "rank": 10,
     "id": "blue_ocean",
+    "canvas_type": "framework_board",
     "name": "Blue Ocean Strategy",
     "core_components": "Strategy canvas, Eliminate-Reduce-Raise-Create",
     "selection_lens": "Use when a market is crowded and the goal is to create uncontested demand instead of competing on price.",
@@ -574,6 +584,7 @@
   {
     "rank": 11,
     "id": "aarrr",
+    "canvas_type": "framework_board",
     "name": "AARRR Pirate Metrics",
     "core_components": "Acquisition, Activation, Retention, Referral, Revenue",
     "selection_lens": "Use when diagnosing where users abandon a software journey or growth funnel.",
@@ -586,13 +597,12 @@
       {
         "id": "acquisition",
         "label": "Acquisition",
-        "description": "In AARRR Pirate Metrics, Acquisition is a core lens for examining the problem through that framework's structure.",
-        "prompt": "Analyze acquisition in direct relation to the user's goal. Use when diagnosing where users abandon a software journey or growth funnel.",
+        "description": "In AARRR Pirate Metrics, Acquisition measures how new users discover your product or service. This includes the costs of acquisition and the effectiveness of each channel in terms of retention and revenue for customers brought in through that channel.",
+        "prompt": "You are analyzing the **Acquisition** stage of the AARRR Pirate Metrics framework.\n\nAssume that:\n\n* Market segments may already be defined in the surrounding context.\n* Product or service information may already exist in the surrounding context.\n* Sales, marketing, partnerships, communities, referrals, marketplaces, events, SEO, outbound efforts, or integrations may be mentioned implicitly rather than explicitly.\n\nYour task is to identify:\n\n1. Likely acquisition channels\n2. The market segments associated with those channels\n3. Estimated acquisition volume\n4. Estimated activation percentage\n5. Confidence level for each estimate\n6. Gaps or missing information that prevent reliable estimation\n\nDefinitions:\n\n* Acquisition Volume = estimated number of users/leads entering through a channel during a reasonable analysis period.\n* Activation % = estimated percentage of acquired users who successfully reach the first meaningful product outcome or activation milestone.\n\nImportant rules:\n\n* Prefer evidence from the provided context over generic startup assumptions.\n* Distinguish clearly between:\n\n  * Explicitly stated channels\n  * Reasonably inferred channels\n  * Speculative possibilities\n* Do not fabricate precision.\n* If insufficient information exists, say so directly.\n* If channel-market fit evidence is weak, lower confidence accordingly.\n* Activation estimates should reflect channel quality, intent alignment, and likely user expectations.\n* Different market segments may have very different activation rates even within the same channel.\n\nFor each identified acquisition channel, provide:\n\n* Channel Name\n* Associated Market Segment(s)\n* Evidence Basis (Explicit / Inferred / Speculative)\n* Estimated Volume\n* Estimated Activation %\n* Confidence (High / Medium / Low)\n* Brief Rationale\n\nOutput in this format:\n\n[\n{\n\"channel\": \"\",\n\"market_segments\": [],\n\"evidence_basis\": \"\",\n\"estimated_volume\": \"\",\n\"estimated_activation_percent\": \"\",\n\"confidence\": \"\",\n\"rationale\": \"\"\n}\n]\n\nAfter the channel analysis, include a section titled:\n\"Missing Acquisition Information\"\n\nIn that section:\n\n* Identify what information is missing\n* Explain why it matters\n* Suggest specific additions the user should provide\n\nExamples of useful missing information:\n\n* Which channels are actively used today\n* Paid vs organic acquisition mix\n* Partnerships or referral sources\n* Event/community participation\n* SEO/content strategy\n* Sales motion (self-serve, outbound, enterprise, channel partner, etc.)\n* Existing customer counts by segment\n* Conversion funnel metrics\n* CAC estimates\n* Geographic targeting\n* Messaging differences between segments\n\nIf little or no acquisition information can be inferred from the context, state that clearly and encourage the user to provide:\n\n* market-segment-to-channel mappings\n* historical lead/customer data\n* conversion metrics\n* marketing or sales activities currently being attempted",
         "questions": [
-          "What does acquisition look like in this specific situation?",
-          "Which evidence would confirm or challenge our read on acquisition?",
-          "How does acquisition interact with other parts of AARRR Pirate Metrics?",
-          "What decision or next action follows from what we learn about acquisition?"
+          "How do users find you?",
+          "Which channels are most effective for acquiring new users?",
+          "What is the cost per acquisition for each channel?"
         ]
       },
       {
@@ -648,6 +658,7 @@
   {
     "rank": 12,
     "id": "rice",
+    "canvas_type": "score_table",
     "name": "RICE Scoring",
     "core_components": "Reach, Impact, Confidence, Effort",
     "selection_lens": "Use when a product backlog is large and the team needs a cold mathematical way to rank features.",
@@ -710,6 +721,7 @@
   {
     "rank": 13,
     "id": "double_diamond",
+    "canvas_type": "framework_board",
     "name": "Double Diamond",
     "core_components": "Discover, Define, Develop, Deliver",
     "selection_lens": "Use when a team is jumping to solutions too quickly and needs divergent problem exploration before convergence.",
@@ -772,6 +784,7 @@
   {
     "rank": 14,
     "id": "stage_gate",
+    "canvas_type": "framework_board",
     "name": "Stage-Gate Process",
     "core_components": "Execution stages alternating with strategic gates",
     "selection_lens": "Use for expensive hardware, manufacturing, or pharma work where mistakes are costly and sign-off gates are required.",
@@ -870,6 +883,7 @@
   {
     "rank": 15,
     "id": "ooda_loop",
+    "canvas_type": "framework_board",
     "name": "OODA Loop",
     "core_components": "Observe, Orient, Decide, Act",
     "selection_lens": "Use when speed and adaptive feedback loops are the main advantage over a slower competitor.",
@@ -932,6 +946,7 @@
   {
     "rank": 16,
     "id": "innovators_dilemma",
+    "canvas_type": "framework_board",
     "name": "Innovator's Dilemma",
     "core_components": "Sustaining versus disruptive technology, value networks",
     "selection_lens": "Use when an incumbent must judge whether low-end disruption will eventually threaten the core business.",
@@ -982,6 +997,7 @@
   {
     "rank": 17,
     "id": "v2mom",
+    "canvas_type": "framework_board",
     "name": "V2MOM",
     "core_components": "Vision, Values, Methods, Obstacles, Measures",
     "selection_lens": "Use when a project or team needs a one-page alignment tool connecting daily work to core values.",
@@ -1056,6 +1072,7 @@
   {
     "rank": 18,
     "id": "first_principles",
+    "canvas_type": "framework_board",
     "name": "First Principles Thinking",
     "core_components": "Deconstruct to undeniable truths, build upward",
     "selection_lens": "Use for seemingly impossible engineering or cost problems where assumptions must be stripped away.",
@@ -1094,6 +1111,7 @@
   {
     "rank": 19,
     "id": "ice",
+    "canvas_type": "framework_board",
     "name": "ICE Scoring",
     "core_components": "Impact, Confidence, Ease",
     "selection_lens": "Use when a small team needs a lightweight prioritization model without complex data gathering.",
@@ -1144,6 +1162,7 @@
   {
     "rank": 20,
     "id": "heart",
+    "canvas_type": "framework_board",
     "name": "HEART Framework",
     "core_components": "Happiness, Engagement, Adoption, Retention, Task Success",
     "selection_lens": "Use when revenue metrics exist but user experience and satisfaction need standardized measurement.",
@@ -1218,6 +1237,7 @@
   {
     "rank": 21,
     "id": "mckinsey_7s",
+    "canvas_type": "framework_board",
     "name": "McKinsey 7S Framework",
     "core_components": "Strategy, Structure, Systems, Shared Values, Style, Staff, Skills",
     "selection_lens": "Use during mergers or restructuring to test alignment between hard systems and soft human factors.",
@@ -1316,6 +1336,7 @@
   {
     "rank": 22,
     "id": "vuca",
+    "canvas_type": "framework_board",
     "name": "VUCA",
     "core_components": "Volatility, Uncertainty, Complexity, Ambiguity",
     "selection_lens": "Use when long-term planning is unreliable and the team needs resilience instead of prediction.",
@@ -1378,6 +1399,7 @@
   {
     "rank": 23,
     "id": "theory_of_constraints",
+    "canvas_type": "framework_board",
     "name": "Theory of Constraints",
     "core_components": "Identify, Exploit, Subordinate, Elevate, Repeat",
     "selection_lens": "Use when a production line, software pipeline, or sales funnel is blocked by one narrow bottleneck.",
@@ -1452,6 +1474,7 @@
   {
     "rank": 24,
     "id": "tows",
+    "canvas_type": "quadrant",
     "name": "TOWS Matrix",
     "core_components": "Crossing Threats, Opportunities, Weaknesses, Strengths",
     "selection_lens": "Use after SWOT when the team needs actionable strategies from combined internal and external factors.",
@@ -1514,6 +1537,7 @@
   {
     "rank": 25,
     "id": "hoshin_kanri",
+    "canvas_type": "framework_board",
     "name": "Hoshin Kanri / X-Matrix",
     "core_components": "Policy deployment, four-quadrant strategic alignment",
     "selection_lens": "Use when an enterprise must connect long-term strategy to daily operational metrics.",
@@ -1576,6 +1600,7 @@
   {
     "rank": 26,
     "id": "vrio",
+    "canvas_type": "framework_board",
     "name": "VRIO Framework",
     "core_components": "Value, Rarity, Imitability, Organization",
     "selection_lens": "Use to assess whether a feature, patent, dataset, or capability creates sustainable advantage.",
@@ -1638,6 +1663,7 @@
   {
     "rank": 27,
     "id": "cynefin",
+    "canvas_type": "framework_board",
     "name": "Cynefin Framework",
     "core_components": "Clear, Complicated, Complex, Chaotic, Confusion",
     "selection_lens": "Use when leaders need to classify the nature of a problem before choosing a management approach.",
@@ -1712,6 +1738,7 @@
   {
     "rank": 28,
     "id": "wardley_mapping",
+    "canvas_type": "framework_board",
     "name": "Wardley Mapping",
     "core_components": "Value chain versus evolutionary stage matrix",
     "selection_lens": "Use when deciding what to build, buy, outsource, or treat as utility.",
@@ -1750,6 +1777,7 @@
   {
     "rank": 29,
     "id": "triz",
+    "canvas_type": "contradiction",
     "name": "TRIZ",
     "core_components": "40 Inventive Principles, contradiction matrix",
     "selection_lens": "Use for engineering paradoxes where improving one property appears to worsen another.",
@@ -1788,6 +1816,7 @@
   {
     "rank": 30,
     "id": "six_thinking_hats",
+    "canvas_type": "framework_board",
     "name": "Six Thinking Hats",
     "core_components": "White, Red, Black, Yellow, Green, Blue cognitive modes",
     "selection_lens": "Use when teams are stuck in groupthink or emotional argument and need structured perspective switching.",
@@ -1874,6 +1903,7 @@
   {
     "rank": 31,
     "id": "epic",
+    "canvas_type": "framework_board",
     "name": "EPIC",
     "core_components": "Essential, Purposeful, Impactful, Conditional",
     "selection_lens": "Use to break a large software feature into executable chunks that deliver real value.",
@@ -1936,6 +1966,7 @@
   {
     "rank": 32,
     "id": "odi",
+    "canvas_type": "framework_board",
     "name": "Outcome-Driven Innovation",
     "core_components": "Customer metrics, opportunity algorithm",
     "selection_lens": "Use when rigorous customer outcome math is needed to identify high-importance, low-satisfaction opportunities.",
@@ -1974,6 +2005,7 @@
   {
     "rank": 33,
     "id": "ogsm",
+    "canvas_type": "framework_board",
     "name": "OGSM",
     "core_components": "Objective, Goals, Strategies, Measures",
     "selection_lens": "Use when top-down corporate deployment must connect high-level objectives to numerical measures.",
@@ -2036,6 +2068,7 @@
   {
     "rank": 34,
     "id": "pie",
+    "canvas_type": "framework_board",
     "name": "PIE Framework",
     "core_components": "Potential, Importance, Ease",
     "selection_lens": "Use when marketing or optimization teams need to prioritize many A/B tests quickly.",
@@ -2086,6 +2119,7 @@
   {
     "rank": 35,
     "id": "pace",
+    "canvas_type": "framework_board",
     "name": "PACE",
     "core_components": "Primary, Alternate, Contingency, Emergency",
     "selection_lens": "Use when system failure has catastrophic consequences and redundant fallback paths must be planned.",
@@ -2148,6 +2182,7 @@
   {
     "rank": 36,
     "id": "commanders_intent",
+    "canvas_type": "framework_board",
     "name": "Commander's Intent",
     "core_components": "Purpose, Method, End State",
     "selection_lens": "Use when decentralized teams need freedom to adapt tactics while preserving the end state.",
@@ -2198,6 +2233,7 @@
   {
     "rank": 37,
     "id": "ends_ways_means",
+    "canvas_type": "framework_board",
     "name": "Ends, Ways, Means",
     "core_components": "Strategy equals Ends plus Ways plus Means",
     "selection_lens": "Use when a project may be failing because goals, execution methods, and resources are misaligned.",
@@ -2248,6 +2284,7 @@
   {
     "rank": 38,
     "id": "most",
+    "canvas_type": "framework_board",
     "name": "MOST Analysis",
     "core_components": "Mission, Objectives, Strategies, Tactics",
     "selection_lens": "Use to verify whether daily tactics connect upward to the company's mission.",
@@ -2310,6 +2347,7 @@
   {
     "rank": 39,
     "id": "nabc",
+    "canvas_type": "framework_board",
     "name": "NABC",
     "core_components": "Need, Approach, Benefits, Competition",
     "selection_lens": "Use when technical teams need to pitch a project clearly to non-technical executives.",
@@ -2372,6 +2410,7 @@
   {
     "rank": 40,
     "id": "soar",
+    "canvas_type": "quadrant",
     "name": "SOAR Analysis",
     "core_components": "Strengths, Opportunities, Aspirations, Results",
     "selection_lens": "Use when morale is low or SWOT is too negative and the team needs an appreciative future-state frame.",
@@ -2434,6 +2473,7 @@
   {
     "rank": 41,
     "id": "mdmp",
+    "canvas_type": "framework_board",
     "name": "Military Decision-Making Process",
     "core_components": "Seven-step planning process",
     "selection_lens": "Use for complex, high-stakes operations requiring course-of-action generation, wargaming, and comparison.",
@@ -2532,6 +2572,7 @@
   {
     "rank": 42,
     "id": "cog_analysis",
+    "canvas_type": "framework_board",
     "name": "COG Analysis",
     "core_components": "Center of Gravity, Capabilities, Vulnerabilities",
     "selection_lens": "Use to identify and protect or attack the central strength that holds a system together.",
@@ -2582,6 +2623,7 @@
   {
     "rank": 43,
     "id": "carver",
+    "canvas_type": "framework_board",
     "name": "CARVER Matrix",
     "core_components": "Criticality, Accessibility, Vulnerability, Effect, Recognizability",
     "selection_lens": "Use to numerically rank targets, vulnerabilities, or projects by value and exploitability.",
@@ -2656,6 +2698,7 @@
   {
     "rank": 44,
     "id": "dotmlpf_p",
+    "canvas_type": "framework_board",
     "name": "DOTMLPF-P",
     "core_components": "Doctrine, Organization, Training, Materiel, Leadership, Personnel, Facilities, Policy",
     "selection_lens": "Use when a large technology acquisition requires training, personnel, infrastructure, and policy readiness.",
@@ -2766,6 +2809,7 @@
   {
     "rank": 45,
     "id": "dime_dimefil",
+    "canvas_type": "framework_board",
     "name": "DIME / DIMEFIL",
     "core_components": "Diplomatic, Information, Military, Economic, Financial, Intelligence, Law enforcement",
     "selection_lens": "Use for macro strategy when every lever of power and influence must be audited.",
@@ -2864,6 +2908,7 @@
   {
     "rank": 46,
     "id": "pmesii_pt",
+    "canvas_type": "framework_board",
     "name": "PMESII-PT",
     "core_components": "Political, Military, Economic, Social, Information, Infrastructure, Physical Environment, Time",
     "selection_lens": "Use for exhaustive environmental scanning of a hostile or complex geographic region.",
@@ -2974,6 +3019,7 @@
   {
     "rank": 47,
     "id": "metl",
+    "canvas_type": "framework_board",
     "name": "METL",
     "core_components": "Mission-Essential Task List",
     "selection_lens": "Use when a team is doing too much busy work and must isolate non-negotiable tasks required for mission success.",
@@ -3024,6 +3070,7 @@
   {
     "rank": 48,
     "id": "fast_value_engineering",
+    "canvas_type": "framework_board",
     "name": "FAST / Value Engineering",
     "core_components": "Function Analysis System Technique",
     "selection_lens": "Use when a product is too expensive and the team must find cheaper ways to perform the same function.",
@@ -3074,6 +3121,7 @@
   {
     "rank": 49,
     "id": "jcids",
+    "canvas_type": "framework_board",
     "name": "JCIDS",
     "core_components": "Joint Capabilities Integration and Development System",
     "selection_lens": "Use in large bureaucratic ecosystems to formally prove a capability gap before requesting budget.",
@@ -3136,6 +3184,7 @@
   {
     "rank": 50,
     "id": "big_data_8_step",
+    "canvas_type": "framework_board",
     "name": "8-Step Big Data Process",
     "core_components": "Question, Dictionaries, Rules, Gather, Analyze, Decide",
     "selection_lens": "Use when intuition fails and procedural data mining is needed to validate an innovation's viability.",

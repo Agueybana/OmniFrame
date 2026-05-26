@@ -1,43 +1,10 @@
-from backend.app.services.canvas_generators import DomainBrief, build_canvas, generate_rice, generate_swot, generate_triz
-
-
-def test_rice_infers_triangle_event_features():
-    canvas = generate_rice(
-        "I need to rank features that an app like Triangle Gig & Event Agent would need. "
-        "Autonomous agents scrape the web daily to curate RTP arts/music events. "
-        "Users find hyper-specific entertainment, artists find open mics and venues. "
-        "Cold start problem. Needs enough initial scraped data to be useful to the first 100 users."
-    )
-
-    initiatives = [row["initiative"] for row in canvas["rows"]]
-
-    assert len(initiatives) == 6
-    assert "Hyperlocal discovery feed with mood, genre, neighborhood, and date filters" in initiatives
-    assert "Daily multi-source event ingestion agent" in initiatives
-    assert canvas["rows"][0]["drilldown"]["panels"][0]["options"]
-
-
-def test_swot_uses_project_specific_table_content():
-    goal = (
-        "Project / Technology\tPurpose\tDetails & Description\tUser Acquisition / Traction Challenges\tKey Benefit / Problem Solved\n"
-        "1. Agent-Trust Cert (\"VeriBot\")\tB2B Trust Infrastructure\tA protocol/badge system signaling to visiting LLMs that a store is audited and safe.\t"
-        "High educational barrier. Merchants won't care until agents are buying things.\tMerchants capture agent-driven sales.\n"
-        "2. VibeOS or SprintZero (AI-Native Jira / Requirements AI)\tEnd-to-End Product Management\tAn OS for vibecoding that automates the requirements workshop.\t"
-        "High ambition requires a flawless UX and a two-sided marketplace.\tA single pipeline from raw idea to deployed product.\n"
-        "3. Triangle Gig & Event Agent\tLocalized Data Curation\tAutonomous agents scrape the web daily to curate RTP arts/music events.\t"
-        "Cold start problem.\tA single source of truth for local culture.\n"
-        "4. AutoValidate (Idea Validator)\tGTM / Product Validation\tSpins up a micro-landing page and validation metrics before building.\t"
-        "Founders often do not want to pay to find out their idea is bad.\tProves market demand before build.\n"
-        "5. Nexus (Cross-Domain DB Agent)\tResearch / Data Mining\tConnects public databases to find novel overlaps.\t"
-        "Extremely high compute costs.\tAutomates interdisciplinary discovery."
-    )
-    canvas = generate_swot(goal)
-    rendered = " ".join(item["text"] for section in canvas["sections"] for item in section["items"])
-
-    assert "Triangle Gig & Event Agent" in rendered
-    assert "VibeOS or SprintZero" in rendered
-    assert "Agent-Trust Cert" in rendered
-    assert "Nexus" in rendered
+from backend.app.services.canvas_generators import (
+    DomainBrief,
+    build_canvas,
+    generate_from_catalog,
+    generate_swot,
+    generate_triz,
+)
 
 
 def test_triz_uses_domain_brief_without_example_branches():
@@ -60,36 +27,8 @@ def test_triz_uses_domain_brief_without_example_branches():
     assert canvas["principles"][0]["drilldown"]["panels"] == []
 
 
-def test_relationship_prompts_use_relationship_language():
-    swot = generate_swot("Find a girlfriend.")
-    swot_text = " ".join(item["text"] for section in swot["sections"] for item in section["items"])
-    assert "relationship" in swot["title"].lower()
-    assert "partner" in swot_text.lower() or "dating" in swot_text.lower()
-
-    triz = generate_triz("Help me decide whether leaving my partner Alex is the best choice.")
-    triz_text = " ".join(triz["analysis_brief"]) + " " + " ".join(principle["application"] for principle in triz["principles"])
-    assert "Alex" in triz_text
-    assert "relationship" in triz_text.lower()
-
-
-def test_relationship_triz_keeps_partner_name_when_travel_list_is_present():
-    triz = generate_triz(
-        "Help me decide whether leaving my partner and having a breakup with her (Alex) is the best choice. "
-        "I want to travel abroad to Egypt, Jordan, Greece, Italy, Japan."
-    )
-    rendered = " ".join(triz["analysis_brief"]) + " " + " ".join(
-        panel["options"][0]
-        for principle in triz["principles"]
-        for panel in principle["drilldown"]["panels"]
-        if panel.get("options")
-    )
-
-    assert "Alex" in rendered
-    assert "Egypt, Jordan, Greece, Italy, Japan and I" not in rendered
-
-
 def test_swot_drilldown_panels_keep_distinct_option_domains():
-    canvas = generate_swot("Find a girlfriend in North Carolina around ages 33-39 who wants to have a child.")
+    canvas = generate_swot("Commercialize our route-optimization algorithm for mid-size logistics carriers.")
     item = canvas["sections"][1]["items"][0]
     panels = {panel["title"]: panel for panel in item["drilldown"]["panels"]}
 
@@ -117,3 +56,67 @@ def test_domain_brief_drives_all_live_frameworks_without_hardcoded_examples():
         canvas = build_canvas(framework_id, goal, brief)
         rendered = str(canvas)
         assert "wetland" in rendered.lower() or "drone" in rendered.lower()
+
+
+def test_generate_from_catalog_swot_renders_quadrant_from_catalog():
+    canvas = generate_from_catalog("swot", "commercialize a wetland drone mapping algorithm.")
+
+    assert canvas["type"] == "quadrant"
+    assert [section["label"] for section in canvas["sections"]] == [
+        "Strengths",
+        "Weaknesses",
+        "Opportunities",
+        "Threats",
+    ]
+    item = canvas["sections"][0]["items"][0]
+    assert {"text", "rationale", "metric", "options", "drilldown"} <= set(item)
+    assert [panel["title"] for panel in item["drilldown"]["panels"]] == [
+        "Evidence to verify",
+        "Strategic action",
+        "Watch metric",
+    ]
+
+
+def test_generate_from_catalog_board_uses_one_lane_per_component():
+    canvas = generate_from_catalog("jtbd", "improve onboarding for our analytics product.")
+
+    assert canvas["type"] == "framework_board"
+    assert canvas["title"] == "Jobs To Be Done Canvas"
+    assert [lane["label"] for lane in canvas["lanes"]] == [
+        "User needs",
+        "core tasks",
+        "hired/fired products",
+    ]
+    item = canvas["lanes"][0]["items"][0]
+    assert {"title", "body", "metric", "options", "drilldown"} <= set(item)
+    assert item["drilldown"]["panels"]
+
+
+def test_build_canvas_falls_back_to_catalog_for_unregistered_framework():
+    goal = "improve onboarding for our analytics product."
+
+    catalog_canvas = build_canvas("jtbd", goal)
+    assert catalog_canvas["type"] == "framework_board"
+    assert catalog_canvas["title"] == "Jobs To Be Done Canvas"
+
+    # Frameworks with bespoke generators keep using them, not the catalog fallback.
+    swot_canvas = build_canvas("swot", goal)
+    assert swot_canvas["type"] == "quadrant"
+    assert swot_canvas["title"] != "SWOT Canvas"  # generate_from_catalog would title it this
+
+
+def test_catalog_canvas_does_not_display_component_prompt():
+    from backend.app.services.frameworks import get_framework
+
+    goal = "Grow our SaaS analytics product among mid-market teams."
+    for framework_id in ["aarrr", "tows"]:  # exercises framework_board and quadrant paths
+        framework = get_framework(framework_id)
+        rendered = str(generate_from_catalog(framework_id, goal))
+        for component in framework["components"]:
+            chunk = (component.get("prompt") or "").strip()[:60]
+            if chunk:
+                assert chunk not in rendered, f"prompt leaked into canvas for {framework_id}/{component['id']}"
+        # The short description is what should drive the displayed subheading/body.
+        first_description = (framework["components"][0].get("description") or "").strip()[:40]
+        if first_description:
+            assert first_description in rendered

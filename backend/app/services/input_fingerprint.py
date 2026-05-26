@@ -15,9 +15,16 @@ def _normalize_payload(payload: Any) -> Any:
     return payload
 
 
-def compute_input_fingerprint(*, goal: str, resources: list[dict[str, Any]], answers: list[dict[str, Any]]) -> str:
+def compute_input_fingerprint(
+    *,
+    goal: str,
+    resources: list[dict[str, Any]],
+    answers: list[dict[str, Any]],
+    details: str = "",
+) -> str:
     normalized = {
         "goal": goal.strip(),
+        "details": (details or "").strip(),
         "resources": _normalize_payload(resources),
         "answers": _normalize_payload(answers),
     }

@@ -14,7 +14,40 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { refreshOptions } from "../lib/api";
+import { fetchComponentResults, generateComponentResult, refreshOptions } from "../lib/api";
+
+const COMPONENT_ALIGNED_TYPES = new Set(["quadrant", "framework_board"]);
+
+function componentIdsOf(canvas) {
+  if (!canvas) return [];
+  const units = canvas.type === "quadrant" ? canvas.sections : canvas.type === "framework_board" ? canvas.lanes : [];
+  return (units ?? []).map((unit) => unit.component_id || unit.id).filter(Boolean);
+}
+
+function mergeComponentText(canvas, componentId, text) {
+  if (!canvas || !text) return canvas;
+  if (canvas.type === "quadrant") {
+    return {
+      ...canvas,
+      sections: canvas.sections.map((section) =>
+        (section.component_id || section.id) === componentId
+          ? { ...section, items: section.items.map((item, index) => (index === 0 ? { ...item, text } : item)) }
+          : section
+      )
+    };
+  }
+  if (canvas.type === "framework_board") {
+    return {
+      ...canvas,
+      lanes: canvas.lanes.map((lane) =>
+        (lane.component_id || lane.id) === componentId
+          ? { ...lane, items: lane.items.map((item, index) => (index === 0 ? { ...item, body: text } : item)) }
+          : lane
+      )
+    };
+  }
+  return canvas;
+}
 
 const FRAMEWORK_ICONS = {
   swot: LayoutGrid,
@@ -26,16 +59,108 @@ const FRAMEWORK_ICONS = {
   triz: Lightbulb
 };
 
-export default function CanvasWorkspace({ route, projectId = null }) {
+export default function CanvasWorkspace({ route, projectId = null, detailsVersion = 0 }) {
   const [canvas, setCanvas] = useState(route?.canvas ?? null);
   const [focusCanvases, setFocusCanvases] = useState([]);
   const [focusIndex, setFocusIndex] = useState(-1);
+  const [componentState, setComponentState] = useState({});
+
+  const isComponentAligned = !!canvas && COMPONENT_ALIGNED_TYPES.has(canvas.type);
+  const componentGenEnabled = !!projectId && !!route?.framework_id && isComponentAligned;
 
   useEffect(() => {
     setCanvas(route?.canvas ?? null);
     setFocusCanvases([]);
     setFocusIndex(-1);
+    setComponentState({});
   }, [route]);
+
+  async function runGenerate(componentId, regenerate) {
+    if (!route?.framework_id) return;
+    setComponentState((state) => ({ ...state, [componentId]: { ...(state[componentId] || {}), status: "loading" } }));
+    try {
+      const result = await generateComponentResult(route.framework_id, componentId, { regenerate });
+      setCanvas((current) => mergeComponentText(current, componentId, result.text));
+      setComponentState((state) => ({ ...state, [componentId]: { status: "ready", is_stale: !!result.is_stale } }));
+    } catch (error) {
+      if (error?.status === 404) {
+        // 404 = this rendered unit is not a catalog component; keep existing content, no controls.
+        setComponentState((state) => ({ ...state, [componentId]: { ...(state[componentId] || {}), status: "unsupported" } }));
+      } else {
+        const message = typeof error?.detail === "string" && error.detail ? error.detail : "Generation failed.";
+        setComponentState((state) => ({ ...state, [componentId]: { ...(state[componentId] || {}), status: "error", error: message } }));
+      }
+    }
+  }
+
+  async function refreshStaleness() {
+    if (!componentGenEnabled) return;
+    try {
+      const cached = await fetchComponentResults(route.framework_id);
+      setComponentState((state) => {
+        const next = { ...state };
+        for (const result of cached) {
+          if (next[result.component_id]) {
+            next[result.component_id] = { ...next[result.component_id], is_stale: !!result.is_stale };
+          }
+        }
+        return next;
+      });
+    } catch {
+      // best-effort; staleness will refresh on next load
+    }
+  }
+
+  // Hydrate component content from the cache, then lazily generate any that are missing.
+  useEffect(() => {
+    const baseCanvas = route?.canvas;
+    if (!projectId || !route?.framework_id || !baseCanvas || !COMPONENT_ALIGNED_TYPES.has(baseCanvas.type)) return;
+    const ids = componentIdsOf(baseCanvas);
+    if (ids.length === 0) return;
+    let cancelled = false;
+
+    (async () => {
+      let cached = [];
+      try {
+        cached = await fetchComponentResults(route.framework_id);
+      } catch {
+        cached = [];
+      }
+      if (cancelled) return;
+      const byId = {};
+      for (const result of cached) byId[result.component_id] = result;
+
+      const initial = {};
+      for (const id of ids) {
+        const result = byId[id];
+        if (result && result.text) {
+          setCanvas((current) => mergeComponentText(current, id, result.text));
+          initial[id] = { status: "ready", is_stale: !!result.is_stale };
+        } else {
+          initial[id] = { status: "idle", is_stale: false };
+        }
+      }
+      if (cancelled) return;
+      setComponentState(initial);
+
+      for (const id of ids) {
+        if (cancelled) return;
+        if (byId[id] && byId[id].text) continue;
+        await runGenerate(id, false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route, projectId]);
+
+  // After a Project Detail chat edit (detailsVersion bumps), re-check staleness so cards flag changes.
+  useEffect(() => {
+    if (detailsVersion > 0) refreshStaleness();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailsVersion]);
 
   if (!route || !canvas) {
     return (
@@ -136,17 +261,59 @@ export default function CanvasWorkspace({ route, projectId = null }) {
         ) : (
           <>
             <PromptPanorama route={route} canvas={canvas} />
-            <AnalysisBrief canvas={canvas} />
-            {canvas.type === "quadrant" && <QuadrantCanvas canvas={canvas} onChange={setCanvas} onOpenFocus={openFocus} />}
+            {canvas.type === "quadrant" && (
+              <QuadrantCanvas
+                canvas={canvas}
+                onChange={setCanvas}
+                onOpenFocus={openFocus}
+                componentState={componentState}
+                onRegenerate={componentGenEnabled ? (id) => runGenerate(id, true) : null}
+              />
+            )}
             {canvas.type === "score_table" && <RiceCanvas canvas={canvas} onChange={setCanvas} onOpenFocus={openFocus} />}
             {canvas.type === "contradiction" && <TrizCanvas canvas={canvas} onChange={setCanvas} onOpenFocus={openFocus} />}
-            {canvas.type === "framework_board" && <FrameworkBoardCanvas canvas={canvas} onOpenFocus={openFocus} />}
+            {canvas.type === "framework_board" && (
+              <FrameworkBoardCanvas
+                canvas={canvas}
+                onOpenFocus={openFocus}
+                componentState={componentState}
+                onRegenerate={componentGenEnabled ? (id) => runGenerate(id, true) : null}
+              />
+            )}
             {canvas.type === "okr_board" && <OkrCanvas canvas={canvas} onOpenFocus={openFocus} />}
             {canvas.type === "force_map" && <ForceMapCanvas canvas={canvas} onOpenFocus={openFocus} />}
           </>
         )}
       </div>
     </section>
+  );
+}
+
+function ComponentControls({ componentId, componentState, onRegenerate }) {
+  if (!onRegenerate) return null;
+  const state = componentState?.[componentId] || {};
+  if (state.status === "unsupported") return null;
+  const loading = state.status === "loading";
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-white/10 pt-3">
+      <button
+        type="button"
+        onClick={() => onRegenerate(componentId)}
+        disabled={loading}
+        className="inline-flex items-center gap-2 rounded-md border border-white/15 bg-white/[0.05] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-white/72 transition hover:border-moss/50 hover:text-white disabled:opacity-50"
+      >
+        <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
+        {loading ? "Generating..." : "Regenerate"}
+      </button>
+      {state.is_stale && (
+        <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-[11px] font-semibold text-amber-300">
+          Project Details changed
+        </span>
+      )}
+      {state.status === "error" && (
+        <span className="text-[11px] leading-4 text-rose-300">{state.error || "Generation failed — retry"}</span>
+      )}
+    </div>
   );
 }
 
@@ -187,23 +354,6 @@ function PromptPanorama({ route, canvas }) {
         </div>
       </div>
     </section>
-  );
-}
-
-function AnalysisBrief({ canvas }) {
-  if (!canvas.analysis_brief?.length) {
-    return null;
-  }
-
-  return (
-    <div className="mb-6 grid gap-3 lg:grid-cols-3">
-      {canvas.analysis_brief.map((brief, index) => (
-        <div key={`${brief}-${index}`} className="depth-card rounded-lg border border-white/10 bg-[#07100d] p-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-moss">System read {index + 1}</p>
-          <TypedRevealText className="mt-2 text-sm leading-6 text-white/70" text={brief} />
-        </div>
-      ))}
-    </div>
   );
 }
 
@@ -257,14 +407,12 @@ function TypedRevealText({ text, className = "" }) {
 }
 
 function DecisionOverview({ route, canvas }) {
-  const isRelationship = /relationship|dating|breakup|partner|girlfriend|boyfriend|wife|husband|family/i.test(`${canvas.title ?? ""} ${route.rationale ?? ""}`);
   const copy = {
     swot: {
-      trigger: isRelationship ? "Personal decision signal" : "Strategic audit signal",
-      method: isRelationship
-        ? "OmniFrame detected a relationship or dating decision, then selected SWOT to separate personal strengths, unclear patterns, opportunities for healthier action, and risks without forcing a premature yes/no answer."
-        : "OmniFrame detected a business assessment with internal capabilities, market conditions, competitors, adoption risks, or opportunity language. SWOT was selected because it separates controllable assets from external forces before choosing a build path.",
-      signals: isRelationship ? ["personal values and needs", "behavior patterns", "decision risks"] : ["internal capability cues", "external opportunity cues", "competitive and adoption risk"]
+      trigger: "Strategic audit signal",
+      method:
+        "OmniFrame detected a business assessment with internal capabilities, market conditions, competitors, adoption risks, or opportunity language. SWOT was selected because it separates controllable assets from external forces before choosing a build path.",
+      signals: ["internal capability cues", "external opportunity cues", "competitive and adoption risk"]
     },
     lean_startup: {
       trigger: "Validation signal",
@@ -505,7 +653,7 @@ function HoverHint({ text, children, placement = "card" }) {
   );
 }
 
-function QuadrantCanvas({ canvas, onChange, onOpenFocus }) {
+function QuadrantCanvas({ canvas, onChange, onOpenFocus, componentState = {}, onRegenerate = null }) {
   function updateItem(sectionId, index, value) {
     onChange({
       ...canvas,
@@ -528,6 +676,7 @@ function QuadrantCanvas({ canvas, onChange, onOpenFocus }) {
             <h3 className="text-xl font-semibold text-white">{section.label}</h3>
             <p className="mt-2 text-sm text-white/52">{section.prompt}</p>
           </div>
+          <ComponentControls componentId={section.component_id || section.id} componentState={componentState} onRegenerate={onRegenerate} />
           <div className="mt-5 space-y-3">
             {section.items.map((rawItem, index) => {
               const item = normalizeInsight(rawItem);
@@ -682,30 +831,43 @@ function TrizCanvas({ canvas, onChange, onOpenFocus }) {
   );
 }
 
-function FrameworkBoardCanvas({ canvas, onOpenFocus }) {
+function FrameworkBoardCanvas({ canvas, onOpenFocus, componentState = {}, onRegenerate = null }) {
   return (
     <div className="grid gap-4 lg:grid-cols-3">
-      {canvas.lanes.map((lane) => (
-        <section key={lane.id} className="depth-card rounded-lg border border-white/10 bg-white/[0.04] p-5">
-          <h3 className="text-xl font-semibold text-white">{lane.label}</h3>
-          <p className="mt-2 text-sm leading-6 text-white/52">{lane.prompt}</p>
-          <div className="mt-5 space-y-3">
-            {lane.items.map((item) => (
-              <HoverHint key={item.title} text="Open this card to get suggested evidence, metrics, and editable report notes.">
-                <button
-                  type="button"
-                  onClick={() => onOpenFocus(buildBoardFocus(canvas.title, lane, item))}
-                  className="insight-card w-full rounded-lg border border-white/10 bg-[#07100d] p-4 text-left transition hover:border-moss/60"
-                >
-                  <h4 className="text-base font-semibold text-white">{item.title}</h4>
-                  <p className="mt-2 text-sm leading-6 text-white/58">{item.body}</p>
-                  {item.metric && <p className="mt-3 text-xs font-bold uppercase tracking-[0.14em] text-moss">Metric: {item.metric}</p>}
-                </button>
-              </HoverHint>
-            ))}
-          </div>
-        </section>
-      ))}
+      {canvas.lanes.map((lane) => {
+        const laneState = componentState[lane.component_id || lane.id] || {};
+        return (
+          <section key={lane.id} className="depth-card rounded-lg border border-white/10 bg-white/[0.04] p-5">
+            <h3 className="text-xl font-semibold text-white">{lane.label}</h3>
+            <p className="mt-2 text-sm leading-6 text-white/52">{lane.prompt}</p>
+            <ComponentControls componentId={lane.component_id || lane.id} componentState={componentState} onRegenerate={onRegenerate} />
+            <div className="mt-5 space-y-3">
+              {lane.items.map((item, index) => {
+                const showStatus = index === 0 && (laneState.status === "loading" || laneState.status === "error");
+                return (
+                  <HoverHint key={item.title} text="Open this card to get suggested evidence, metrics, and editable report notes.">
+                    <button
+                      type="button"
+                      onClick={() => onOpenFocus(buildBoardFocus(canvas.title, lane, item))}
+                      className="insight-card w-full rounded-lg border border-white/10 bg-[#07100d] p-4 text-left transition hover:border-moss/60"
+                    >
+                      <h4 className="text-base font-semibold text-white">{item.title}</h4>
+                      {showStatus && laneState.status === "loading" ? (
+                        <p className="mt-2 text-sm italic leading-6 text-white/40">Generating…</p>
+                      ) : showStatus && laneState.status === "error" ? (
+                        <p className="mt-2 text-sm leading-6 text-rose-300">⚠ {laneState.error || "Generation failed"}</p>
+                      ) : (
+                        <p className="mt-2 text-sm leading-6 text-white/58">{item.body}</p>
+                      )}
+                      {item.metric && <p className="mt-3 text-xs font-bold uppercase tracking-[0.14em] text-moss">Metric: {item.metric}</p>}
+                    </button>
+                  </HoverHint>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }
@@ -1378,9 +1540,7 @@ function getPanelKind(panel) {
 }
 
 function getCanvasPanorama(canvas) {
-  console.log(canvas.type);
   if (canvas.type === "quadrant") {
-    console.log(canvas.sections);
     return (canvas.sections ?? []).slice(0, 4).map((section) => {
       const first = normalizeInsight(section.items?.[0] ?? {});
       return {

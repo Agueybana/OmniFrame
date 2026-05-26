@@ -4,12 +4,12 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 ProjectStatus = Literal["draft", "active", "archived"]
 ResourceKind = Literal["link", "note", "file"]
-ElementKind = Literal["section", "item", "row", "panel"]
+ElementKind = Literal["section", "item", "row", "panel", "component"]
 
 
 class ProfileUpsertRequest(BaseModel):
@@ -26,6 +26,7 @@ class ProfileResponse(BaseModel):
 class ProjectCreateRequest(BaseModel):
     title: str = Field(..., min_length=1, max_length=500)
     goal: str = Field(..., min_length=1, max_length=20000)
+    details: str | None = Field(default=None, max_length=100000)
     framework_id: str | None = Field(default=None, max_length=64)
     status: ProjectStatus = "draft"
 
@@ -33,6 +34,7 @@ class ProjectCreateRequest(BaseModel):
 class ProjectUpdateRequest(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=500)
     goal: str | None = Field(default=None, min_length=1, max_length=20000)
+    details: str | None = Field(default=None, max_length=100000)
     framework_id: str | None = Field(default=None, max_length=64)
     status: ProjectStatus | None = None
     input_fingerprint: str | None = Field(default=None, max_length=128)
@@ -43,6 +45,7 @@ class ProjectResponse(BaseModel):
     profile_id: UUID
     title: str
     goal: str
+    details: str | None
     framework_id: str | None
     status: ProjectStatus
     input_fingerprint: str | None
@@ -118,3 +121,40 @@ class ElementScoreResponse(BaseModel):
     input_fingerprint: str
     is_stale: bool
     computed_at: datetime
+
+
+class ComponentResultRequest(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+    framework_id: str = Field(..., min_length=1, max_length=64)
+    regenerate: bool = False
+    model_provider: Literal["openai", "google"] | None = None
+    model_id: str | None = Field(default=None, max_length=120)
+
+
+class ComponentResultResponse(BaseModel):
+    project_id: UUID
+    framework_id: str
+    component_id: str
+    text: str
+    is_stale: bool
+    computed_at: datetime
+
+
+class ProjectDetailsChatRequest(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+    instruction: str = Field(..., min_length=1, max_length=100000)
+    model_provider: Literal["openai", "google"] | None = None
+    model_id: str | None = Field(default=None, max_length=120)
+
+
+class ProjectDetailsImportRequest(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+    document: str = Field(..., min_length=1, max_length=500000)
+    filename: str | None = Field(default=None, max_length=300)
+    model_provider: Literal["openai", "google"] | None = None
+    model_id: str | None = Field(default=None, max_length=120)
+
+
+class ProjectDetailsChatResponse(BaseModel):
+    details: str
+    summary: str

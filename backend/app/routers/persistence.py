@@ -5,17 +5,24 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..db.models import ComponentAnswer, ElementScore, Profile, Project, Resource, utcnow
 from ..db.schemas import (
     ComponentAnswerBulkRequest,
     ComponentAnswerResponse,
+    ComponentResultRequest,
+    ComponentResultResponse,
     ElementScoreResponse,
     ElementScoreUpsertRequest,
     ProfileResponse,
     ProfileUpsertRequest,
     ProjectCreateRequest,
+    ProjectDetailsChatRequest,
+    ProjectDetailsChatResponse,
+    ProjectDetailsImportRequest,
     ProjectResponse,
     ProjectUpdateRequest,
     ResourceCreateRequest,
@@ -23,6 +30,9 @@ from ..db.schemas import (
     ResourceUpdateRequest,
 )
 from ..db.session import get_session_factory, is_database_configured
+from ..services.frameworks import get_framework
+from ..services.input_fingerprint import compute_input_fingerprint
+from ..services.router import apply_project_details_edit, assimilate_project_details, generate_component_result
 
 router = APIRouter(prefix="/api", tags=["persistence"])
 
@@ -72,6 +82,7 @@ def project_response(project: Project) -> ProjectResponse:
         profile_id=project.profile_id,
         title=project.title,
         goal=project.goal,
+        details=project.details,
         framework_id=project.framework_id,
         status=project.status,  # type: ignore[arg-type]
         input_fingerprint=project.input_fingerprint,
@@ -127,17 +138,46 @@ def upsert_profile(
     payload: ProfileUpsertRequest,
     db: Session = Depends(db_session),
 ) -> ProfileResponse:
-    require_database()
-    profile = db.get(Profile, profile_id)
     now = utcnow()
-    if profile is None:
-        profile = Profile(id=profile_id, display_name=payload.display_name, created_at=now, updated_at=now)
-        db.add(profile)
-    else:
+    profile = db.get(Profile, profile_id)
+    if profile is not None:
         profile.display_name = payload.display_name
         profile.updated_at = now
-    db.commit()
-    db.refresh(profile)
+        db.commit()
+        db.refresh(profile)
+        return profile_response(profile)
+
+    insert_stmt = (
+        insert(Profile)
+        .values(
+            id=profile_id,
+            display_name=payload.display_name,
+            created_at=now,
+            updated_at=now,
+        )
+        .on_conflict_do_update(
+            index_elements=[Profile.id],
+            set_={
+                "display_name": payload.display_name,
+                "updated_at": now,
+            },
+        )
+    )
+    try:
+        db.execute(insert_stmt)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        profile = db.get(Profile, profile_id)
+        if profile is None:
+            raise
+        profile.display_name = payload.display_name
+        profile.updated_at = now
+        db.commit()
+
+    profile = db.get(Profile, profile_id)
+    if profile is None:
+        raise HTTPException(status_code=500, detail="Unable to upsert profile")
     return profile_response(profile)
 
 
@@ -186,6 +226,7 @@ def create_project(
         profile_id=profile_id,
         title=payload.title,
         goal=payload.goal,
+        details=payload.details,
         framework_id=payload.framework_id,
         status=payload.status,
         created_at=now,
@@ -221,6 +262,8 @@ def update_project(
         project.title = payload.title
     if payload.goal is not None:
         project.goal = payload.goal
+    if payload.details is not None:
+        project.details = payload.details
     if payload.framework_id is not None:
         project.framework_id = payload.framework_id
     if payload.status is not None:
@@ -452,3 +495,215 @@ def upsert_score(
     db.commit()
     db.refresh(existing)
     return score_response(existing)
+
+
+def _result_text(content: object) -> str:
+    if isinstance(content, dict):
+        text = content.get("text")
+        if isinstance(text, str):
+            return text
+    return ""
+
+
+def _project_fingerprint(project: Project) -> str:
+    resources = [
+        {"kind": resource.kind, "title": resource.title, "body": resource.body, "uri": resource.uri}
+        for resource in project.resources
+    ]
+    answers = [
+        {
+            "framework_id": answer.framework_id,
+            "component_id": answer.component_id,
+            "question_index": answer.question_index,
+            "answer": answer.answer,
+        }
+        for answer in project.answers
+    ]
+    return compute_input_fingerprint(
+        goal=project.goal,
+        details=project.details or "",
+        resources=resources,
+        answers=answers,
+    )
+
+
+@router.get("/projects/{project_id}/component-results", response_model=list[ComponentResultResponse])
+def list_component_results(
+    project_id: UUID,
+    framework_id: str = Query(..., min_length=1, max_length=64),
+    db: Session = Depends(db_session),
+    profile_id: UUID = Header(..., alias="X-OmniFrame-Profile-Id"),
+) -> list[ComponentResultResponse]:
+    require_database()
+    project = get_owned_project(db, project_id, profile_id)
+    current_fingerprint = _project_fingerprint(project)
+    rows = db.scalars(
+        select(ElementScore)
+        .where(
+            ElementScore.project_id == project_id,
+            ElementScore.framework_id == framework_id,
+            ElementScore.element_kind == "component",
+        )
+        .order_by(ElementScore.element_key)
+    ).all()
+    return [
+        ComponentResultResponse(
+            project_id=project_id,
+            framework_id=framework_id,
+            component_id=row.element_key,
+            text=_result_text(row.content),
+            is_stale=row.input_fingerprint != current_fingerprint,
+            computed_at=row.computed_at,
+        )
+        for row in rows
+    ]
+
+
+@router.post("/projects/{project_id}/components/{component_id}/result", response_model=ComponentResultResponse)
+async def generate_component(
+    project_id: UUID,
+    component_id: str,
+    payload: ComponentResultRequest,
+    db: Session = Depends(db_session),
+    profile_id: UUID = Header(..., alias="X-OmniFrame-Profile-Id"),
+) -> ComponentResultResponse:
+    require_database()
+    project = get_owned_project(db, project_id, profile_id)
+
+    framework = get_framework(payload.framework_id)
+    if framework is None:
+        raise HTTPException(status_code=404, detail="Framework not found")
+    component = next(
+        (item for item in (framework.get("components") or []) if item.get("id") == component_id),
+        None,
+    )
+    if component is None:
+        raise HTTPException(status_code=404, detail="Component not found")
+
+    current_fingerprint = _project_fingerprint(project)
+    existing = db.scalar(
+        select(ElementScore).where(
+            ElementScore.project_id == project_id,
+            ElementScore.framework_id == payload.framework_id,
+            ElementScore.element_key == component_id,
+        )
+    )
+
+    if existing is not None and not payload.regenerate:
+        return ComponentResultResponse(
+            project_id=project_id,
+            framework_id=payload.framework_id,
+            component_id=component_id,
+            text=_result_text(existing.content),
+            is_stale=existing.input_fingerprint != current_fingerprint,
+            computed_at=existing.computed_at,
+        )
+
+    try:
+        generated = await generate_component_result(
+            payload.framework_id,
+            component,
+            project.details or "",
+            project.goal,
+            payload.model_provider,
+            payload.model_id,
+        )
+    except Exception as exc:  # surface the LLM failure instead of masking it with catalog text
+        raise HTTPException(status_code=502, detail=f"Component generation failed: {exc}") from exc
+    if not generated:
+        raise HTTPException(status_code=502, detail="Component generation returned no content.")
+
+    now = utcnow()
+    if existing is None:
+        existing = ElementScore(
+            project_id=project_id,
+            framework_id=payload.framework_id,
+            element_key=component_id,
+            element_kind="component",
+            score=None,
+            content={"text": generated},
+            input_fingerprint=current_fingerprint,
+            is_stale=False,
+            computed_at=now,
+        )
+        db.add(existing)
+    else:
+        existing.element_kind = "component"
+        existing.content = {"text": generated}
+        existing.input_fingerprint = current_fingerprint
+        existing.is_stale = False
+        existing.computed_at = now
+
+    project.updated_at = now
+    db.commit()
+    db.refresh(existing)
+    return ComponentResultResponse(
+        project_id=project_id,
+        framework_id=payload.framework_id,
+        component_id=component_id,
+        text=_result_text(existing.content),
+        is_stale=False,
+        computed_at=existing.computed_at,
+    )
+
+
+@router.post("/projects/{project_id}/details/chat", response_model=ProjectDetailsChatResponse)
+async def chat_project_details(
+    project_id: UUID,
+    payload: ProjectDetailsChatRequest,
+    db: Session = Depends(db_session),
+    profile_id: UUID = Header(..., alias="X-OmniFrame-Profile-Id"),
+) -> ProjectDetailsChatResponse:
+    require_database()
+    project = get_owned_project(db, project_id, profile_id)
+    current = project.details or ""
+
+    edit = await apply_project_details_edit(
+        current,
+        payload.instruction,
+        project.goal,
+        payload.model_provider,
+        payload.model_id,
+    )
+    if edit is None:
+        new_details = f"{current}\n\n{payload.instruction}".strip()
+        summary = "Appended note (LLM unavailable)."
+    else:
+        new_details, summary = edit
+
+    project.details = new_details
+    project.updated_at = utcnow()
+    db.commit()
+    return ProjectDetailsChatResponse(details=new_details, summary=summary)
+
+
+@router.post("/projects/{project_id}/details/import", response_model=ProjectDetailsChatResponse)
+async def import_project_details(
+    project_id: UUID,
+    payload: ProjectDetailsImportRequest,
+    db: Session = Depends(db_session),
+    profile_id: UUID = Header(..., alias="X-OmniFrame-Profile-Id"),
+) -> ProjectDetailsChatResponse:
+    require_database()
+    project = get_owned_project(db, project_id, profile_id)
+    current = project.details or ""
+
+    result = await assimilate_project_details(
+        current,
+        payload.document,
+        payload.filename,
+        project.goal,
+        payload.model_provider,
+        payload.model_id,
+    )
+    if result is None:
+        heading = f"## Imported: {payload.filename}" if payload.filename else "## Imported document"
+        new_details = f"{current}\n\n{heading}\n\n{payload.document}".strip()
+        summary = "Imported document (LLM unavailable)."
+    else:
+        new_details, summary = result
+
+    project.details = new_details
+    project.updated_at = utcnow()
+    db.commit()
+    return ProjectDetailsChatResponse(details=new_details, summary=summary)

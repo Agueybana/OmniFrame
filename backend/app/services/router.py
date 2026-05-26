@@ -119,19 +119,6 @@ PESTLE_TERMS = {
     "compliance",
     "policy",
 }
-RELATIONSHIP_TERMS = {
-    "partner",
-    "breakup",
-    "girlfriend",
-    "boyfriend",
-    "wife",
-    "husband",
-    "relationship",
-    "dating",
-    "marriage",
-    "family",
-    "couple",
-}
 
 MODEL_DEFAULTS = {
     "openai": "gpt-5.1",
@@ -182,8 +169,6 @@ def _score_pass(goal: str, mode: str, domain_brief: dict | None = None) -> dict:
                 add(framework_id, len(term_hits), f"keyword signal: {', '.join(term_hits[:4])}")
             for phrase in phrase_hits:
                 add(framework_id, 2, f"phrase signal: {phrase}")
-        if tokens & RELATIONSHIP_TERMS:
-            add("swot", 5, "relationship or personal decision language")
     else:
         if any(word in tokens for word in ["rank", "prioritize", "priority", "backlog", "features", "score"]):
             add("rice", 5, "requested output is ranking or prioritization")
@@ -202,7 +187,7 @@ def _score_pass(goal: str, mode: str, domain_brief: dict | None = None) -> dict:
             add("pestle", 5, "requested output is macro-environment scan")
         if any(word in tokens for word in ["lighter", "stronger", "cheaper", "faster", "constraint", "contradiction", "material", "engineering"]):
             add("triz", 5, "requested output involves a technical contradiction or design tradeoff")
-        if any(word in tokens for word in RELATIONSHIP_TERMS) or any(phrase in text for phrase in ["should i", "decide whether", "best choice"]):
+        if any(phrase in text for phrase in ["should i", "decide whether", "best choice"]):
             add("swot", 5, "requested output is a decision audit under uncertainty")
         if not any(scores.values()):
             add("swot", 1, "broad diagnostic fallback")
@@ -229,9 +214,6 @@ def _adjudicate_smart_passes(goal: str, intent_pass: dict, output_pass: dict, do
     scores = {framework_id: intent_pass["scores"].get(framework_id, 0) + output_pass["scores"].get(framework_id, 0) for framework_id in ACTIVE_FRAMEWORK_IDS}
     criteria = []
 
-    if tokens & RELATIONSHIP_TERMS:
-        scores["swot"] += 4
-        criteria.append("Personal or relationship decisions require a diagnostic audit before advice.")
     if any(word in tokens for word in ["rank", "prioritize", "features", "score", "backlog"]):
         scores["rice"] += 3
         criteria.append("Ranking language gets extra weight for RICE.")
@@ -392,7 +374,6 @@ async def _openai_json(prompt: str, model_id: str) -> dict | None:
     if not texts and data.get("output_text"):
         texts.append(data["output_text"])
     result = _json_from_text("\n".join(texts))
-    print(result)
     if result:
         return result
     return None
@@ -424,15 +405,42 @@ async def _google_json(prompt: str, model_id: str) -> dict | None:
     return _json_from_text("\n".join(texts))
 
 
-async def _llm_json(prompt: str, provider: str | None, model_id: str | None) -> dict | None:
+async def _llm_json(prompt: str, provider: str | None, model_id: str | None, *, strict: bool = False) -> dict | None:
+    print("--------------------------------")
+    print(f"_llm_json")
+    print("--------------------------------")
     selected_provider, selected_model = _model_choice(provider, model_id)
+    print(f"Selected provider: {selected_provider}")
+    print("--------------------------------")
+    print(f"Selected model: {selected_model}")
+    print("--------------------------------")
+    
     if not _llm_enabled(selected_provider):
+        print("--------------------------------")
+        print(f"LLM is disabled. Set OMNIFRAME_USE_LLM=true and a provider API key.")
+        print("--------------------------------")
+        if strict:
+            raise RuntimeError("LLM is disabled. Set OMNIFRAME_USE_LLM=true and a provider API key.")
         return None
     try:
+        print("--------------------------------")
+        print(f"Calling LLM...")
+        print("--------------------------------")
         if selected_provider == "google":
+            print("--------------------------------")
+            print(f"Calling Google LLM...")
+            print("--------------------------------")
             return await _google_json(prompt, selected_model)
+        print("--------------------------------")
+        print(f"Calling OpenAI LLM...")
+        print("--------------------------------")
         return await _openai_json(prompt, selected_model)
-    except Exception:
+    except Exception as exc:
+        print("--------------------------------")
+        print(f"Error: {exc}")
+        print("--------------------------------")
+        if strict:
+            raise RuntimeError(f"{selected_provider} ({selected_model}) request failed: {exc}") from exc
         return None
 
 
@@ -464,8 +472,7 @@ async def langchain_route(goal: str, provider: str | None = None, model_id: str 
         "Route the user goal to exactly one framework: swot, lean_startup, okrs, porters_five_forces, pestle, rice, or triz.\n"
         "Return compact JSON with framework_id, confidence, and rationale.\n"
         "Use SWOT for broad strategic or personal decision audits, Lean Startup for MVP validation, OKRs for measurable alignment, "
-        "Porter's Five Forces for industry structure, PESTLE for macro risk, RICE for prioritization, and TRIZ for engineering contradictions.\n"
-        "For relationship, dating, breakup, or family decisions, prefer swot unless the user explicitly requests another framework.\n\n"
+        "Porter's Five Forces for industry structure, PESTLE for macro risk, RICE for prioritization, and TRIZ for engineering contradictions.\n\n"
         f"Domain brief JSON:\n{json.dumps(domain_brief or {}, ensure_ascii=False)}\n"
         f"Subject: {brief.subject}\nDomain: {brief.domain}\nUsers/stakeholders: {brief.users}\nWorkflow: {brief.workflow}\n"
         f"Goal: {goal}"
@@ -503,10 +510,9 @@ async def langchain_enrich_canvas(
         f"{framework_skill_pack(framework_id)}\n\n"
         "You are OmniFrame's senior framework analyst with web research enabled when available. Return only valid JSON.\n"
         "Preserve the current canvas schema and top-level type exactly, but rewrite generic content into concrete, domain-specific analysis.\n"
-        "Use the user's exact context, names, constraints, and emotional/business/engineering details. If the prompt is personal or relationship-related, avoid business jargon.\n"
+        "Use the user's exact context, names, constraints, and business or engineering details.\n"
         "The root canvas must already feel complete before the user opens any focus workspace: populate every first-page section, row, force, objective, lane, or principle with highly specific wording tied to the user's prompt.\n"
         "Do not reserve all specificity for drilldowns. The first screen should give a panoramic view of user focus, derived context, key variables, risks, and next moves.\n"
-        "For relationship decisions, do not decide for the user; organize values, patterns, boundaries, repair options, safety concerns, and conversation experiments.\n"
         "For every drilldown panel, provide options that directly reference the original user input and the current framework.\n"
         "For every option set, keep options specific to that panel's role: evidence options must be evidence, actions must be actions, metrics must be metrics, risks must be risks, and experiments must be experiments.\n"
         "Use reputable public web context where useful, but do not include citations in the JSON unless a field already supports them.\n\n"
@@ -518,6 +524,130 @@ async def langchain_enrich_canvas(
     parsed = await _llm_json(prompt, provider, model_id)
     if isinstance(parsed, dict) and parsed.get("type") == canvas.get("type"):
         return parsed
+    return None
+
+
+async def generate_component_result(
+    framework_id: str,
+    component: dict,
+    project_details: str,
+    goal: str,
+    provider: str | None = None,
+    model_id: str | None = None,
+) -> str:
+    """Generate one framework component's content from the project's markdown details.
+
+    Returns markdown text. Raises RuntimeError with a reason when the LLM is
+    disabled or the call fails, so the endpoint can surface the failure rather
+    than silently masking it with catalog text.
+    """
+    print("--------------------------------")
+    print(f"Generating component result for: {component.get('label')} (id: {component.get('id')})")
+    print("--------------------------------")
+    #print(f"Project details: {project_details.strip().replace('\n', ' ')}")
+    print("--------------------------------")
+    print(f"Goal: {goal}")
+    print("--------------------------------")
+    context = (project_details or "").strip() or (goal or "").strip()
+    instruction = component.get("prompt") or component.get("description") or component.get("label") or ""
+    prompt = (
+        f"{framework_skill_pack(framework_id)}\n\n"
+        'Return only valid JSON of the form {"text": "<markdown>"}.\n'
+        "Write the analysis for ONE framework component only, using the Project Details below as the sole domain context.\n"
+        "Be concrete and specific to this project; avoid generic boilerplate. Use concise markdown (short paragraphs or bullets).\n\n"
+        f"Framework: {framework_id}\n"
+        f"Component: {component.get('label')} (id: {component.get('id')})\n"
+        f"Component instruction: {instruction}\n"
+        f"Project Details:\n{context}"
+    )
+    print("--------------------------------")
+    print(f"Prompt: {prompt}")
+    print("--------------------------------")
+    print("Calling LLM...")
+    print("--------------------------------")   
+    print(f"Provider: {provider}")
+    print("--------------------------------")
+    print(f"Model ID: {model_id}")
+    print("--------------------------------")
+    parsed = await _llm_json(prompt, provider, model_id, strict=True)
+    if isinstance(parsed, dict):
+        text = parsed.get("text")
+        print("--------------------------------")
+        print(f"Text: {text}")
+        print("--------------------------------")
+        if isinstance(text, str) and text.strip():
+            print("--------------------------------")
+            print(f"Returning text: {text.strip()}")
+            print("--------------------------------")
+            return text.strip()
+    print("--------------------------------")
+    print("LLM returned no usable 'text' field for this component.")
+    print("--------------------------------")
+    raise RuntimeError("LLM returned no usable 'text' field for this component.")
+
+
+async def apply_project_details_edit(
+    current_details: str,
+    instruction: str,
+    goal: str,
+    provider: str | None = None,
+    model_id: str | None = None,
+) -> tuple[str, str] | None:
+    """Apply a natural-language add/update/delete request to the Project Detail markdown.
+
+    Returns (updated_markdown, one_line_summary), or None when the LLM is
+    disabled/unavailable so the caller can fall back to a deterministic append.
+    """
+    prompt = (
+        f"{load_skill('domain_analyst')}\n\n"
+        'Return only valid JSON of the form {"details": "<full updated markdown>", "summary": "<one short line>"}.\n'
+        "You maintain a project's living \"Project Detail\" document. Apply the user's request, which may add, "
+        "update, or delete information. Return the COMPLETE updated markdown (not a diff), preserving unrelated "
+        "content and structure. Keep it clean, well-organized markdown. The summary is one short line describing what changed.\n\n"
+        f"Goal context: {goal}\n"
+        f"Current Project Detail markdown:\n{current_details or '(empty)'}\n\n"
+        f"User request:\n{instruction}"
+    )
+    parsed = await _llm_json(prompt, provider, model_id)
+    if isinstance(parsed, dict):
+        details = parsed.get("details")
+        summary = parsed.get("summary")
+        if isinstance(details, str) and details.strip():
+            return details.strip(), (summary.strip() if isinstance(summary, str) and summary.strip() else "Updated project details.")
+    return None
+
+
+async def assimilate_project_details(
+    current_details: str,
+    document: str,
+    filename: str | None,
+    goal: str,
+    provider: str | None = None,
+    model_id: str | None = None,
+) -> tuple[str, str] | None:
+    """Integrate an imported document into the existing Project Detail markdown.
+
+    Returns (updated_markdown, one_line_summary), or None when the LLM is
+    disabled/unavailable so the caller can fall back to appending the document.
+    """
+    source = f" (source: {filename})" if filename else ""
+    prompt = (
+        f"{load_skill('domain_analyst')}\n\n"
+        'Return only valid JSON of the form {"details": "<full updated markdown>", "summary": "<one short line>"}.\n'
+        "You maintain a project's living \"Project Detail\" document. Integrate the imported document below into the "
+        "existing Project Detail: merge related information, remove duplicates, and organize it cleanly. Preserve "
+        "existing content that the document does not change. Return the COMPLETE updated markdown (not a diff). "
+        "The summary is one short line describing what was assimilated.\n\n"
+        f"Goal context: {goal}\n"
+        f"Current Project Detail markdown:\n{current_details or '(empty)'}\n\n"
+        f"Imported document{source}:\n{document}"
+    )
+    parsed = await _llm_json(prompt, provider, model_id)
+    if isinstance(parsed, dict):
+        details = parsed.get("details")
+        summary = parsed.get("summary")
+        if isinstance(details, str) and details.strip():
+            return details.strip(), (summary.strip() if isinstance(summary, str) and summary.strip() else "Imported document into project details.")
     return None
 
 
@@ -719,6 +849,38 @@ async def refresh_panel_options(request, provider: str | None = None, model_id: 
     }
 
 
+def _canvas_component_ids(canvas: dict) -> list[str] | None:
+    if canvas.get("type") == "quadrant":
+        units = canvas.get("sections")
+    elif canvas.get("type") == "framework_board":
+        units = canvas.get("lanes")
+    else:
+        return None
+    if not units:
+        return None
+    ids = [unit.get("component_id") or unit.get("id") for unit in units]
+    return ids if all(ids) else None
+
+
+async def _enrich_unless_component_aligned(
+    framework_id: str,
+    goal: str,
+    canvas: dict,
+    provider: str | None,
+    model_id: str | None,
+    domain_brief: dict | None,
+) -> dict | None:
+    # Skip the whole-canvas enrich only when every rendered unit maps to a real
+    # catalog component (so per-component generation will supply the content).
+    ids = _canvas_component_ids(canvas)
+    if ids:
+        framework = get_framework(framework_id) or {}
+        catalog_ids = {component.get("id") for component in (framework.get("components") or [])}
+        if catalog_ids and set(ids).issubset(catalog_ids):
+            return None
+    return await langchain_enrich_canvas(framework_id, goal, canvas, provider, model_id, domain_brief)
+
+
 async def route_goal(goal: str, framework_id: str | None = None, model_provider: str | None = None, model_id: str | None = None) -> dict:
     domain_brief = await langchain_domain_brief(goal, model_provider, model_id)
     smart_decision = deterministic_route(goal, domain_brief)
@@ -726,11 +888,11 @@ async def route_goal(goal: str, framework_id: str | None = None, model_provider:
 
     if framework_id:
         framework = get_framework(framework_id)
-        if not framework or framework_id not in ACTIVE_FRAMEWORK_IDS:
+        if not framework or not framework.get("active"):
             decision = smart_decision
         else:
             canvas = build_canvas(framework_id, goal, domain_brief_from_mapping(domain_brief, goal))
-            enriched = await langchain_enrich_canvas(framework_id, goal, canvas, model_provider, model_id, domain_brief)
+            enriched = await _enrich_unless_component_aligned(framework_id, goal, canvas, model_provider, model_id, domain_brief)
             selection_process = {
                 **smart_decision["selection_process"],
                 "summary": f"Smart criteria recommended {FRAMEWORK_NAMES.get(smart_decision['framework_id'], smart_decision['framework_id'])}; user overrode to {framework['name']}.",
@@ -781,7 +943,7 @@ async def route_goal(goal: str, framework_id: str | None = None, model_provider:
         selection_process = dict(decision["selection_process"])
 
     canvas = build_canvas(decision["framework_id"], goal, domain_brief_from_mapping(domain_brief, goal))
-    enriched = await langchain_enrich_canvas(decision["framework_id"], goal, canvas, model_provider, model_id, domain_brief)
+    enriched = await _enrich_unless_component_aligned(decision["framework_id"], goal, canvas, model_provider, model_id, domain_brief)
     return {
         "framework_id": decision["framework_id"],
         "framework_name": framework["name"],
